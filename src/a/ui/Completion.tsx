@@ -1,0 +1,59 @@
+/** The completion state: what just happened, then where next. The actions sit in the pinned row. */
+import { FRESH, useGated, useJourney, type DoneKind } from "../lib/journeyContext";
+import { LinkButton, PlusMark, QuietButton, TextButton } from "./controls";
+
+const LINE: Record<DoneKind, string> = {
+  saved: "Saved to your looks",
+  reserved: "Pieces reserved for 24 hours",
+  dna: "Your DNA is saved",
+};
+
+export function Completion({ kind }: { kind: DoneKind }) {
+  return (
+    <div className="mt-6 lg:mt-8" aria-live="polite">
+      <p className="text-[13px] leading-5 text-[var(--muted)]">{LINE[kind]}</p>
+      <h2 className="a-display mt-2">Done. Where next?</h2>
+    </div>
+  );
+}
+
+/**
+ * Stacked: style another moment (keeps the face and the DNA), then the DNA
+ * as the second path with its value line, then the looks.
+ */
+export function CompletionActions() {
+  const { href, store, go, user } = useJourney();
+  const gated = useGated();
+  const plus = user?.plus ?? false;
+  const toDna = () => gated("dna", () => go("dna/face", { ...FRESH, face: null }));
+
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
+        Style another moment
+      </LinkButton>
+      {store.dna ? (
+        <>
+          <LinkButton to={href("looks", { hero: null })} variant="secondary">
+            Open my looks
+          </LinkButton>
+          <TextButton onClick={toDna}>
+            Update my Style DNA
+            <PlusMark show={!plus} />
+          </TextButton>
+        </>
+      ) : (
+        <>
+          <p className="mt-2 text-[13px] leading-5 text-[var(--muted)]">Two taps next time</p>
+          <QuietButton onClick={toDna}>
+            Build my Style DNA
+            <PlusMark show={!plus} />
+          </QuietButton>
+          <LinkButton to={href("looks", { hero: null })} variant="tertiary">
+            Open my looks
+          </LinkButton>
+        </>
+      )}
+    </div>
+  );
+}

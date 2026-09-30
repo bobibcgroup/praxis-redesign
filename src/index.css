@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design-lab isolation. Neutralises the production global rules that would
+ * otherwise leak into the concepts: element-level serif headings, the 300 ms
+ * transition on every node, and dark-mode image dimming. Concepts define
+ * their own tokens on their root element via data-concept.
+ */
+[data-lab] h1,
+[data-lab] h2,
+[data-lab] h3 {
+  font-family: inherit;
+}
+
+[data-lab] *:not([class*="transition"]):not([class*="animate-"]) {
+  transition-property: none;
+}
+
+[data-lab] img {
+  filter: none;
+}
+
+[data-lab] {
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab] * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

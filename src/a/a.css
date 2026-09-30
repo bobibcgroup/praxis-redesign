@@ -1,0 +1,394 @@
+/*
+ * Concept A: Stage. Brand "Forest and Bone", element system "Hairline".
+ * Palettes from the Forest and Bone brand definition (docs/BRAND.md) (muted darkened for clarity);
+ * construction rules from system.css. Everything visual reads through a variable.
+ */
+
+[data-concept="a"] {
+  --font-display: "Source Serif 4", "Source Serif Pro", Georgia, serif;
+  --font-display-weight: 600;
+  --font-display-tracking: -0.01em;
+  --font-body: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r-control: 2px;
+  --r-frame: 0px;
+  --control-border: 1px solid var(--rule);
+  --control-hover-bg: var(--surface);
+  --selected-bg: var(--ink);
+  --selected-fg: var(--ink-fg);
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  border-color: var(--rule);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] {
+    font-size: 15px;
+  }
+}
+
+[data-concept="a"][data-mode="light"] {
+  --bg: #efeae0;
+  --surface: #e4ded2;
+  --text: #1b1f1c;
+  --muted: #5a5e56;
+  --rule: #d0c9ba;
+  --accent: #1f3a2e;
+  --accent-fg: #efeae0;
+  --accent-tint: #dbe4db;
+  --ink: #1b1f1c;
+  --ink-fg: #efeae0;
+  --scrim: rgba(27, 31, 28, 0.42);
+  --error: #8a2f2f;
+  color-scheme: light;
+}
+
+[data-concept="a"][data-mode="dark"] {
+  --bg: #121614;
+  --surface: #1a201c;
+  --text: #ece7dc;
+  --muted: #9a9b95;
+  --rule: #263029;
+  --accent: #7fb090;
+  --accent-fg: #121614;
+  --accent-tint: #1f2e26;
+  --ink: #ece7dc;
+  --ink-fg: #121614;
+  --scrim: rgba(0, 0, 0, 0.6);
+  --error: #e08a8a;
+  color-scheme: dark;
+}
+
+[data-concept="a"] * {
+  border-color: var(--rule);
+}
+
+[data-concept="a"] :focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] button,
+[data-concept="a"] a {
+  cursor: pointer;
+}
+
+/* ---------- Type ---------- */
+[data-concept="a"] .a-display {
+  font-family: var(--font-display);
+  font-weight: var(--font-display-weight);
+  font-optical-sizing: auto;
+  letter-spacing: var(--font-display-tracking);
+  font-size: 30px;
+  line-height: 32px;
+  text-wrap: balance;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-display {
+    font-size: 40px;
+    line-height: 40px;
+  }
+}
+
+[data-concept="a"] .a-display-sm {
+  font-size: 20px;
+  line-height: 24px;
+}
+
+[data-concept="a"] .a-display-md {
+  font-size: 28px;
+  line-height: 32px;
+}
+
+[data-concept="a"] .a-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-concept="a"] .a-spine {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ---------- Controls: the box sets the height; text is centred by flex, never by padding. ---------- */
+[data-concept="a"] .a-control {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-control);
+  border: var(--control-border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+  outline: none;
+}
+
+[data-concept="a"] .a-control:hover {
+  background: var(--control-hover-bg);
+}
+
+[data-concept="a"] .a-control:active {
+  transform: scale(0.98);
+}
+
+[data-concept="a"] .a-control:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] .a-control[aria-checked="true"],
+[data-concept="a"] .a-control[aria-pressed="true"] {
+  background: var(--selected-bg);
+  color: var(--selected-fg);
+  border: 1px solid var(--ink);
+}
+
+[data-concept="a"] .a-control .hint {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-concept="a"] .a-control[aria-checked="true"] .hint,
+[data-concept="a"] .a-control[aria-pressed="true"] .hint,
+[data-concept="a"] .a-primary .hint,
+[data-concept="a"] .a-ink .hint {
+  color: inherit;
+  opacity: 0.72;
+}
+
+[data-concept="a"] .a-ink {
+  background: var(--ink);
+  color: var(--ink-fg);
+  border: 1px solid var(--ink);
+  justify-content: center;
+}
+
+[data-concept="a"] .a-ink:hover {
+  background: color-mix(in srgb, var(--ink) 88%, var(--bg));
+}
+
+/* Apple Pay: Apple's mark is black by rule, so this one control keeps its own colours in both modes. */
+[data-concept="a"] .a-applepay {
+  height: 48px;
+  background: #111111;
+  color: #efeae0;
+  border: 1px solid #111111;
+  justify-content: center;
+  gap: 6px;
+}
+
+[data-concept="a"] .a-applepay:hover {
+  background: #262626;
+}
+
+[data-concept="a"] .a-input {
+  display: block;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--rule);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  outline: none;
+}
+
+[data-concept="a"] .a-input::placeholder {
+  color: color-mix(in srgb, var(--muted) 70%, transparent);
+}
+
+[data-concept="a"] .a-input:focus-visible {
+  border-color: var(--text);
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] .a-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--ink-fg);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+[data-concept="a"] .a-primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: 1px solid var(--accent);
+  padding: 0 20px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+[data-concept="a"] .a-primary:hover {
+  background: color-mix(in srgb, var(--accent) 88%, var(--text));
+}
+
+[data-concept="a"] .a-secondary {
+  background: transparent;
+  border: 1px solid var(--text);
+  padding: 0 20px;
+  min-width: 120px;
+  justify-content: center;
+}
+
+[data-concept="a"] .a-tertiary {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 0 8px;
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-tertiary:hover {
+  color: var(--text);
+  background: transparent;
+}
+
+/* Anything that exists on desktop only. Scoped so it outranks the control's own display. */
+[data-concept="a"] .a-desktop {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-desktop {
+    display: inline-flex;
+  }
+}
+
+[data-concept="a"] .a-control:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none;
+}
+
+/* Answer rows: the same control, full width of the column, stacked 8 px apart. */
+[data-concept="a"] .a-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-concept="a"] .a-answers .a-control {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* ---------- Detail rows: tabular prices on one right edge. ---------- */
+[data-concept="a"] .a-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 16px;
+  padding: 8px 0;
+}
+
+[data-concept="a"] .a-row .vendor {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+[data-concept="a"] .a-total {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  padding: 12px 0 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--rule);
+  font-weight: 500;
+}
+
+/* ---------- Thumbnails: 64 x 85, 12 px gaps, active underline flush to the print, 6 px below. ---------- */
+[data-concept="a"] .a-thumbs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding-bottom: 8px;
+}
+
+[data-concept="a"] .a-thumb {
+  position: relative;
+  width: 64px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: block;
+}
+
+[data-concept="a"] .a-thumb img {
+  display: block;
+  width: 64px;
+  height: 85px;
+  object-fit: cover;
+  object-position: top;
+  opacity: 0.7;
+  transition: opacity 160ms ease;
+}
+
+[data-concept="a"] .a-thumb.is-active img,
+[data-concept="a"] .a-thumb:hover img {
+  opacity: 1;
+}
+
+[data-concept="a"] .a-thumb.is-active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  background: var(--accent);
+}
+
+[data-concept="a"] .a-thumb:focus-visible {
+  box-shadow: none;
+}
+
+[data-concept="a"] .a-thumb:focus-visible img {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+/* Build progress: one continuous 2 px line under the print. */
+[data-concept="a"] .a-line {
+  margin-top: 16px;
+  height: 2px;
+  background: var(--rule);
+}
+
+[data-concept="a"] .a-line > div {
+  height: 2px;
+  width: 100%;
+  transform-origin: left;
+  background: var(--accent);
+}

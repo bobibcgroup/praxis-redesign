@@ -1,0 +1,173 @@
+/* Concept A: structure. The stage, the column with its pinned action row, the print, the rail, the gate and the lab button. Tokens and controls live in a.css. */
+
+/* ---------- Structure: top bar plus the split, capped at 1600 px and centred. ---------- */
+.a-stage {
+  display: grid;
+  grid-template-rows: 56px minmax(0, 1fr);
+  height: 100dvh;
+  min-height: 100dvh;
+  max-width: 1600px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.a-split {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+}
+
+.a-split[data-band="looks"] {
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.a-split[data-band="home"] {
+  grid-template-rows: minmax(0, 36fr) minmax(0, 64fr);
+}
+
+.a-split > .a-canvas {
+  order: 0;
+}
+
+.a-split > .a-col {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .a-split,
+  .a-split[data-band="looks"],
+  .a-split[data-band="home"] {
+    grid-template-rows: none;
+    grid-template-columns: 2fr 3fr;
+  }
+
+  .a-split > .a-col {
+    order: 0;
+  }
+
+  .a-split > .a-canvas {
+    order: 1;
+  }
+}
+
+/* The column: content scrolls inside the body only if it must; the action row stays pinned. */
+.a-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+[data-concept="a"] .a-actions {
+  flex: none;
+  border-top: 1px solid var(--rule);
+  padding-top: 16px;
+  padding-right: 80px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-actions {
+    padding-top: 24px;
+    padding-right: 0;
+    padding-bottom: 0;
+  }
+}
+
+/* The 3:4 print sizes itself from the room the canvas leaves it. */
+.a-frame-room {
+  container-type: size;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+.a-print {
+  position: relative;
+  width: min(100cqw, calc((100cqh - var(--below, 0px)) * 0.75));
+}
+
+.a-frame {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-frame);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* Horizontal gallery without a visible scrollbar. */
+.a-rail {
+  scrollbar-width: none;
+}
+
+.a-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.a-rail-print {
+  width: 62vw;
+  aspect-ratio: 3 / 4;
+}
+
+@media (min-width: 640px) {
+  .a-rail-print {
+    width: auto;
+    height: 56dvh;
+  }
+}
+
+[data-concept="a"] .a-swatch {
+  border-radius: var(--r-control);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+/* The gate: a centred sheet on desktop, a bottom sheet on mobile. */
+.a-gate {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 92dvh;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-bottom: 0;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.a-gate-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+@media (min-width: 1024px) {
+  .a-gate {
+    max-width: 440px;
+    max-height: calc(100dvh - 64px);
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 0;
+  }
+}
+
+/* Lab-only mode button, bottom right. */
+[data-concept="a"] .a-mode-button {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 60;
+  min-width: 44px;
+  padding: 0 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-concept="a"] .a-control,
+  [data-concept="a"] .a-thumb img {
+    transition: none;
+  }
+}
