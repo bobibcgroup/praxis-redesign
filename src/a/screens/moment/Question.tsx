@@ -28,12 +28,12 @@ interface StepDef {
 }
 
 const STEPS: Record<string, StepDef> = {
-  occasion: { key: "occasion", group: "occasion", step: 1, question: () => "What is the occasion?", options: () => OCCASIONS, next: "moment/venue", prev: "", requires: [] },
+  occasion: { key: "occasion", group: "occasion", step: 1, question: () => "Where are you going?", options: () => OCCASIONS, next: "moment/venue", prev: "", requires: [] },
   venue: {
     key: "venue",
     group: "room",
     step: 2,
-    question: (a) => `Where is the ${occasionLabel(a.occasion).toLowerCase()}?`,
+    question: () => "Where is it?",
     options: (a) => (a.occasion ? VENUES[a.occasion] : []),
     next: "moment/time",
     prev: "moment/occasion",
@@ -41,7 +41,7 @@ const STEPS: Record<string, StepDef> = {
   },
   time: { key: "time", group: "room", step: 3, question: () => "Day or night?", options: () => TIMES, next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
   feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/time", requires: ["occasion", "venue", "time"] },
-  spend: { key: "spend", group: "feel", step: 5, question: () => "What would you spend on the look?", options: () => SPEND, next: "moment/you", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
+  spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/you", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
 };
 
 const ADVANCE_MS = 260;

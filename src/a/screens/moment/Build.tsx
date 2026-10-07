@@ -39,7 +39,7 @@ export function Build() {
       canvas={
         <Frame
           image={image}
-          alt={`${occasionLabel(answers.occasion)} look forming`}
+          alt={`Your looks for ${occasionLabel(answers.occasion).toLowerCase()}`}
           night={answers.time === "NIGHT"}
           reduced={reduced}
           belowHeight={BELOW.thumbsLine}
@@ -52,7 +52,7 @@ export function Build() {
         />
       }
     >
-      <h1 className="a-display">Three looks for {occasionLabel(answers.occasion).toLowerCase()}, forming.</h1>
+      <h1 className="a-display">Give me a moment. I’m putting your looks together.</h1>
       <p className="sr-only" aria-live="polite">
         {build.current?.label ?? "Ready"}
       </p>

@@ -33,11 +33,11 @@ export function momentSpine(current: MomentGroup, answers: Answers, href: (p: st
 export type DnaGroup = "face" | "fit" | "life" | "taste" | "dna";
 
 const DNA_ORDER: readonly { id: DnaGroup; label: string; path: string }[] = [
-  { id: "face", label: "Face", path: "dna/face" },
+  { id: "face", label: "Photo", path: "dna/face" },
   { id: "fit", label: "Fit", path: "dna/fit" },
   { id: "life", label: "Life", path: "dna/lifestyle" },
   { id: "taste", label: "Taste", path: "dna/inspiration" },
-  { id: "dna", label: "DNA", path: "dna/result" },
+  { id: "dna", label: "Style DNA", path: "dna/result" },
 ];
 
 export function dnaSpine(current: DnaGroup, href: (p: string) => string): SpineStep[] {

@@ -113,7 +113,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={success ? "You are in" : step ? STEP_LABEL[step] : "Continue"}
+        aria-label={success ? "You’re in" : step ? STEP_LABEL[step] : "Continue"}
         initial={hidden}
         animate={{ opacity: 1, y: 0 }}
         exit={hidden}
@@ -132,7 +132,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
 
         {success ? (
           <div className="px-5 pb-8 pt-2 lg:px-8 lg:pb-10" aria-live="polite">
-            <h2 className="a-display">You are in.</h2>
+            <h2 className="a-display">You’re in.</h2>
             <p className="mt-4 leading-6">Plus is on your account.</p>
           </div>
         ) : step === "signin" ? (

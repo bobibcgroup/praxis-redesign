@@ -15,25 +15,25 @@ export interface BuildStage {
 }
 
 export const MOMENT_STAGES: readonly BuildStage[] = [
-  { id: "read", label: "Reading the occasion", ms: 700 },
-  { id: "filter", label: "Filtering the catalog for the room", ms: 900 },
-  { id: "compose", label: "Composing three looks", ms: 1100 },
-  { id: "check", label: "Checking colour against your tones", ms: 800 },
-  { id: "render", label: "Rendering", ms: 600 },
+  { id: "read", label: "Getting the occasion right", ms: 700 },
+  { id: "filter", label: "Finding the right pieces", ms: 900 },
+  { id: "compose", label: "Putting three looks together", ms: 1100 },
+  { id: "check", label: "Checking the colours on you", ms: 800 },
+  { id: "render", label: "Finishing your looks", ms: 600 },
 ];
 
 export const TRYON_STAGES: readonly BuildStage[] = [
-  { id: "align", label: "Aligning the frame to you", ms: 900 },
-  { id: "drape", label: "Placing the pieces", ms: 1300 },
+  { id: "align", label: "Getting the proportions right", ms: 900 },
+  { id: "drape", label: "Putting the look together", ms: 1300 },
   { id: "light", label: "Matching the light", ms: 900 },
-  { id: "finish", label: "Finishing", ms: 600 },
+  { id: "finish", label: "Finishing the look", ms: 600 },
 ];
 
 export const DNA_STAGES: readonly BuildStage[] = [
-  { id: "tones", label: "Reading skin and hair tones", ms: 900 },
-  { id: "contrast", label: "Measuring contrast", ms: 700 },
+  { id: "tones", label: "Finding your best colours", ms: 900 },
+  { id: "contrast", label: "Checking your contrast", ms: 700 },
   { id: "palette", label: "Building your palette", ms: 900 },
-  { id: "save", label: "Saving your DNA", ms: 500 },
+  { id: "save", label: "Putting your Style DNA together", ms: 500 },
 ];
 
 export interface GuidedBuildState {

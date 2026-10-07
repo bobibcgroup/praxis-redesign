@@ -16,9 +16,6 @@ import { ModeRadio } from "../../ui/Mode";
 import { Stage } from "../../ui/Stage";
 import { StageList } from "../../ui/StageList";
 
-const UNDERTONE: Record<ToneResult["undertone"], string> = { cool: "Cool undertone", warm: "Warm undertone", neutral: "Neutral undertone" };
-const CONTRAST: Record<ToneResult["contrast"], string> = { high: "strong contrast", medium: "medium contrast", low: "soft contrast" };
-
 export function DnaBuild() {
   const { href, go, reduced } = useJourney();
   const dna = useDnaAnswers();
@@ -40,7 +37,7 @@ export function DnaBuild() {
       back={href("dna/inspiration")}
       canvas={<Frame image={portrait} alt="Your portrait" reduced={reduced} belowHeight={BELOW.line} below={<ProgressLine progress={build.progress} label={build.current?.label ?? "Done"} reduced={reduced} />} />}
     >
-      <h1 className="a-display">Reading you.</h1>
+      <h1 className="a-display">I’ve got what I need.</h1>
       <p className="sr-only" aria-live="polite">
         {build.current?.label ?? "Ready"}
       </p>
@@ -55,16 +52,16 @@ function Swatches({ tones }: { tones: ToneResult }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="mb-2 text-[13px] text-[var(--muted)]">Wear near your face</p>
-        <ul className="flex gap-2" aria-label="Your palette">
+        <p className="mb-2 text-[13px] text-[var(--muted)]">Your best colours</p>
+        <ul className="flex gap-2" aria-label="Your best colours">
           {tones.palette.map((hex) => (
             <li key={hex} className="a-swatch h-8 w-8" style={{ background: hex }} title={hex} />
           ))}
         </ul>
       </div>
       <div>
-        <p className="mb-2 text-[13px] text-[var(--muted)]">Leave these</p>
-        <ul className="flex gap-2" aria-label="Colours to avoid">
+        <p className="mb-2 text-[13px] text-[var(--muted)]">Use these less</p>
+        <ul className="flex gap-2" aria-label="Colours to use less">
           {tones.avoid.map((hex) => (
             <li key={hex} className="a-swatch h-8 w-8" style={{ background: hex }} title={hex} />
           ))}
@@ -83,9 +80,7 @@ function ToneSummary({ tones, fit, lifestyle, presetIds }: { tones: ToneResult; 
     <div className="flex flex-col gap-4">
       <p className="max-w-[40ch] leading-6">{tones.line}</p>
       <Swatches tones={tones} />
-      <Caption className="hidden lg:block">
-        {UNDERTONE[tones.undertone]}, {CONTRAST[tones.contrast]}. {facts.join(". ")}.
-      </Caption>
+      {facts.length ? <Caption className="hidden lg:block">{facts.join(". ")}.</Caption> : null}
     </div>
   );
 }
@@ -117,12 +112,12 @@ export function DnaResult() {
       canvas={<Frame image={portrait} alt="Your portrait" reduced={reduced} />}
       actions={
         <div className="flex items-center gap-2">
-          <PrimaryButton onClick={save}>Save my DNA</PrimaryButton>
-          <TextButton onClick={() => go("dna/face", { ...FRESH, face: null })}>Redo</TextButton>
+          <PrimaryButton onClick={save}>Save my Style DNA</PrimaryButton>
+          <TextButton onClick={() => go("dna/face", { ...FRESH, face: null })}>Start again</TextButton>
         </div>
       }
     >
-      <h1 className="a-display">Your Style DNA.</h1>
+      <h1 className="a-display">Your Style DNA</h1>
       <div className="mt-6">
         <ToneSummary tones={SAMPLE_TONES} fit={dna.fit} lifestyle={dna.life} presetIds={dna.taste} />
       </div>
@@ -148,13 +143,13 @@ export function DnaHome() {
             Dress me for a moment
           </LinkButton>
           <TextButton onClick={() => gated("dna", () => go("dna/face", { ...FRESH, face: null }))}>
-            Redo
+            Start again
             <PlusMark show={!user?.plus} />
           </TextButton>
         </div>
       }
     >
-      <h1 className="a-display">Your Style DNA.</h1>
+      <h1 className="a-display">Your Style DNA</h1>
       <div className="mt-6">
         <ToneSummary tones={dna.tones} fit={dna.fit} lifestyle={dna.lifestyle} presetIds={dna.presetIds} />
       </div>

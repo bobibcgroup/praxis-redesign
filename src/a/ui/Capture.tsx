@@ -20,7 +20,7 @@ interface CaptureProps {
 
 const CAMERA_ERROR = "The camera is not available here. Upload a photo or use a sample instead.";
 const WAYS = [
-  { id: "camera", label: "Use the camera", hint: "Face the light" },
+  { id: "camera", label: "Take a photo", hint: "Face natural light" },
   { id: "upload", label: "Upload a photo" },
   { id: "sample", label: "Use a sample" },
 ] as const;
@@ -63,7 +63,7 @@ export function Capture({ videoRef, onStream, onCapture }: CaptureProps) {
   const takePhoto = () => {
     const image = videoRef.current ? captureFrame(videoRef.current) : null;
     if (!image) {
-      setError("The camera has not started yet. Give it a second and try again.");
+      setError("The camera isn’t ready yet. Give it a second and try again.");
       return;
     }
     stop();
@@ -80,7 +80,7 @@ export function Capture({ videoRef, onStream, onCapture }: CaptureProps) {
       setBusy(true);
       onCapture({ image: await shrinkImage(await fileToDataUrl(file)), source: "own" });
     } catch {
-      setError("The photo could not be read. Try another one.");
+      setError("I couldn’t read that photo. Try another one.");
     } finally {
       setBusy(false);
     }
@@ -96,9 +96,9 @@ export function Capture({ videoRef, onStream, onCapture }: CaptureProps) {
   if (stream) {
     return (
       <div className="flex flex-col gap-4">
-        <Caption>Face the light. The preview is in the frame.</Caption>
+        <Caption>Face natural light and look straight at the camera.</Caption>
         <div className="flex gap-2">
-          <QuietButton onClick={takePhoto}>Take the photo</QuietButton>
+          <QuietButton onClick={takePhoto}>Take photo</QuietButton>
           <TextButton onClick={stop}>Cancel</TextButton>
         </div>
         {error && <p className="text-[15px] text-[var(--error)]">{error}</p>}
@@ -108,7 +108,7 @@ export function Capture({ videoRef, onStream, onCapture }: CaptureProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <ChoiceList label="How to add your face" options={WAYS} value={null} onChange={choose} />
+      <ChoiceList label="How to add your photo" options={WAYS} value={null} onChange={choose} />
       <input
         ref={fileRef}
         type="file"

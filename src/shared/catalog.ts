@@ -72,15 +72,15 @@ export const TIMES: readonly ChoiceOption<TimeId>[] = [
 
 export type VibeId = "SAFE" | "SHARP" | "RELAXED";
 export const VIBES: readonly ChoiceOption<VibeId>[] = [
-  { id: "SAFE", label: "Safe", hint: "Always appropriate" },
+  { id: "SAFE", label: "Classic", hint: "Always appropriate" },
   { id: "SHARP", label: "Sharp", hint: "Make an impression" },
   { id: "RELAXED", label: "Relaxed", hint: "Easy, still put together" },
 ];
 
 export type SpendId = "SENSIBLE" | "ELEVATED" | "OPEN";
 export const SPEND: readonly ChoiceOption<SpendId>[] = [
-  { id: "SENSIBLE", label: "Sensible", hint: "Under $300 for the look" },
-  { id: "ELEVATED", label: "Elevated", hint: "$300 to $900" },
+  { id: "SENSIBLE", label: "Under $300" },
+  { id: "ELEVATED", label: "$300 to $900" },
   { id: "OPEN", label: "No limit" },
 ];
 
@@ -152,9 +152,9 @@ const ROLE_BY_TIER: Record<TierType, Look["role"]> = {
 };
 
 const WHY_BY_TIER: Record<TierType, string> = {
-  SAFEST: "Dark, matched, and quiet. Nothing here can be wrong for the room.",
-  SHARPER: "One stronger contrast at the face. That is what people remember.",
-  RELAXED: "Softer shoulder, easier shoe. Still finished, less effort on show.",
+  SAFEST: "This is the one that’s always right. Dark, matched and quiet, so nothing here can be wrong for the room.",
+  SHARPER: "This is the sharper of the three. One stronger contrast at the face gives it presence, and that’s what people remember.",
+  RELAXED: "This is the more relaxed option. A softer shoulder and an easier shoe, still finished, with less effort on show.",
 };
 
 function toLook(entry: OutfitEntry): Look {
@@ -253,5 +253,5 @@ export const SAMPLE_TONES: ToneResult = {
   contrast: "high",
   palette: ["#1F2A44", "#2F3B2F", "#5B5F66", "#E8E4DC", "#7A1F2B"],
   avoid: ["#D9A441", "#C97B4A"],
-  line: "Cool undertone, strong contrast. Deep navy and charcoal near the face, white not cream.",
+  line: "You have cool tones and strong contrast. Deep navy, charcoal and crisp white should work especially well near your face.",
 };

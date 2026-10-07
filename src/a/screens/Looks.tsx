@@ -26,7 +26,7 @@ export function Looks() {
       <TopBar back={href("")} wordmark />
       <div className="flex min-h-0 flex-col">
         <div className="flex items-baseline justify-between px-5 pt-4 lg:px-12 lg:pt-6">
-          <h1 className="a-display">{looks.length === 0 ? "Nothing saved yet." : "Looks"}</h1>
+          <h1 className="a-display">{looks.length === 0 ? "No saved looks yet." : "Looks"}</h1>
           {looks.length > 0 ? (
             <span className="a-mono text-[13px] text-[var(--muted)]">
               {looks.length} {looks.length === 1 ? "look" : "looks"}
@@ -36,7 +36,7 @@ export function Looks() {
 
         {looks.length === 0 ? (
           <div className="flex flex-1 flex-col items-start justify-center gap-6 px-5 pb-16 lg:px-12">
-            <p className="max-w-[36ch] leading-6 text-[var(--muted)]">Save a look after a moment and it will wait for you here.</p>
+            <p className="max-w-[36ch] leading-6 text-[var(--muted)]">Save a look you like and I’ll keep it here for you.</p>
             <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
               Dress me for a moment
             </LinkButton>
@@ -84,12 +84,12 @@ export function LookDetail() {
           alt={`${saved.look.title} for ${saved.occasionLabel.toLowerCase()}`}
           reduced={reduced}
           belowHeight={saved.tryOnImage ? BELOW.caption : BELOW.none}
-          below={saved.tryOnImage ? <FrameCaption>Rendered on you</FrameCaption> : undefined}
+          below={saved.tryOnImage ? <FrameCaption>On you</FrameCaption> : undefined}
         />
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <PrimaryButton onClick={() => gated("buy", openBuy)}>Buy the pieces</PrimaryButton>
+          <PrimaryButton onClick={() => gated("buy", openBuy)}>Get the pieces</PrimaryButton>
           <TextButton
             onClick={() => {
               store.removeLook(saved.id);

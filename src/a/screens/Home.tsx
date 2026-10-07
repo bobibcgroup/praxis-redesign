@@ -7,12 +7,12 @@
 import { useEffect, useState } from "react";
 import { OCCASIONS, STAND_IN_PORTRAIT, type OccasionId } from "../../shared/catalog";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
-import { Caption, ChoiceList, LinkButton, PlusMark, QuietButton, TextButton } from "../ui/controls";
+import { ChoiceList, LinkButton, PlusMark, QuietButton, TextButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
 import { BELOW, Frame, FrameCaption } from "../ui/Frame";
 import { Stage } from "../ui/Stage";
 
-const LINE = "Tell me where you are going. I build three looks from the catalog and show them on you.";
+const LINE = "Tell me where you’re going. I’ll put together three looks for the occasion and show you how they’d look on you.";
 
 function DnaBlock() {
   const { store, go, user } = useJourney();
@@ -23,7 +23,7 @@ function DnaBlock() {
   if (store.dna) {
     return (
       <div className="flex items-center justify-between gap-4">
-        <p className="text-[15px] leading-5">Your Style DNA is on file</p>
+        <p className="text-[15px] leading-5">I know your style.</p>
         <TextButton onClick={toDna}>
           Update
           <PlusMark show={!plus} />
@@ -34,8 +34,8 @@ function DnaBlock() {
   return (
     <div className="mt-4 border-t border-[var(--rule)] pt-4">
       <p className="text-[13px] leading-5 text-[var(--muted)]">Style DNA</p>
-      <p className="a-display a-display-sm mt-2 lg:max-w-[30ch]">Know your colours and fit once. Two taps every time after.</p>
-      <p className="mt-2 text-[15px] leading-5">Face reading, palette, fit and lifestyle, saved to you.</p>
+      <p className="a-display a-display-sm mt-2 lg:max-w-[30ch]">Let me get to know your style.</p>
+      <p className="mt-2 text-[15px] leading-5">Tell me what suits you and what you like. I’ll remember it for next time.</p>
       <QuietButton onClick={toDna} className="mt-4">
         Build my Style DNA
         <PlusMark show={!plus} />
@@ -90,7 +90,6 @@ export function Home() {
       {dna ? (
         <div className="mt-6">
           <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
-          <Caption className="mt-4 hidden lg:block">Dressed to your DNA.</Caption>
         </div>
       ) : null}
     </Stage>

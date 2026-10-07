@@ -19,10 +19,10 @@ One full-viewport stage. The left column asks one question at a time; the right 
 
 Journeys:
 
-- **Style a moment**: occasion, venue, day or night, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three thumbnails beneath, try-on, save, share, buy.
+- **Style a moment**: occasion, venue, day or night, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three thumbnails beneath, try-on, save, share, get the pieces.
 - **Style DNA**: face, fit, lifestyle, up to two inspiration presets, a guided build, and a plain-language result (undertone, contrast, palette, one line of advice). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
-- **You**: the saved DNA, redo, sign out, light or dark.
+- **Style DNA**: the saved Style DNA, start again, sign out, light or dark.
 
 Full concept spec: `docs/CONCEPT-A.md`.
 
@@ -55,7 +55,7 @@ Browser storage (prototype only, replace with real persistence):
 - **Sign-in and payment** (`src/a/ui/Gate.tsx`, `GateSteps.tsx`): visual previews of Apple, Google and email sign-in, and of a "Praxis Plus" purchase with Apple Pay or card. No Clerk or Stripe calls. Replace with Clerk for identity and a Stripe Payment Element (Apple Pay enabled) for the purchase, then check the entitlement server-side before try-on and DNA endpoints run. The plan shape (one membership, $9 a month) and the price are placeholders.
 - **Looks and pieces** (`src/shared/catalog.ts`): built from the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented vendors and prices. Replace with the vendor catalog.
 - **Guided build** (`src/shared/guided.ts`): fixed, named stages with fixed durations. Keep the stage names and drive the progress from real backend events instead of timers.
-- **Try-on**: the shared stand-in portrait with a different crop. Replace with the rendering pipeline; keep the wipe, the "Rendered on you" caption and the note.
+- **Try-on**: the shared stand-in portrait with a different crop. Replace with the rendering pipeline; keep the wipe, the "Here’s how it looks on you" caption and the note.
 - **DNA result**: `SAMPLE_TONES` for every capture. Replace with the face pipeline.
 - **Images**: `public/images/*.jpg` (catalog looks) and `src/assets/styles/*.jpg` (inspiration presets).
 

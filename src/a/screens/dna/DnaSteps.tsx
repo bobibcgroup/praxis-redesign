@@ -38,9 +38,9 @@ export function DnaFace() {
         ) : undefined
       }
     >
-      <h1 className="a-display">Let us read your tones.</h1>
+      <h1 className="a-display">Let’s find your colours.</h1>
       <Count step={1} total={4} />
-      <Caption className="mt-4 max-w-[36ch]">Skin, hair and eyes set the colours that work near your face. Daylight, no filter.</Caption>
+      <Caption className="mt-4 max-w-[36ch]">I’ll use your skin, hair and eye tones to find the colours that suit you best. Use a daylight photo with no filter.</Caption>
       {!portrait ? (
         <div className="mt-6">
           <Capture
@@ -73,10 +73,10 @@ export function DnaFit() {
 
   return (
     <Stage spine={dnaSpine("fit", href)} back={href("dna/face")} canvas={<Frame image={portrait} alt="Your portrait" reduced={reduced} />}>
-      <h1 className="a-display">How do you like clothes to sit?</h1>
+      <h1 className="a-display">How do you like your clothes to fit?</h1>
       <Count step={2} total={4} />
       <div className="mt-6">
-        <ChoiceList label="How do you like clothes to sit?" options={FITS} value={pending ?? dna.fit} onChange={(id) => setPending(id)} />
+        <ChoiceList label="How do you like your clothes to fit?" options={FITS} value={pending ?? dna.fit} onChange={(id) => setPending(id)} />
       </div>
     </Stage>
   );
@@ -98,10 +98,10 @@ export function DnaLifestyle() {
 
   return (
     <Stage spine={dnaSpine("life", href)} back={href("dna/fit")} canvas={<Frame image={portrait} alt="Your portrait" reduced={reduced} />}>
-      <h1 className="a-display">Where does most of your week go?</h1>
+      <h1 className="a-display">What does most of your week look like?</h1>
       <Count step={3} total={4} />
       <div className="mt-6">
-        <ChoiceList label="Where does most of your week go?" options={LIFESTYLES} value={pending ?? dna.life} onChange={(id) => setPending(id)} />
+        <ChoiceList label="What does most of your week look like?" options={LIFESTYLES} value={pending ?? dna.life} onChange={(id) => setPending(id)} />
       </div>
     </Stage>
   );
@@ -126,11 +126,11 @@ export function DnaInspiration() {
       spine={dnaSpine("taste", href)}
       back={href("dna/lifestyle")}
       canvas={<Frame image={last?.images[0] ?? portrait} alt={last ? `${last.label} look` : "Your portrait"} reduced={reduced} />}
-      actions={<PrimaryButton onClick={() => go("dna/build", { taste: picked.length ? picked.join(",") : null })}>{picked.length ? "Build my DNA" : "Skip and build my DNA"}</PrimaryButton>}
+      actions={<PrimaryButton onClick={() => go("dna/build", { taste: picked.length ? picked.join(",") : null })}>{picked.length ? "Build my Style DNA" : "Skip this"}</PrimaryButton>}
     >
-      <h1 className="a-display">Which two do you admire?</h1>
+      <h1 className="a-display">Which of these feel most like you?</h1>
       <Count step={4} total={4} />
-      <Caption className="mt-4">Pick up to two. They shape the advice, not the rules.</Caption>
+      <Caption className="mt-4">Pick up to two. I’ll use them as a guide, not a rule.</Caption>
       <div role="group" aria-label="Inspiration" className="a-answers mt-6 grid grid-cols-2">
         {STYLE_PRESETS.map((p) => (
           <button key={p.id} type="button" aria-pressed={picked.includes(p.id)} onClick={() => toggle(p.id)} className="a-control">

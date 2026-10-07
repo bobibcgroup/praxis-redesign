@@ -55,7 +55,7 @@ export function TryOn() {
       className="absolute inset-0"
       style={reduced ? undefined : { clipPath: "inset(0 100% 0 0)" }}
     >
-      <img src={rendering} alt={`Rendering of you wearing ${hero.title}`} className="h-full w-full scale-[1.08] object-cover object-[50%_18%]" draggable={false} />
+      <img src={rendering} alt={`How ${hero.title} looks on you`} className="h-full w-full scale-[1.08] object-cover object-[50%_18%]" draggable={false} />
     </motion.div>
   );
 
@@ -77,7 +77,7 @@ export function TryOn() {
               <Thumbs looks={looks} activeId={hero.id} onPick={(id) => go("moment/tryon", { hero: id }, { replace: true })} reduced={reduced} />
               {build.done ? (
                 <FrameCaption>
-                  Rendered on you
+                  Here’s how it looks on you
                   <span className="block lg:hidden">A rendering, not a photograph.</span>
                 </FrameCaption>
               ) : null}
@@ -90,7 +90,7 @@ export function TryOn() {
           <CompletionActions />
         ) : (
           <div className="flex flex-wrap items-center gap-2">
-            <PrimaryButton onClick={() => gated("buy", openBuy)}>Buy the pieces</PrimaryButton>
+            <PrimaryButton onClick={() => gated("buy", openBuy)}>Get the pieces</PrimaryButton>
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
@@ -103,9 +103,9 @@ export function TryOn() {
     >
       {!build.done ? (
         <>
-          <h1 className="a-display">Putting it on you.</h1>
+          <h1 className="a-display">Let me show you.</h1>
           <p className="sr-only" aria-live="polite">
-            {build.current?.label ?? "Finishing"}
+            {build.current?.label ?? "Finishing the look"}
           </p>
           <div className="mt-6">
             <StageList stages={TRYON_STAGES} index={build.index} />
@@ -113,8 +113,8 @@ export function TryOn() {
         </>
       ) : (
         <>
-          <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : "Rendered on you"} compact={done !== null} onOpenPieces={() => setSheet(true)} />
-          {done ? <Completion kind={done} /> : <Caption className="mt-4 hidden lg:block">A rendering, not a photograph. Fit and colour are read from your face and the catalog piece.</Caption>}
+          <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : "Here’s how it looks on you"} compact={done !== null} onOpenPieces={() => setSheet(true)} />
+          {done ? <Completion kind={done} /> : <Caption className="mt-4 hidden lg:block">A rendering, not a photograph. Use it to get a feel for the look. Fit may vary by piece.</Caption>}
           <PiecesSheet
             look={hero}
             open={sheet}

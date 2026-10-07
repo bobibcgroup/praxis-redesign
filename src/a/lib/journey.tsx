@@ -32,7 +32,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   const href = useCallback(
     (path: string, patch: Patch = {}) => {
       const search = withPatch(params, patch).toString();
-      const pathname = path === "" ? base : `${base}/${path.replace(/^\//, "")}`;
+      const pathname = path === "" ? base || "/" : `${base}/${path.replace(/^\//, "")}`;
       return search ? `${pathname}?${search}` : pathname;
     },
     [base, params],

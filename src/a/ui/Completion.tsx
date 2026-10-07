@@ -3,16 +3,16 @@ import { FRESH, useGated, useJourney, type DoneKind } from "../lib/journeyContex
 import { LinkButton, PlusMark, QuietButton, TextButton } from "./controls";
 
 const LINE: Record<DoneKind, string> = {
-  saved: "Saved to your looks",
-  reserved: "Pieces reserved for 24 hours",
-  dna: "Your DNA is saved",
+  saved: "I’ve saved it to your Looks.",
+  reserved: "I’ve got your pieces ready.",
+  dna: "I’ll remember your Style DNA.",
 };
 
 export function Completion({ kind }: { kind: DoneKind }) {
   return (
     <div className="mt-6 lg:mt-8" aria-live="polite">
       <p className="text-[13px] leading-5 text-[var(--muted)]">{LINE[kind]}</p>
-      <h2 className="a-display mt-2">Done. Where next?</h2>
+      <h2 className="a-display mt-2">You’re set.</h2>
     </div>
   );
 }
@@ -30,12 +30,12 @@ export function CompletionActions() {
   return (
     <div className="flex flex-col items-start gap-2">
       <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
-        Style another moment
+        Dress me for another moment
       </LinkButton>
       {store.dna ? (
         <>
           <LinkButton to={href("looks", { hero: null })} variant="secondary">
-            Open my looks
+            See my looks
           </LinkButton>
           <TextButton onClick={toDna}>
             Update my Style DNA
@@ -44,13 +44,12 @@ export function CompletionActions() {
         </>
       ) : (
         <>
-          <p className="mt-2 text-[13px] leading-5 text-[var(--muted)]">Two taps next time</p>
           <QuietButton onClick={toDna}>
             Build my Style DNA
             <PlusMark show={!plus} />
           </QuietButton>
           <LinkButton to={href("looks", { hero: null })} variant="tertiary">
-            Open my looks
+            See my looks
           </LinkButton>
         </>
       )}

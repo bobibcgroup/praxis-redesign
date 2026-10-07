@@ -41,7 +41,7 @@ export function LookDetails({ look, eyebrow, compact = false, onOpenPieces }: Pr
           </div>
           <button type="button" onClick={onOpenPieces} className="mt-4 grid h-11 grid-cols-[1fr_auto] items-center border-t border-[var(--rule)] pt-2 text-left font-medium lg:hidden">
             <span>
-              {look.pieces.length} pieces from {vendors} {vendors === 1 ? "vendor" : "vendors"}
+              {look.pieces.length} pieces from {vendors} {vendors === 1 ? "retailer" : "retailers"}
             </span>
             <span className="a-mono">{money(look.total)}</span>
           </button>

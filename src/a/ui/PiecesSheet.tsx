@@ -27,7 +27,7 @@ export function PiecesSheet({ look, open, onClose, mode, onReserve }: PiecesShee
   const groups = groupByVendor(look.pieces);
 
   return (
-    <Sheet open={open} onClose={onClose} label={mode === "buy" ? "Buy the pieces" : "The pieces"}>
+    <Sheet open={open} onClose={onClose} label={mode === "buy" ? "Get the pieces" : "The pieces"}>
       <div className="flex flex-col gap-6">
         {groups.map((g) => (
           <section key={g.vendor} aria-label={g.vendor}>
@@ -68,9 +68,9 @@ export function PiecesSheet({ look, open, onClose, mode, onReserve }: PiecesShee
           </div>
           {mode === "buy" && onReserve ? (
             <>
-              <p className="mt-4 text-[13px] leading-5 text-[var(--muted)]">Each vendor holds the pieces in your size for 24 hours. Nothing is charged here; you pay at the vendor's own checkout.</p>
+              <p className="mt-4 text-[13px] leading-5 text-[var(--muted)]">You’ll get each piece from the retailer directly. Nothing is charged here.</p>
               <PrimaryButton className="mt-4 w-full" onClick={onReserve}>
-                Reserve with {groups.length === 1 ? "the vendor" : `${groups.length} vendors`}
+                Get the pieces
               </PrimaryButton>
             </>
           ) : null}

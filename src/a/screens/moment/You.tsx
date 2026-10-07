@@ -25,8 +25,8 @@ export function You() {
   const canvas = useYouCanvas();
   if (!answers.spend) return <Navigate to={href("moment/occasion")} replace />;
 
-  const faceLine = answers.face === "own" ? "Your photo is in" : answers.face === "sample" ? "Sample face is in" : store.dna ? "From your DNA" : "Add";
-  const itemLine = answers.item && ownedItem ? ownedItem.name : "Add";
+  const faceLine = answers.face === "own" ? "Photo added" : answers.face === "sample" ? "Sample added" : store.dna?.portrait ? "Already saved" : "Add a photo";
+  const itemLine = answers.item && ownedItem ? ownedItem.name : "Add a piece";
   const anything = Boolean(answers.face || answers.item);
 
   return (
@@ -34,18 +34,18 @@ export function You() {
       spine={momentSpine("you", answers, href)}
       back={href("moment/spend")}
       canvas={<Frame {...canvas} reduced={reduced} />}
-      actions={<PrimaryButton onClick={() => go("moment/build")}>{anything ? "Build the looks" : "Not now"}</PrimaryButton>}
+      actions={<PrimaryButton onClick={() => go("moment/build")}>{anything ? "Find my looks" : "Not now"}</PrimaryButton>}
     >
-      <h1 className="a-display">Want it on you?</h1>
+      <h1 className="a-display">Want me to make it more personal?</h1>
       <Count step={6} total={6} />
-      <Caption className="mt-4 max-w-[36ch]">Your face lets us render the look on you. One piece you own becomes the anchor of every look. Both optional.</Caption>
+      <Caption className="mt-4 max-w-[36ch]">I can show the looks on you or build them around something you already own.</Caption>
       <div className="a-answers mt-6">
-        <button type="button" onClick={() => go("moment/you/face")} className="a-control" aria-pressed={faceLine !== "Add"}>
-          Your face
+        <button type="button" onClick={() => go("moment/you/face")} className="a-control" aria-pressed={faceLine !== "Add a photo"}>
+          See the looks on me
           <span className="hint">{faceLine}</span>
         </button>
-        <button type="button" onClick={() => go("moment/you/item")} className="a-control" aria-pressed={itemLine !== "Add"}>
-          One item you own
+        <button type="button" onClick={() => go("moment/you/item")} className="a-control" aria-pressed={itemLine !== "Add a piece"}>
+          Use something I own
           <span className="hint">{itemLine}</span>
         </button>
       </div>
@@ -70,7 +70,7 @@ export function YouFace() {
       canvas={<Frame {...canvas} liveRef={videoRef} live={Boolean(stream)} reduced={reduced} />}
       actions={<QuietButton onClick={() => go("moment/you")}>Not now</QuietButton>}
     >
-      <h1 className="a-display">Add your face.</h1>
+      <h1 className="a-display">Let’s see it on you.</h1>
       <Count step={6} total={6} />
       <div className="mt-6">
         <Capture
@@ -118,7 +118,7 @@ export function YouItem() {
     try {
       finish(`Your own ${SLOT_LABEL[slot].toLowerCase()}`, await shrinkImage(await fileToDataUrl(file)));
     } catch {
-      setError("The photo could not be read. Try another one.");
+      setError("I couldn’t read that photo. Try another one.");
     }
   };
 
@@ -127,13 +127,13 @@ export function YouItem() {
       spine={momentSpine("you", answers, href)}
       back={href("moment/you")}
       canvas={<Frame {...canvas} reduced={reduced} />}
-      actions={slot ? <TextButton onClick={() => setSlot(null)}>Different piece</TextButton> : undefined}
+      actions={slot ? <TextButton onClick={() => setSlot(null)}>Choose another piece</TextButton> : undefined}
     >
-      <h1 className="a-display">{slot ? `Show us the ${SLOT_LABEL[slot].toLowerCase()}.` : "Which piece is it?"}</h1>
+      <h1 className="a-display">{slot ? `Show me the ${SLOT_LABEL[slot].toLowerCase()}.` : "What do you want me to work with?"}</h1>
       <Count step={6} total={6} />
       <div className="mt-6">
         {!slot ? (
-          <ChoiceList label="Which piece is it?" options={SLOT_OPTIONS} value={slot} onChange={(id) => setSlot(id)} />
+          <ChoiceList label="What do you want me to work with?" options={SLOT_OPTIONS} value={slot} onChange={(id) => setSlot(id)} />
         ) : (
           <div className="flex flex-col gap-4">
             <ChoiceList

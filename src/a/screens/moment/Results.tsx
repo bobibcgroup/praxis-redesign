@@ -6,7 +6,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useGateAction, useGated, useJourney } from "../../lib/journeyContext";
-import { occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
+import { defaultHeroId, occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { Completion, CompletionActions } from "../../ui/Completion";
 import { LinkButton, PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
@@ -39,6 +39,7 @@ export function Results() {
   const saved = store.looks.some((s) => s.look.id === hero.id && s.occasionLabel === label);
   const done = answers.done;
   const plus = user?.plus ?? false;
+  const isPick = hero.id === defaultHeroId(looks, answers.vibe);
 
   return (
     <Stage
@@ -61,25 +62,25 @@ export function Results() {
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <PrimaryButton onClick={() => gated("tryon", () => go("moment/tryon"))}>
-                See it on you
+                See it on me
                 <PlusMark show={!plus} />
               </PrimaryButton>
               <TextButton onClick={() => gated("save", save)} disabled={saved}>
                 {saved ? "Saved" : "Save"}
               </TextButton>
               <TextButton onClick={() => gated("buy", openBuy)} className="a-desktop">
-                Buy
+                Get the pieces
               </TextButton>
               <LinkButton to={href("moment/you")} variant="tertiary" className="lg:ml-auto">
                 Back
               </LinkButton>
             </div>
-            {!plus ? <p className="mt-3 hidden text-[13px] leading-5 text-[var(--muted)] lg:block">Plus shows every look on you and saves your DNA.</p> : null}
+            {!plus ? <p className="mt-3 hidden text-[13px] leading-5 text-[var(--muted)] lg:block">With Plus, I can show every look on you and remember your Style DNA.</p> : null}
           </div>
         )
       }
     >
-      <LookDetails look={hero} eyebrow={`${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
+      <LookDetails look={hero} eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
       {done ? <Completion kind={done} /> : null}
       <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} mode="buy" onReserve={() => {
         setSheet(false);

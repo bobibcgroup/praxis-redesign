@@ -56,5 +56,5 @@ export function money(n: number): string {
   return n === 0 ? "Owned" : `$${n.toLocaleString("en-US")}`;
 }
 
-export const ROLE_LABEL: Record<Look["role"], string> = { hero: "Safe", sharper: "Sharper", relaxed: "Relaxed" };
+export const ROLE_LABEL: Record<Look["role"], string> = { hero: "Classic", sharper: "Sharper", relaxed: "Relaxed" };
 export const SLOT_LABEL: Record<Slot, string> = { top: "Top", bottom: "Bottom", shoes: "Shoes", extras: "Extras" };
