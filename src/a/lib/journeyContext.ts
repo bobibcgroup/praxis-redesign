@@ -98,6 +98,8 @@ export function withPatch(params: URLSearchParams, patch: Patch): URLSearchParam
   /* A completion state or an open gate never survives a navigation unless the patch sets it. */
   next.delete("done");
   next.delete("gate");
+  /* Starting a journey of your own leaves the shared link behind. */
+  if ("occasion" in patch) ["via", "utm_source", "utm_medium", "utm_campaign"].forEach((k) => next.delete(k));
   Object.entries(patch).forEach(([key, value]) => {
     if (value === null || value === undefined) next.delete(key);
     else next.set(key, value);

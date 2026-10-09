@@ -21,7 +21,7 @@ import { Stage } from "../../ui/Stage";
 import { Thumbs } from "../../ui/Thumbs";
 
 export function Results() {
-  const { answers, href, go, ownedItem, store, reduced, user } = useJourney();
+  const { answers, params, href, go, ownedItem, store, reduced, user } = useJourney();
   const gated = useGated();
   const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
   const [sheet, setSheet] = useState(false);
@@ -49,6 +49,9 @@ export function Results() {
   const pick = (id: string) => go("moment/results", { hero: id }, { replace: true });
   const hasFace = Boolean(answers.face || store.dna?.portrait);
   const eyebrow = isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`;
+  /* Opened from someone's shared link: show their looks and invite this visitor to get their own. */
+  const shared = params.get("via") !== null && !done;
+  const fresh = href("", FRESH);
   const seeOnMe = () => gated("tryon", () => go(hasFace ? "moment/tryon" : "moment/you/face"));
 
   return (
@@ -78,6 +81,16 @@ export function Results() {
       actions={
         done ? (
           <CompletionActions />
+        ) : shared ? (
+          <div className="flex flex-wrap items-center gap-1 lg:gap-2">
+            <LinkButton to={fresh} variant="primary">
+              Get your own looks
+            </LinkButton>
+            <TextButton onClick={openBuy} disabled={selection.chosen.length === 0}>
+              Check out
+            </TextButton>
+            <TextButton onClick={() => setSharing(true)}>Share</TextButton>
+          </div>
         ) : (
           <div className="flex flex-wrap items-center gap-1 lg:gap-2">
             <PrimaryButton onClick={openBuy} disabled={selection.chosen.length === 0}>
@@ -88,7 +101,7 @@ export function Results() {
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
-            <LinkButton to={href("", FRESH)} variant="tertiary" className="a-desktop ml-auto lg:-mr-2">
+            <LinkButton to={fresh} variant="tertiary" className="a-desktop ml-auto lg:-mr-2">
               Try a new look
             </LinkButton>
           </div>
@@ -101,14 +114,21 @@ export function Results() {
         compact={done !== null}
         selection={selection}
         end={
-          done ? null : (
-            <LinkButton to={href("", FRESH)} variant="tertiary" className="a-phone mt-2 self-start !px-0">
+          done || shared ? null : (
+            <LinkButton to={fresh} variant="tertiary" className="a-phone mt-2 self-start !px-0">
               Try a new look
             </LinkButton>
           )
         }
         personal={
-          done ? null : (
+          done ? null : shared ? (
+            <div className="mt-6">
+              <p className="a-label text-[var(--muted)]">Shared with you</p>
+              <p className="a-note mt-3">
+                A friend asked me to style them {answers.occasion === "WORK" ? "for work" : `for a ${label.toLowerCase()}`}. Tell me about your moment and I’ll style three looks for you.
+              </p>
+            </div>
+          ) : (
             <div className="mt-6">
               <p className="a-label text-[var(--muted)]">Make it yours</p>
               <div className="a-personal mt-3">

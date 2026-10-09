@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react";
 import type { Look } from "../../shared/catalog";
 import { renderLookCard } from "../lib/card";
-import { askFriend, copyLink, download, shareImage } from "../lib/share";
+import { askFriend, copyLink, download, shareImage, sharedUrl } from "../lib/share";
 import { PrimaryButton, QuietButton, TextButton } from "./controls";
 import { Sheet } from "./Sheet";
 
@@ -26,7 +26,6 @@ export function ShareSheet({ look, eyebrow, occasion, open, onClose }: Props) {
   const [card, setCard] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const url = typeof window !== "undefined" ? window.location.href : "";
   const address = typeof window !== "undefined" ? window.location.host.replace(/^www\./, "") : "";
 
   useEffect(() => {
@@ -50,12 +49,12 @@ export function ShareSheet({ look, eyebrow, occasion, open, onClose }: Props) {
 
   const story = async () => {
     if (!card) return;
-    const outcome = await shareImage(card, fileName(look), `My ${occasion} look, styled by Praxis.`, url);
+    const outcome = await shareImage(card, fileName(look), `My ${occasion} look, styled by Praxis.`, sharedUrl("story"));
     if (outcome === "saved") setNote("Saved. Post it to your story from your photos.");
   };
 
   const ask = async () => {
-    await askFriend(`Which one should I wear for ${occasion}? Help me choose.`, url);
+    await askFriend(`Which one should I wear for ${occasion}? Help me choose.`, sharedUrl("friend"));
   };
 
   const save = () => {
@@ -65,7 +64,7 @@ export function ShareSheet({ look, eyebrow, occasion, open, onClose }: Props) {
   };
 
   const copy = async () => {
-    const outcome = await copyLink(url);
+    const outcome = await copyLink(sharedUrl("link"));
     setNote(outcome === "copied" ? "Link copied." : "I couldn’t copy the link.");
   };
 
