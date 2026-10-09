@@ -107,6 +107,7 @@ export function LookDetail() {
       band="looks"
       canvas={
         <Frame
+          book
           image={saved.tryOnImage ?? saved.look.image}
           alt={`${saved.look.title} for ${saved.occasionLabel.toLowerCase()}`}
           reduced={reduced}

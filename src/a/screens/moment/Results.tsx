@@ -48,6 +48,7 @@ export function Results() {
       band="looks"
       canvas={
         <Frame
+          book
           image={hero.image}
           alt={`${hero.title}, the ${ROLE_LABEL[hero.role].toLowerCase()} look for ${label.toLowerCase()}`}
           reduced={reduced}

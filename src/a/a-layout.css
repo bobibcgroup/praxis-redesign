@@ -256,22 +256,30 @@
   }
 }
 
-/* Home only: the photo melts into the page instead of meeting it at a hard edge, so the first screen feels soft.
-   Results and the steps keep the hard edge. */
-.a-split[data-band="home"] > .a-canvas,
-.a-split[data-band="home"] > .a-canvas .a-frame,
-.a-split[data-band="home"] > .a-canvas .a-frame > div {
+/* Every page but the result melts its photo into the page, so the journey feels soft.
+   The result pages (results, try-on, a saved look) keep the hard edge of a lookbook. */
+.a-canvas:has(> .a-frame-room:not([data-book])),
+.a-frame-room:not([data-book]) .a-frame,
+.a-frame-room:not([data-book]) .a-frame > div {
   background: var(--bg);
 }
 
-.a-split[data-band="home"] > .a-canvas .a-frame > div > img {
+.a-frame-room[data-bleed="always"]:not([data-book]) .a-frame > div {
   -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
 }
 
 @media (min-width: 1024px) {
-  .a-split[data-band="home"] > .a-canvas .a-frame > div > img {
+  .a-frame-room[data-bleed="always"]:not([data-book]) .a-frame > div {
     -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28%);
     mask-image: linear-gradient(to right, transparent 0, #000 28%);
   }
+}
+
+/* A framed print on those pages (the build, the Style DNA build) softens on every edge. */
+.a-frame-room:not([data-bleed]):not([data-book]) .a-frame > div {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 3%, #000 84%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 3%, #000 84%, transparent 100%);
+  mask-composite: intersect;
 }

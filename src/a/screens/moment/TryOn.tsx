@@ -65,6 +65,7 @@ export function TryOn() {
       band="looks"
       canvas={
         <Frame
+          book
           image={hero.image}
           alt={`${hero.title} for ${label.toLowerCase()}`}
           overlay={overlay}

@@ -23,16 +23,18 @@ export interface FrameProps {
   belowHeight?: number;
   /** On desktop, run the print full bleed and hide what sits under it (the overlay carries it instead). */
   bleedDesktop?: boolean;
+  /** A result page: the print keeps its hard lookbook edge instead of fading into the page. */
+  book?: boolean;
 }
 
 const FADE = { duration: 0.7, ease: "easeInOut" as const };
 
-export function Frame({ image, alt, preview, night = false, liveRef, live = false, overlay, reduced, below, belowHeight = 0, bleedDesktop = false }: FrameProps) {
+export function Frame({ image, alt, preview, night = false, liveRef, live = false, overlay, reduced, below, belowHeight = 0, bleedDesktop = false, book = false }: FrameProps) {
   const fade = reduced ? { duration: 0 } : FADE;
   const style = { "--below": `${belowHeight}px` } as CSSProperties;
 
   return (
-    <div className="a-frame-room" data-bleed={below ? (bleedDesktop ? "desktop" : undefined) : "always"}>
+    <div className="a-frame-room" data-bleed={below ? (bleedDesktop ? "desktop" : undefined) : "always"} data-book={book ? "" : undefined}>
       <div className="a-print" style={style}>
         <div className="a-frame">
           <div className="relative h-full w-full overflow-hidden bg-[var(--surface)]">
