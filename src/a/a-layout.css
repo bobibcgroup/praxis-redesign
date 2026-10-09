@@ -255,3 +255,23 @@
     transition: none;
   }
 }
+
+/* Home only: the photo melts into the page instead of meeting it at a hard edge, so the first screen feels soft.
+   Results and the steps keep the hard edge. */
+.a-split[data-band="home"] > .a-canvas,
+.a-split[data-band="home"] > .a-canvas .a-frame,
+.a-split[data-band="home"] > .a-canvas .a-frame > div {
+  background: var(--bg);
+}
+
+.a-split[data-band="home"] > .a-canvas .a-frame > div > img {
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+}
+
+@media (min-width: 1024px) {
+  .a-split[data-band="home"] > .a-canvas .a-frame > div > img {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 28%);
+    mask-image: linear-gradient(to right, transparent 0, #000 28%);
+  }
+}
