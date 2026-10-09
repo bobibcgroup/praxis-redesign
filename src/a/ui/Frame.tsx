@@ -65,6 +65,12 @@ export function Frame({ image, alt, preview, night = false, liveRef, live = fals
               )}
             </AnimatePresence>
 
+            {!image && !preview && !live ? (
+              <div aria-hidden className="absolute inset-0 grid place-items-center">
+                <div className="a-guide" />
+              </div>
+            ) : null}
+
             {liveRef && (
               <video
                 ref={liveRef}

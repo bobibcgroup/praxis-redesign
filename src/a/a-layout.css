@@ -22,7 +22,7 @@
 }
 
 .a-split[data-band="home"] {
-  grid-template-rows: minmax(0, 42fr) minmax(0, 58fr);
+  grid-template-rows: minmax(0, 34fr) minmax(0, 66fr);
 }
 
 .a-split > .a-canvas {
@@ -42,11 +42,33 @@
   .a-split[data-band="looks"],
   .a-split[data-band="home"] {
     grid-template-rows: none;
-    grid-template-columns: 2fr 3fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .a-split > .a-col {
     order: 0;
+    justify-content: center;
+    padding-top: 88px;
+    padding-bottom: 48px;
+  }
+
+  /* The question block sits centred in its half, text still on a left edge. */
+  .a-split > .a-col > * {
+    width: 100%;
+    max-width: clamp(440px, 30vw, 520px);
+    margin-inline: auto;
+  }
+
+  /* The bar floats over the split so the print can run the full height of the window. */
+  .a-stage:has(> .a-split) {
+    position: relative;
+    max-width: none;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .a-stage:has(> .a-split) > header {
+    position: absolute;
+    inset: 0 0 auto 0;
   }
 
   .a-split > .a-canvas {
@@ -123,6 +145,22 @@
 
 .a-frame-room[data-bleed] img {
   object-position: center 12%;
+}
+
+/* An empty print waiting for a portrait: one hairline oval where the face will sit. */
+[data-concept="a"] .a-guide {
+  width: min(36%, 200px);
+  aspect-ratio: 3 / 4;
+  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
+  border-radius: 50%;
+}
+
+/* Home on a phone: the five occasions sit two to a row so they all show with the photo. */
+@media (max-width: 1023px) {
+  [data-concept="a"] .a-home-answers .a-answers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* Horizontal gallery without a visible scrollbar. */

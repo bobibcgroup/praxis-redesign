@@ -75,7 +75,7 @@ Atelier (ivory and charcoal, after the stylist reference) with the Hairline elem
 
 Type: Playfair Display 400 for the question, the home headline, the look title, answer choices and piece names (38 px on mobile, 52 px on desktop for display); Geist 400 and 500 for everything else; small labels (step count, eyebrows, piece houses) in 11 px tracked capitals (`.a-label`); Geist Mono for prices. Body text 16 px on mobile, 15 px on desktop. Fonts load from Google Fonts in `src/shared/fonts.ts`; self-host them for production.
 
-Header: a centred PRAXIS wordmark in tracked capitals and a menu icon. The progress spine shows on desktop only; on mobile the step count and back arrow carry progress.
+Layout: on desktop the split is half and half, the bar floats over it so the print runs the full window height, and the question block sits centred in its half (max 440 to 520 px). Header: the PRAXIS wordmark in tracked capitals (centred on mobile, left on desktop beside the progress spine) and a menu icon; the spine shows on desktop only. On a phone, home sets the occasions two to a row. An empty portrait print shows a hairline oval.
 
 Imagery: with nothing under it, the print runs full bleed across the canvas like a lookbook page; results keep the framed print with thumbnails. Motion: fades 0.7 s, page entry 0.6 s, reduced motion respected.
 

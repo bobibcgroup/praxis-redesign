@@ -91,8 +91,8 @@
 
 @media (min-width: 1024px) {
   [data-concept="a"] .a-display {
-    font-size: 52px;
-    line-height: 56px;
+    font-size: clamp(40px, min(4vw, 6.4vh), 56px);
+    line-height: 1.08;
   }
 }
 
@@ -435,6 +435,12 @@
   letter-spacing: 0.36em;
   margin-right: -0.36em;
   text-transform: uppercase;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-wordmark {
+    margin-right: 32px;
+  }
 }
 
 /* Atelier: a piece reads like a fitting card, house above, name in the serif. */

@@ -26,7 +26,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ spine, back = null }: TopBarProps) {
-  const { href, begun, user, openGate } = useJourney();
+  const { href, user, openGate } = useJourney();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
 
@@ -43,19 +43,13 @@ export function TopBar({ spine, back = null }: TopBarProps) {
             <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
         )}
+        <Link to={href("", FRESH)} aria-label="Praxis, home" className="a-wordmark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--text)] lg:static lg:mr-8 lg:translate-x-0 lg:translate-y-0">
+          Praxis
+        </Link>
         {spine && <Spine steps={spine} />}
       </div>
 
-      <Link to={href("", FRESH)} aria-label="Praxis, home" className="a-wordmark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--text)]">
-        Praxis
-      </Link>
-
       <div className="flex items-center">
-        {begun ? (
-          <Link to={href("", FRESH)} className="a-control a-tertiary a-desktop text-[13px]">
-            New moment
-          </Link>
-        ) : null}
         {user ? (
           <button type="button" onClick={() => setMenu(true)} aria-label={`${user.name}, open menu`} className="a-desktop mr-1 items-center justify-center" style={{ width: 44, height: 44 }}>
             <span className="a-avatar" aria-hidden="true">
@@ -85,7 +79,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
 
 function Spine({ steps }: { steps: SpineStep[] }) {
   return (
-    <nav aria-label="Progress" className="a-spine a-desktop ml-1 lg:ml-2">
+    <nav aria-label="Progress" className="a-spine a-desktop">
       <ol className="flex items-center gap-3 sm:gap-5">
         {steps.map((s) => {
           const color = s.state === "done" ? "text-[var(--accent)]" : s.state === "current" ? "text-[var(--text)]" : "text-[var(--muted)]";

@@ -30,21 +30,21 @@ export function Stage({ spine, back, wordmark, canvas, children, actions, band =
     <div className="a-stage">
       <TopBar spine={spine} back={back} wordmark={wordmark} />
       <div className="a-split" data-band={band}>
-        <section className="a-col px-5 lg:px-12 lg:pb-6">
+        <section className="a-col px-5 lg:px-16">
           <div className="a-body">
             <motion.div
               key={pathname}
               initial={reduced ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="flex min-h-0 w-full flex-col pt-6 lg:max-w-[480px] lg:pt-12"
+              className="flex min-h-0 w-full flex-col pt-6 lg:pt-0"
             >
               {children}
             </motion.div>
           </div>
-          {actions ? <div className="a-actions lg:max-w-[480px]">{actions}</div> : null}
+          {actions ? <div className="a-actions">{actions}</div> : null}
         </section>
-        <aside className="a-canvas flex min-h-0 flex-col bg-[var(--surface)] px-5 pb-2 pt-2 lg:px-12 lg:pb-20 lg:pt-8" aria-label="Canvas">
+        <aside className="a-canvas flex min-h-0 flex-col bg-[var(--surface)] px-5 pb-2 pt-2 lg:px-12 lg:pb-12 lg:pt-24" aria-label="Canvas">
           {canvas}
         </aside>
       </div>

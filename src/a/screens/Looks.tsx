@@ -50,9 +50,11 @@ export function Looks() {
     <div className="a-stage">
       <TopBar back={href("")} wordmark />
       <div className="flex min-h-0 flex-col">
-        <div className="flex items-baseline justify-between px-5 pt-4 lg:px-12 lg:pt-6">
-          <h1 className="a-display">{looks.length === 0 ? "No saved looks yet." : "Looks"}</h1>
-        </div>
+        {looks.length > 0 ? (
+          <div className="flex items-baseline justify-between px-5 pt-6 lg:px-12 lg:pt-8">
+            <h1 className="a-display">Looks</h1>
+          </div>
+        ) : null}
         {removed ? (
           <div className="flex items-center gap-2 px-5 pt-2 lg:px-12" aria-live="polite">
             <p className="text-[15px] leading-5 text-[var(--muted)]">Removed.</p>
@@ -61,7 +63,8 @@ export function Looks() {
         ) : null}
 
         {looks.length === 0 ? (
-          <div className="flex flex-1 flex-col items-start justify-center gap-6 px-5 pb-16 lg:px-12">
+          <div className="flex flex-1 flex-col items-center justify-center gap-6 px-5 pb-16 text-center lg:px-12">
+            <h1 className="a-display">No saved looks yet.</h1>
             <p className="max-w-[36ch] leading-6 text-[var(--muted)]">Save a look you like and I’ll keep it here for you.</p>
             <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
               Dress me for a moment
@@ -75,8 +78,8 @@ export function Looks() {
                   <span className="a-rail-print block">
                     <img src={s.tryOnImage ?? s.look.image} alt={`${s.look.title} for ${s.occasionLabel.toLowerCase()}`} className="h-full w-full object-cover object-top transition-opacity duration-200 group-hover:opacity-85" draggable={false} />
                   </span>
-                  <span className="mt-3 block text-[15px] leading-5">{s.look.title}</span>
-                  <span className="mt-1 block text-[13px] leading-5 text-[var(--muted)]">
+                  <span className="mt-4 block font-[family-name:var(--font-display)] text-[19px] leading-6">{s.look.title}</span>
+                  <span className="a-label mt-1 block text-[var(--muted)]">
                     {s.occasionLabel}, {savedOn(s.savedAt)}
                   </span>
                 </Link>
