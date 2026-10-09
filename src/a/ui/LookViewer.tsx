@@ -7,6 +7,7 @@ import { AnimatePresence, motion, type PanInfo } from "motion/react";
 import { X } from "lucide-react";
 import type { Look } from "../../shared/catalog";
 import { ROLE_LABEL } from "../lib/looks";
+import { useScrollLock } from "../lib/scrollLock";
 
 interface Props {
   open: boolean;
@@ -21,6 +22,7 @@ interface Props {
 export function LookViewer({ open, looks, activeId, onPick, onClose, onShare, reduced }: Props) {
   const index = Math.max(0, looks.findIndex((l) => l.id === activeId));
   const look = looks[index];
+  useScrollLock(open);
 
   useEffect(() => {
     if (!open) return;

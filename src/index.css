@@ -22,8 +22,18 @@
   filter: none;
 }
 
+/* Nothing may push the page sideways on a phone, and the page never bounces past its edges. */
+html,
+body {
+  overflow-x: clip;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 [data-lab] {
   min-height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { FRESH, useJourney } from "../lib/journeyContext";
 import { stepsFor, type GateKind, type GateStep } from "../lib/user";
+import { useScrollLock } from "../lib/scrollLock";
 import { TextButton } from "./controls";
 import { PlusCard, PlusTop, SignInStep, usePlusPayment } from "./GateSteps";
 
@@ -16,6 +17,7 @@ const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), a[href], [tabi
 
 export function Gate() {
   const { gate, closeGate } = useJourney();
+  useScrollLock(gate !== null);
   return (
     <AnimatePresence>
       {gate ? <GateDialog key={gate} kind={gate} onClose={closeGate} /> : null}

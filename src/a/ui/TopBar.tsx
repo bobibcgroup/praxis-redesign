@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, Menu as MenuIcon, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { FRESH, useJourney } from "../lib/journeyContext";
+import { useScrollLock } from "../lib/scrollLock";
 import { TextButton } from "./controls";
 
 export interface SpineStep {
@@ -102,6 +103,7 @@ function Spine({ steps }: { steps: SpineStep[] }) {
 
 function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { href, store, reduced, user, signOut, openGate } = useJourney();
+  useScrollLock(open);
 
   useEffect(() => {
     if (!open) return;

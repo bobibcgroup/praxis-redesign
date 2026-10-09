@@ -76,6 +76,69 @@
   }
 }
 
+/* Phones and tablets: the page itself scrolls, never a box inside it. A scroller nested in a
+   fixed-height screen fights iOS Safari (the page rubber-bands, the inner box sticks, the bar
+   resizes the screen). Here the photo band takes a fixed share of the small viewport (svh, so it
+   never jumps when Safari's toolbar hides), the column flows under it, the top bar stays at the
+   top and the action row stays at the bottom of the screen. */
+@media (max-width: 1023px) {
+  .a-stage:has(> .a-split) {
+    --a-screen: calc(100vh - 56px);
+    --a-screen: calc(100svh - 56px - env(safe-area-inset-top));
+    display: block;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100svh;
+    overflow: visible;
+  }
+
+  .a-stage:has(> .a-split) > header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    background: var(--bg);
+    padding-top: env(safe-area-inset-top);
+    height: calc(56px + env(safe-area-inset-top));
+  }
+
+  .a-stage > .a-split {
+    --a-band: 0.45;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .a-stage > .a-split[data-band="looks"] {
+    --a-band: 0.5;
+  }
+
+  .a-stage > .a-split[data-band="home"] {
+    --a-band: 0.34;
+  }
+
+  .a-stage > .a-split > .a-canvas {
+    flex: none;
+    height: calc(var(--a-screen) * var(--a-band));
+  }
+
+  .a-stage > .a-split > .a-col {
+    flex: 1 0 auto;
+    min-height: calc(var(--a-screen) * (1 - var(--a-band)));
+    overflow: visible;
+  }
+
+  .a-stage > .a-split .a-body {
+    flex: 1 0 auto;
+    overflow: visible;
+  }
+
+  [data-concept="a"] .a-stage > .a-split .a-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    background: var(--bg);
+  }
+}
+
 /* The column: content scrolls inside the body only if it must; the action row stays pinned. */
 .a-body {
   position: relative;
@@ -234,6 +297,7 @@
 }
 
 .a-gate-scroll {
+  overscroll-behavior: contain;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;

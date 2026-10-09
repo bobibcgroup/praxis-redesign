@@ -100,8 +100,14 @@ src/shared/             catalog, guided build, fonts, store
 src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 ```
 
+## Phones and iOS Safari
+
+- Under 1024 px the page itself scrolls, never a box inside it: the photo band takes a fixed share of `100svh` (so it does not jump when Safari's toolbar hides), the top bar sticks to the top and the action row sticks to the bottom (`a-layout.css`, the max-width 1023 px block). Desktop keeps the fixed split.
+- `html, body` clip sideways overflow and do not bounce past their edges (`src/index.css`).
+- Text fields are 16 px; anything smaller makes iOS zoom the page on focus.
+- Sheets, the gate, the menu and the full-screen look hold the page still while open (`src/a/lib/scrollLock.ts`); their own content scrolls with `overscroll-behavior: contain`.
+
 ## Known gaps
 
-- At 375x667 the results column scrolls by a few pixels; the primary stays visible.
 - "New moment" lives in the overlay menu on mobile; the spine fills the bar.
 - The Dinner mood image is the same file as the Dinner "sharper" look, so one preview swap shows no change.
