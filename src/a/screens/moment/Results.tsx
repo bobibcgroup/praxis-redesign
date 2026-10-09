@@ -3,6 +3,7 @@
  * stable order with the hero underlined. Tapping one crossfades the print
  * and moves the underline. Save lands in the completion state.
  */
+import { usePieceSelection } from "../../lib/selection";
 import { useCallback, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useGateAction, useGated, useJourney } from "../../lib/journeyContext";
@@ -22,6 +23,7 @@ export function Results() {
   const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
   const [sheet, setSheet] = useState(false);
   const hero = resolved?.hero ?? null;
+  const selection = usePieceSelection(hero);
   const label = occasionLabel(answers.occasion);
 
   const save = useCallback(() => {
@@ -73,10 +75,10 @@ export function Results() {
                 <PlusMark show={!plus} />
               </PrimaryButton>
               <QuietButton onClick={openBuy} className="a-desktop">
-                Get the pieces
+                Check out
               </QuietButton>
               <TextButton onClick={openBuy} className="a-phone">
-                Get the pieces
+                Check out
               </TextButton>
               <TextButton onClick={() => gated("save", save)} disabled={saved}>
                 {saved ? "Saved" : "Save"}
@@ -86,9 +88,9 @@ export function Results() {
         )
       }
     >
-      <LookDetails look={hero} eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
+      <LookDetails look={hero} eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`} compact={done !== null} selection={selection} />
       {done ? <Completion kind={done} /> : null}
-      <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} mode="buy" />
+      <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
     </Stage>
   );
 }

@@ -3,6 +3,7 @@
  * stages, a wipe from left to right reveals the rendering of him in the
  * look. The three thumbnails stay; tapping one re-runs the try-on for it.
  */
+import { usePieceSelection } from "../../lib/selection";
 import { useCallback, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { Navigate } from "react-router-dom";
@@ -28,6 +29,7 @@ export function TryOn() {
   const build = useGuidedBuild(TRYON_STAGES, ready, answers.hero ?? "", reduced);
   const [sheet, setSheet] = useState(false);
   const hero = resolved?.hero ?? null;
+  const selection = usePieceSelection(hero);
   const label = occasionLabel(answers.occasion);
   const rendering = STAND_IN_PORTRAIT;
 
@@ -90,7 +92,7 @@ export function TryOn() {
           <CompletionActions />
         ) : (
           <div className="flex flex-wrap items-center gap-2">
-            <PrimaryButton onClick={openBuy}>Get the pieces</PrimaryButton>
+            <PrimaryButton onClick={openBuy}>Check out</PrimaryButton>
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
@@ -113,9 +115,9 @@ export function TryOn() {
         </>
       ) : (
         <>
-          <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : `On you, for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
+          <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : `On you, for ${label.toLowerCase()}`} compact={done !== null} selection={selection} />
           {done ? <Completion kind={done} /> : <Caption className="mt-4 hidden lg:block">A rendering, not a photograph.</Caption>}
-          <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} mode="buy" />
+          <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
         </>
       )}
     </Stage>

@@ -534,3 +534,48 @@
     height: 75px;
   }
 }
+
+/* A piece the client can keep or drop: a 20 px box on the left, the whole row is the target. */
+[data-concept="a"] .a-pick {
+  grid-template-columns: 20px 1fr auto;
+  column-gap: 16px;
+  align-items: center;
+  min-height: 64px;
+  cursor: pointer;
+}
+
+[data-concept="a"] .a-box {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid color-mix(in srgb, var(--text) 45%, transparent);
+  border-radius: var(--r-control);
+  color: var(--ink-fg);
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+[data-concept="a"] .a-pick[data-chosen] .a-box {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+[data-concept="a"] .a-pick:not([data-chosen]) .name,
+[data-concept="a"] .a-pick:not([data-chosen]) .price {
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-pick:not([data-chosen]) .price {
+  text-decoration: line-through;
+}
+
+[data-concept="a"] .a-pick:has(input:focus-visible) .a-box {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] .a-sheet-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 400;
+}

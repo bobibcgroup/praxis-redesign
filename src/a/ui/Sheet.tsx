@@ -8,9 +8,11 @@ interface SheetProps {
   onClose: () => void;
   label: string;
   children: ReactNode;
+  /** Pinned under the scrolling body, for the sheet's one action. */
+  footer?: ReactNode;
 }
 
-export function Sheet({ open, onClose, label, children }: SheetProps) {
+export function Sheet({ open, onClose, label, children, footer }: SheetProps) {
   const reduced = useReducedMotion() ?? false;
   const panelRef = useRef<HTMLDivElement>(null);
   const returnRef = useRef<HTMLElement | null>(null);
@@ -60,7 +62,7 @@ export function Sheet({ open, onClose, label, children }: SheetProps) {
             className="relative flex max-h-[85dvh] w-full flex-col bg-[var(--bg)] lg:h-full lg:max-h-none lg:w-[440px]"
           >
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rule)] pl-5 pr-2 lg:pl-8">
-              <h2 className="a-display text-[22px] font-normal leading-none">{label}</h2>
+              <h2 className="a-sheet-title">{label}</h2>
               <button
                 type="button"
                 onClick={onClose}
@@ -71,6 +73,7 @@ export function Sheet({ open, onClose, label, children }: SheetProps) {
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 lg:px-8 lg:py-6">{children}</div>
+            {footer ? <div className="shrink-0 border-t border-[var(--rule)] px-5 pb-[max(16px,env(safe-area-inset-bottom))] pt-4 lg:px-8 lg:pb-8">{footer}</div> : null}
           </motion.div>
         </div>
       )}

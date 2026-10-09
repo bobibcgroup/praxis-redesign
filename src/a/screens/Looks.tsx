@@ -2,6 +2,7 @@
  * Looks: a quiet library. The stage becomes a horizontal rail of saved
  * prints; tapping one opens it in the print with its pieces.
  */
+import { usePieceSelection } from "../lib/selection";
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link, Navigate, useParams } from "react-router-dom";
@@ -98,6 +99,7 @@ export function LookDetail() {
   const [sheet, setSheet] = useState(false);
   const openBuy = useCallback(() => setSheet(true), []);
   const saved = store.looks.find((s) => s.id === id);
+  const selection = usePieceSelection(saved?.look ?? null);
 
   if (!saved) return <Navigate to={href("looks")} replace />;
 
@@ -117,7 +119,7 @@ export function LookDetail() {
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <PrimaryButton onClick={openBuy}>Get the pieces</PrimaryButton>
+          <PrimaryButton onClick={openBuy}>Check out</PrimaryButton>
           <TextButton
             onClick={() => {
               writeSession(REMOVED_KEY, saved);
@@ -130,8 +132,8 @@ export function LookDetail() {
         </div>
       }
     >
-      <LookDetails look={saved.look} eyebrow={`${saved.occasionLabel}, saved ${savedOn(saved.savedAt)}`} onOpenPieces={() => setSheet(true)} />
-      <PiecesSheet look={saved.look} open={sheet} onClose={() => setSheet(false)} mode="buy" />
+      <LookDetails look={saved.look} eyebrow={`${saved.occasionLabel}, saved ${savedOn(saved.savedAt)}`} selection={selection} />
+      <PiecesSheet look={saved.look} open={sheet} onClose={() => setSheet(false)} selection={selection} />
     </Stage>
   );
 }
