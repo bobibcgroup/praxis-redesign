@@ -92,6 +92,13 @@
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
+/* A rule already closes the pieces, so the total needs no second one. */
+[data-concept="a"] .a-piece + .a-total {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 16px;
+}
+
 /* On desktop the action row follows the answers, so the next step sits where the eye already is. */
 @media (min-width: 1024px) {
   .a-body {
@@ -129,22 +136,47 @@
 }
 
 /* Full bleed: with nothing under it, the print fills the canvas edge to edge, like a lookbook page. */
-.a-canvas:has(> .a-frame-room[data-bleed]) {
+.a-canvas:has(> .a-frame-room[data-bleed="always"]) {
   padding: 0;
 }
 
-.a-frame-room[data-bleed] .a-print {
+.a-frame-room[data-bleed="always"] .a-print {
   width: 100%;
   height: 100%;
 }
 
-.a-frame-room[data-bleed] .a-frame {
+.a-frame-room[data-bleed="always"] .a-frame {
   aspect-ratio: auto;
   height: 100%;
 }
 
-.a-frame-room[data-bleed] img {
+.a-frame-room[data-bleed="always"] .a-frame > div > img {
   object-position: center 12%;
+}
+
+/* Results on desktop: the print runs full bleed too; the looks ride on it instead of under it. */
+@media (min-width: 1024px) {
+  .a-canvas:has(> .a-frame-room[data-bleed="desktop"]) {
+    padding: 0;
+  }
+
+  .a-frame-room[data-bleed="desktop"] .a-print {
+    width: 100%;
+    height: 100%;
+  }
+
+  .a-frame-room[data-bleed="desktop"] .a-print > :not(.a-frame) {
+    display: none;
+  }
+
+  .a-frame-room[data-bleed="desktop"] .a-frame {
+    aspect-ratio: auto;
+    height: 100%;
+  }
+
+  .a-frame-room[data-bleed="desktop"] .a-frame > div > img {
+    object-position: center 20%;
+  }
 }
 
 /* An empty print waiting for a portrait: one hairline oval where the face will sit. */

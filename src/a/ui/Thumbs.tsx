@@ -13,11 +13,13 @@ interface Props {
   activeId: string | null;
   onPick?: (id: string) => void;
   reduced: boolean;
+  /** Stacked on the print's edge, like a lookbook index, instead of a row under it. */
+  vertical?: boolean;
 }
 
-export function Thumbs({ looks, activeId, onPick, reduced }: Props) {
+export function Thumbs({ looks, activeId, onPick, reduced, vertical = false }: Props) {
   return (
-    <ul className="a-thumbs" role="group" aria-label="The three looks">
+    <ul className={vertical ? "a-thumbs a-thumbs-vertical" : "a-thumbs"} role="group" aria-label="The three looks">
       <AnimatePresence initial={false}>
         {looks.map((look) => {
           const active = look.id === activeId;

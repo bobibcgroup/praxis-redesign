@@ -19,7 +19,7 @@ export function LookDetails({ look, eyebrow, compact = false }: Props) {
     <div className="flex min-h-0 flex-col">
       <p className="a-label mb-3 text-[var(--muted)]">{eyebrow}</p>
       <h1 className="a-display">{look.title}</h1>
-      <p className={`mt-4 max-w-[40ch] leading-6 ${compact ? "hidden lg:block" : ""}`}>{look.why}</p>
+      <p className={`a-note mt-4 max-w-[34ch] ${compact ? "hidden lg:block" : ""}`}>{look.why}</p>
 
       {!compact ? (
         <>
@@ -34,7 +34,7 @@ export function LookDetails({ look, eyebrow, compact = false }: Props) {
               </div>
             ))}
             <div className="a-total">
-              <span>Total</span>
+              <span className="a-label">Total</span>
               <span className="a-mono">{money(look.total)}</span>
             </div>
           </div>

@@ -9,7 +9,7 @@ import { useGateAction, useGated, useJourney } from "../../lib/journeyContext";
 import { defaultHeroId, occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { Completion, CompletionActions } from "../../ui/Completion";
-import { PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
+import { PlusMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
 import { BELOW, Frame } from "../../ui/Frame";
 import { LookDetails } from "../../ui/LookDetails";
 import { PiecesSheet } from "../../ui/PiecesSheet";
@@ -39,6 +39,7 @@ export function Results() {
   const done = answers.done;
   const plus = user?.plus ?? false;
   const isPick = hero.id === defaultHeroId(looks, answers.vibe);
+  const pick = (id: string) => go("moment/results", { hero: id }, { replace: true });
 
   return (
     <Stage
@@ -51,7 +52,13 @@ export function Results() {
           alt={`${hero.title}, the ${ROLE_LABEL[hero.role].toLowerCase()} look for ${label.toLowerCase()}`}
           reduced={reduced}
           belowHeight={BELOW.thumbs}
-          below={<Thumbs looks={looks} activeId={hero.id} onPick={(id) => go("moment/results", { hero: id }, { replace: true })} reduced={reduced} />}
+          below={<Thumbs looks={looks} activeId={hero.id} onPick={pick} reduced={reduced} />}
+          bleedDesktop
+          overlay={
+            <div className="a-thumbs-index">
+              <Thumbs looks={looks} activeId={hero.id} onPick={pick} reduced={reduced} vertical />
+            </div>
+          }
         />
       }
       actions={
@@ -64,7 +71,12 @@ export function Results() {
                 See it on me
                 <PlusMark show={!plus} />
               </PrimaryButton>
-              <TextButton onClick={openBuy}>Get the pieces</TextButton>
+              <QuietButton onClick={openBuy} className="a-desktop">
+                Get the pieces
+              </QuietButton>
+              <TextButton onClick={openBuy} className="a-phone">
+                Get the pieces
+              </TextButton>
               <TextButton onClick={() => gated("save", save)} disabled={saved}>
                 {saved ? "Saved" : "Save"}
               </TextButton>
