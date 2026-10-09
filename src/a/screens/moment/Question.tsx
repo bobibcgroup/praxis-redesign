@@ -40,12 +40,12 @@ const STEPS: Record<string, StepDef> = {
   },
   time: { key: "time", group: "room", step: 3, question: () => "Day or night?", options: () => TIMES, next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
   feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/time", requires: ["occasion", "venue", "time"] },
-  spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/you", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
+  spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/build", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
 };
 
 const ADVANCE_MS = 260;
 /** Occasion, place, day or night, feel, spend, you. */
-export const MOMENT_STEPS = 6;
+export const MOMENT_STEPS = 5;
 
 export function Question({ step }: { step: string }) {
   const def = STEPS[step];

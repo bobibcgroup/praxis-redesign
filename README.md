@@ -19,7 +19,7 @@ One full-viewport stage. The left column asks one question at a time; the right 
 
 Journeys:
 
-- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three labelled thumbnails beneath, try-on, save, share, check out (every piece ticked by default with a live total, then a sheet by retailer with one Purchase action; open to everyone, no sign in).
+- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, a guided build, then the looks first: three looks with the hero in the print and three labelled thumbnails beside it (beneath on a phone, where a tap opens them full screen to swipe left, right and down). The results offer "Make it yours": see it on me (face by camera, upload or sample, then the try-on) or use something I own (one item by slot, then the looks rebuild around it). Then try-on, save, share, check out (every piece ticked by default with a live total, then a sheet by retailer with one Purchase action; open to everyone, no sign in).
 - **Style DNA**: face, fit, lifestyle, up to two inspiration presets, a guided build, and a plain-language result (undertone, contrast, palette, one line of advice). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
 - **Style DNA**: the saved Style DNA, start again, sign out, light or dark.
@@ -33,7 +33,7 @@ Mounted at `/`. Step routes:
 ```
 /                                   home (first visit, or returning with DNA)
 /moment/occasion  /moment/venue  /moment/time  /moment/feel  /moment/spend
-/moment/you  /moment/you/face  /moment/you/item
+/moment/you/face  /moment/you/item   (reached from the results; /moment/you redirects there)
 /moment/build  /moment/results  /moment/tryon
 /looks  /looks/:id
 /dna  /dna/face  /dna/fit  /dna/lifestyle  /dna/inspiration  /dna/build  /dna/result

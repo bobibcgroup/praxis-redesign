@@ -34,7 +34,7 @@ export function Build() {
   return (
     <Stage
       spine={momentSpine("looks", answers, href)}
-      back={href("moment/you")}
+      back={href("moment/spend")}
       band="looks"
       canvas={
         <Frame

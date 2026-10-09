@@ -1,6 +1,6 @@
 /**
- * The optional sixth step: add your face, add one item, or skip both.
- * Face capture and the item live on their own routes so Back works.
+ * Making the looks personal, reached from the results: add your face (then the try-on),
+ * or add one item (then the looks rebuild around it). Each lives on its own route so Back works.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
@@ -8,8 +8,7 @@ import { useJourney, type Slot } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, resolveLooks, SAMPLE_ITEMS, SLOT_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { fileToDataUrl, shrinkImage } from "../../lib/image";
-import { Caption, ChoiceList, Count, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
-import { MOMENT_STEPS } from "./Question";
+import { ChoiceList, QuietButton, TextButton } from "../../ui/controls";
 import { Capture } from "../../ui/Capture";
 import { Frame } from "../../ui/Frame";
 import { useAttachStream } from "../../lib/stream";
@@ -21,37 +20,10 @@ function useYouCanvas() {
   return { image: canvasImage(answers, resolved), alt: answers.occasion ? `${occasionLabel(answers.occasion)} look` : "", night: answers.time === "NIGHT" };
 }
 
+/** The old sixth step: the looks now come first and offer this on the results, so the route goes there. */
 export function You() {
-  const { answers, href, go, ownedItem, store, reduced } = useJourney();
-  const canvas = useYouCanvas();
-  if (!answers.spend) return <Navigate to={href("moment/occasion")} replace />;
-
-  const faceLine = answers.face === "own" ? "Photo added" : answers.face === "sample" ? "Sample added" : store.dna?.portrait ? "Using your Style DNA photo" : "Add a photo";
-  const itemLine = answers.item && ownedItem ? ownedItem.name : "Add a piece";
-  const anything = Boolean(answers.face || answers.item);
-
-  return (
-    <Stage
-      spine={momentSpine("you", answers, href)}
-      back={href("moment/spend")}
-      canvas={<Frame {...canvas} reduced={reduced} />}
-      actions={<PrimaryButton onClick={() => go("moment/build")}>{anything ? "Show my looks" : "Skip and show my looks"}</PrimaryButton>}
-    >
-      <Count step={6} total={MOMENT_STEPS} />
-      <h1 className="a-display">Want me to make it more personal?</h1>
-      <Caption className="mt-4 max-w-[36ch]">I can show the looks on you or build them around something you already own.</Caption>
-      <div className="a-answers mt-6">
-        <button type="button" onClick={() => go("moment/you/face")} className="a-control" aria-pressed={faceLine !== "Add a photo"}>
-          See the looks on me
-          <span className="hint">{faceLine}</span>
-        </button>
-        <button type="button" onClick={() => go("moment/you/item")} className="a-control" aria-pressed={itemLine !== "Add a piece"}>
-          Use something I own
-          <span className="hint">{itemLine}</span>
-        </button>
-      </div>
-    </Stage>
-  );
+  const { href } = useJourney();
+  return <Navigate to={href("moment/results")} replace />;
 }
 
 export function YouFace() {
@@ -66,12 +38,11 @@ export function YouFace() {
 
   return (
     <Stage
-      spine={momentSpine("you", answers, href)}
-      back={href("moment/you")}
+      spine={momentSpine("looks", answers, href)}
+      back={href("moment/results")}
       canvas={<Frame {...canvas} liveRef={videoRef} live={Boolean(stream)} reduced={reduced} />}
-      actions={<QuietButton onClick={() => go("moment/you")}>Not now</QuietButton>}
+      actions={<QuietButton onClick={() => go("moment/results")}>Not now</QuietButton>}
     >
-      <Count step={6} total={MOMENT_STEPS} />
       <h1 className="a-display">Let’s see it on you.</h1>
       <div className="mt-6">
         <Capture
@@ -79,7 +50,7 @@ export function YouFace() {
           onStream={onStream}
           onCapture={({ image, source }) => {
             setFaceImage(source === "own" ? image : null);
-            go("moment/you", { face: source });
+            go("moment/tryon", { face: source });
           }}
         />
       </div>
@@ -108,7 +79,7 @@ export function YouItem() {
   const finish = (name: string, image: string | null) => {
     if (!slot) return;
     setOwnedItem({ slot, name, image });
-    go("moment/you", { item: slot });
+    go("moment/build", { item: slot, hero: null });
   };
 
   const onFile = async (file: File | undefined) => {
@@ -126,12 +97,11 @@ export function YouItem() {
 
   return (
     <Stage
-      spine={momentSpine("you", answers, href)}
-      back={href("moment/you")}
+      spine={momentSpine("looks", answers, href)}
+      back={href("moment/results")}
       canvas={<Frame {...canvas} reduced={reduced} />}
       actions={slot ? <TextButton onClick={() => setSlot(null)}>Choose another piece</TextButton> : undefined}
     >
-      <Count step={6} total={MOMENT_STEPS} />
       <h1 className="a-display">{slot ? `Show me the ${SLOT_LABEL[slot].toLowerCase()}.` : "What do you want me to work with?"}</h1>
       <div className="mt-6">
         {!slot ? (

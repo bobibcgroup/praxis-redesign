@@ -1,16 +1,18 @@
 /**
- * Results: the hero fills the print; the three looks sit under it in a
- * stable order with the hero underlined. Tapping one crossfades the print
- * and moves the underline. Save lands in the completion state.
+ * Results: the looks come first. The hero fills the print with the three looks beside it
+ * (under it on a phone, where a tap opens them full screen). The column offers to make it
+ * personal (see it on me, build around something I own), lists the pieces to check out,
+ * and ends with a way to start a new look. Save lands in the completion state.
  */
 import { usePieceSelection } from "../../lib/selection";
 import { useCallback, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useGateAction, useGated, useJourney } from "../../lib/journeyContext";
-import { defaultHeroId, occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
+import { FRESH, useGateAction, useGated, useJourney } from "../../lib/journeyContext";
+import { defaultHeroId, money, occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { Completion, CompletionActions } from "../../ui/Completion";
-import { PlusMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { LinkButton, PlusMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { LookViewer } from "../../ui/LookViewer";
 import { BELOW, Frame } from "../../ui/Frame";
 import { LookDetails } from "../../ui/LookDetails";
 import { PiecesSheet } from "../../ui/PiecesSheet";
@@ -22,6 +24,7 @@ export function Results() {
   const gated = useGated();
   const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
   const [sheet, setSheet] = useState(false);
+  const [viewer, setViewer] = useState(false);
   const hero = resolved?.hero ?? null;
   const selection = usePieceSelection(hero);
   const label = occasionLabel(answers.occasion);
@@ -42,11 +45,13 @@ export function Results() {
   const plus = user?.plus ?? false;
   const isPick = hero.id === defaultHeroId(looks, answers.vibe);
   const pick = (id: string) => go("moment/results", { hero: id }, { replace: true });
+  const hasFace = Boolean(answers.face || store.dna?.portrait);
+  const seeOnMe = () => gated("tryon", () => go(hasFace ? "moment/tryon" : "moment/you/face"));
 
   return (
     <Stage
       spine={momentSpine("looks", answers, href)}
-      back={href("moment/you")}
+      back={href("moment/spend")}
       band="looks"
       canvas={
         <Frame
@@ -58,9 +63,12 @@ export function Results() {
           below={<Thumbs looks={looks} activeId={hero.id} onPick={pick} reduced={reduced} />}
           bleedDesktop
           overlay={
-            <div className="a-thumbs-index">
-              <Thumbs looks={looks} activeId={hero.id} onPick={pick} reduced={reduced} vertical />
-            </div>
+            <>
+              <button type="button" className="a-enlarge" aria-label={`Open ${hero.title} full screen`} onClick={() => setViewer(true)} />
+              <div className="a-thumbs-index">
+                <Thumbs looks={looks} activeId={hero.id} onPick={pick} reduced={reduced} vertical />
+              </div>
+            </>
           }
         />
       }
@@ -68,28 +76,45 @@ export function Results() {
         done ? (
           <CompletionActions />
         ) : (
-          <div>
-            <div className="flex flex-wrap items-center gap-1 lg:gap-2">
-              <PrimaryButton onClick={() => gated("tryon", () => go("moment/tryon"))}>
-                See it on me
-                <PlusMark show={!plus} />
-              </PrimaryButton>
-              <QuietButton onClick={openBuy} className="a-desktop">
-                Check out
-              </QuietButton>
-              <TextButton onClick={openBuy} className="a-phone">
-                Check out
-              </TextButton>
-              <TextButton onClick={() => gated("save", save)} disabled={saved}>
-                {saved ? "Saved" : "Save"}
-              </TextButton>
-            </div>
+          <div className="flex flex-wrap items-center gap-1 lg:gap-2">
+            <PrimaryButton onClick={openBuy} disabled={selection.chosen.length === 0}>
+              Check out
+              <span className="hint">{money(selection.total)}</span>
+            </PrimaryButton>
+            <TextButton onClick={() => gated("save", save)} disabled={saved}>
+              {saved ? "Saved" : "Save"}
+            </TextButton>
+            <LinkButton to={href("", FRESH)} variant="tertiary" className="ml-auto lg:-mr-4">
+              Try a new look
+            </LinkButton>
           </div>
         )
       }
     >
-      <LookDetails look={hero} eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`} compact={done !== null} selection={selection} />
+      <LookDetails
+        look={hero}
+        eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`}
+        compact={done !== null}
+        selection={selection}
+        personal={
+          done ? null : (
+            <div className="mt-6">
+              <p className="a-label text-[var(--muted)]">Make it yours</p>
+              <div className="a-personal mt-3">
+                <QuietButton onClick={seeOnMe}>
+                  See it on me
+                  <PlusMark show={!plus} />
+                </QuietButton>
+                <QuietButton onClick={() => go("moment/you/item")}>
+                  {ownedItem ? "Change my piece" : "Use something I own"}
+                </QuietButton>
+              </div>
+            </div>
+          )
+        }
+      />
       {done ? <Completion kind={done} /> : null}
+      <LookViewer open={viewer} looks={looks} activeId={hero.id} onPick={pick} onClose={() => setViewer(false)} reduced={reduced} />
       <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
     </Stage>
   );

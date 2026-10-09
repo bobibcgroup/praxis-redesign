@@ -579,3 +579,92 @@
   line-height: 32px;
   font-weight: 400;
 }
+
+/* The full-screen look on a phone. */
+[data-concept="a"] .a-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+
+[data-concept="a"] .a-viewer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 8px 0 20px;
+  flex: none;
+}
+
+[data-concept="a"] .a-viewer-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  touch-action: none;
+}
+
+[data-concept="a"] .a-viewer-stage img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+[data-concept="a"] .a-viewer-foot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px max(16px, env(safe-area-inset-bottom));
+  text-align: center;
+}
+
+[data-concept="a"] .a-viewer-dots {
+  display: flex;
+  gap: 8px;
+}
+
+[data-concept="a"] .a-viewer-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rule);
+}
+
+[data-concept="a"] .a-viewer-dots span[data-on] {
+  background: var(--ink);
+}
+
+/* The tap target that opens the viewer, over the print on a phone. */
+[data-concept="a"] .a-enlarge {
+  position: absolute;
+  inset: 0;
+  cursor: zoom-in;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-enlarge {
+    display: none;
+  }
+}
+
+/* Make it yours: two equal controls side by side. */
+[data-concept="a"] .a-personal {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+[data-concept="a"] .a-personal .a-control {
+  justify-content: center;
+  padding: 0 12px;
+}

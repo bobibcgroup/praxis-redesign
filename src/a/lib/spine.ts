@@ -8,7 +8,6 @@ const MOMENT_ORDER: readonly { id: MomentGroup; label: string; path: string }[] 
   { id: "occasion", label: "Occasion", path: "moment/occasion" },
   { id: "room", label: "Place", path: "moment/venue" },
   { id: "feel", label: "Feel", path: "moment/feel" },
-  { id: "you", label: "You", path: "moment/you" },
   { id: "looks", label: "Looks", path: "moment/results" },
 ];
 
