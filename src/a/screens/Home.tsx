@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { OCCASIONS, STAND_IN_PORTRAIT, type OccasionId } from "../../shared/catalog";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
-import { ChoiceList, PlusMark, QuietButton, TextButton } from "../ui/controls";
+import { ChoiceList, LinkButton, PlusMark, QuietButton, TextButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
 import { Frame } from "../ui/Frame";
 import { Stage } from "../ui/Stage";
@@ -44,7 +44,7 @@ function DnaBlock() {
 }
 
 export function Home() {
-  const { answers, go, store, reduced, setFaceImage } = useJourney();
+  const { answers, href, go, store, reduced, setFaceImage } = useJourney();
   const [pending, setPending] = useState<OccasionId | null>(null);
   const dna = store.dna;
 
@@ -76,10 +76,16 @@ export function Home() {
       actions={<DnaBlock />}
     >
       <h1 className="a-display max-w-[19ch]">{dna ? "Where are you going?" : "Know what to wear. Every time."}</h1>
-      <p className="mt-4 max-w-[40ch] leading-6">{dna ? RETURNING_LINE : LINE}</p>
+      <p className="mt-4 max-w-[40ch] text-[16px] leading-6">{dna ? RETURNING_LINE : LINE}</p>
       <div className="a-home-answers mt-8">
         <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
       </div>
+      {store.looks.length > 0 ? (
+        <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="mt-4 self-start !px-0">
+          Saved looks
+          <span className="hint">{store.looks.length}</span>
+        </LinkButton>
+      ) : null}
     </Stage>
   );
 }

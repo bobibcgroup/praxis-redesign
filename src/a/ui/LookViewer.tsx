@@ -2,7 +2,7 @@
  * Phone only: a look opened full screen. Swipe left or right to move between the three looks,
  * swipe down (or tap close) to go back to the page. The page follows the look you land on.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "motion/react";
 import { X } from "lucide-react";
 import type { Look } from "../../shared/catalog";
@@ -19,10 +19,28 @@ interface Props {
   reduced: boolean;
 }
 
+const HINT_KEY = "praxis_lab_a_viewer_hint";
+
 export function LookViewer({ open, looks, activeId, onPick, onClose, onShare, reduced }: Props) {
   const index = Math.max(0, looks.findIndex((l) => l.id === activeId));
   const look = looks[index];
   useScrollLock(open);
+  /* The swipe hint shows the first time only; after that the gesture is known. */
+  const [hint] = useState(() => {
+    try {
+      return window.localStorage.getItem(HINT_KEY) === null;
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    if (!open) return;
+    try {
+      window.localStorage.setItem(HINT_KEY, "1");
+    } catch {
+      // Storage blocked: the hint simply shows again next time.
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -93,7 +111,7 @@ export function LookViewer({ open, looks, activeId, onPick, onClose, onShare, re
                 <span key={l.id} data-on={l.id === look.id ? "" : undefined} />
               ))}
             </div>
-            <p className="text-[13px] leading-5 text-[var(--muted)]">Swipe for the other looks. Swipe down to close.</p>
+            {hint ? <p className="text-[13px] leading-5 text-[var(--muted)]">Swipe for the other looks. Swipe down to close.</p> : null}
             {onShare ? (
               <button type="button" onClick={onShare} className="a-control a-secondary mt-1">
                 Share this look

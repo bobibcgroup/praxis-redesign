@@ -64,11 +64,26 @@ export const VENUES: Record<OccasionId, readonly ChoiceOption[]> = {
   ],
 };
 
-export type TimeId = "DAY" | "NIGHT";
+export type TimeId = "SUNRISE" | "DAY" | "SUNSET" | "NIGHT";
 export const TIMES: readonly ChoiceOption<TimeId>[] = [
+  { id: "SUNRISE", label: "Sunrise" },
   { id: "DAY", label: "Day" },
+  { id: "SUNSET", label: "Sunset" },
   { id: "NIGHT", label: "Night" },
 ];
+
+/** The times that make sense for each occasion: no sunrise dinner, no sunset at the office. */
+const TIME_IDS: Record<OccasionId, readonly TimeId[]> = {
+  DINNER: ["SUNSET", "NIGHT"],
+  WORK: ["DAY", "NIGHT"],
+  DATE: ["DAY", "SUNSET", "NIGHT"],
+  WEDDING: ["SUNRISE", "DAY", "SUNSET", "NIGHT"],
+  PARTY: ["DAY", "SUNSET", "NIGHT"],
+};
+
+export function timesFor(occasion: OccasionId | null): readonly ChoiceOption<TimeId>[] {
+  return occasion ? TIMES.filter((t) => TIME_IDS[occasion].includes(t.id)) : TIMES;
+}
 
 export type VibeId = "SAFE" | "SHARP" | "RELAXED";
 export const VIBES: readonly ChoiceOption<VibeId>[] = [

@@ -29,12 +29,12 @@ export function CompletionActions() {
   return (
     <div className="flex flex-col items-start gap-2">
       <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
-        Dress me for another moment
+        Start a new look
       </LinkButton>
       {store.dna ? (
         <>
           <LinkButton to={href("looks", { hero: null })} variant="secondary">
-            See my looks
+            See saved looks
           </LinkButton>
           <TextButton onClick={toDna}>
             Update my Style DNA
@@ -48,7 +48,7 @@ export function CompletionActions() {
             <PlusMark show={!plus} />
           </QuietButton>
           <LinkButton to={href("looks", { hero: null })} variant="tertiary">
-            See my looks
+            See saved looks
           </LinkButton>
         </>
       )}

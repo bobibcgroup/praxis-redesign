@@ -33,8 +33,11 @@ export function LinkButton({ to, variant = "secondary", className = "", children
 }
 
 /** The premium marker inside a gated control. Gone once the user has Plus. */
-export function PlusMark({ show }: { show: boolean }) {
-  return show ? <span className="hint">Plus</span> : null;
+export const PLUS_PRICE = "$9 a month";
+
+/** The premium marker inside a gated control. Gone once the user has Plus. With `price`, it says what Plus costs up front. */
+export function PlusMark({ show, price = false }: { show: boolean; price?: boolean }) {
+  return show ? <span className="hint">{price ? `Plus, ${PLUS_PRICE}` : "Plus"}</span> : null;
 }
 
 interface FieldProps {

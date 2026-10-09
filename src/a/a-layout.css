@@ -254,11 +254,19 @@
   border-radius: 50%;
 }
 
-/* Home on a phone: the five occasions sit two to a row so they all show with the photo. */
+/* Home on a phone: the five occasions sit in two even rows, three then two, so none is left alone. */
 @media (max-width: 1023px) {
   [data-concept="a"] .a-home-answers .a-answers {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  [data-concept="a"] .a-home-answers .a-answers > * {
+    grid-column: span 2;
+  }
+
+  [data-concept="a"] .a-home-answers .a-answers > :nth-child(n + 4) {
+    grid-column: span 3;
   }
 }
 
@@ -350,4 +358,11 @@
   -webkit-mask-composite: source-in;
   mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%), linear-gradient(to bottom, transparent 0, #000 3%, #000 84%, transparent 100%);
   mask-composite: intersect;
+}
+
+/* Narrow phones: Check out, Share, Save and Restyle stay on one line; the total is in the list just above. */
+@media (max-width: 400px) {
+  [data-concept="a"] .a-actions .a-primary .hint {
+    display: none;
+  }
 }

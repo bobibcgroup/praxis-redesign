@@ -13,6 +13,8 @@ export interface FrameProps {
   /** Muted slices shown while the print is empty. */
   preview?: readonly { image: string }[];
   night?: boolean;
+  /** Sunrise or sunset: a low warm light over the print. */
+  golden?: "SUNRISE" | "SUNSET" | null;
   liveRef?: RefObject<HTMLVideoElement>;
   live?: boolean;
   overlay?: ReactNode;
@@ -29,7 +31,7 @@ export interface FrameProps {
 
 const FADE = { duration: 0.7, ease: "easeInOut" as const };
 
-export function Frame({ image, alt, preview, night = false, liveRef, live = false, overlay, reduced, below, belowHeight = 0, bleedDesktop = false, book = false }: FrameProps) {
+export function Frame({ image, alt, preview, night = false, golden = null, liveRef, live = false, overlay, reduced, below, belowHeight = 0, bleedDesktop = false, book = false }: FrameProps) {
   const fade = reduced ? { duration: 0 } : FADE;
   const style = { "--below": `${belowHeight}px` } as CSSProperties;
 
@@ -88,6 +90,14 @@ export function Frame({ image, alt, preview, night = false, liveRef, live = fals
             )}
 
             <motion.div aria-hidden initial={false} animate={{ opacity: night ? 0.38 : 0 }} transition={fade} className="pointer-events-none absolute inset-0 bg-[#0b0d10]" />
+            <motion.div
+              aria-hidden
+              initial={false}
+              animate={{ opacity: golden === "SUNSET" ? 0.5 : golden === "SUNRISE" ? 0.4 : 0 }}
+              transition={fade}
+              className="pointer-events-none absolute inset-0 mix-blend-soft-light"
+              style={{ background: golden === "SUNRISE" ? "linear-gradient(180deg, #ffd9a8 0%, #f6b98a 55%, #c98a6a 100%)" : "linear-gradient(180deg, #f2a65a 0%, #d9714a 60%, #7a3b2e 100%)" }}
+            />
 
             {overlay}
           </div>

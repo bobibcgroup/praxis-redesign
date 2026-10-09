@@ -27,7 +27,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ spine, back = null }: TopBarProps) {
-  const { href, user, openGate } = useJourney();
+  const { href, user, openGate, store } = useJourney();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
 
@@ -50,7 +50,22 @@ export function TopBar({ spine, back = null }: TopBarProps) {
         {spine && <Spine steps={spine} />}
       </div>
 
-      <div className="flex items-center">
+      {/* On desktop the few places to go sit in the bar; a light veil keeps them readable over any photo. */}
+      <div className="a-topright flex items-center">
+        <nav aria-label="Praxis" className="a-desktop items-center">
+          <Link to={href("looks", { hero: null })} className="a-control a-tertiary a-signin">
+            Saved looks
+          </Link>
+          {store.dna ? (
+            <Link to={href("dna", { hero: null })} className="a-control a-tertiary a-signin">
+              Style DNA
+            </Link>
+          ) : (
+            <Link to={href("", { ...FRESH, gate: "dna" })} className="a-control a-tertiary a-signin">
+              Style DNA
+            </Link>
+          )}
+        </nav>
         {user ? (
           <button type="button" onClick={() => setMenu(true)} aria-label={`${user.name}, open menu`} className="a-desktop mr-1 items-center justify-center" style={{ width: 44, height: 44 }}>
             <span className="a-avatar" aria-hidden="true">
@@ -67,7 +82,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
           aria-label="Menu"
           aria-expanded={menu}
           onClick={() => setMenu(true)}
-          className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text)] transition-colors duration-300 hover:text-[var(--muted)]"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text)] transition-colors duration-300 hover:text-[var(--muted)] lg:hidden"
         >
           <MenuIcon size={22} strokeWidth={1.25} />
         </button>
@@ -116,8 +131,8 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
   }, [open, onClose]);
 
   const items = [
-    { label: "New moment", to: href("", FRESH) },
-    { label: "Looks", to: href("looks", { hero: null }) },
+    { label: "Start a new look", to: href("", FRESH) },
+    { label: "Saved looks", to: href("looks", { hero: null }) },
     { label: store.dna ? "Style DNA" : "Build my Style DNA", to: store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" }) },
   ];
 

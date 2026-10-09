@@ -14,7 +14,7 @@ interface Props {
   /** Hide the pieces (the completion state takes their place). */
   compact?: boolean;
   selection: PieceSelection;
-  /** Sits between the note and the pieces: the offer to make the look personal. */
+  /** Follows the pieces and total: the offer to make the look personal. */
   personal?: ReactNode;
   /** Closes the column, after the total. */
   end?: ReactNode;
@@ -27,8 +27,6 @@ export function LookDetails({ look, eyebrow, compact = false, selection, persona
       <p className="a-label mb-3 text-[var(--muted)]">{eyebrow}</p>
       <h1 className="a-display">{look.title}</h1>
       <p className={`a-note mt-4 max-w-[34ch] ${compact ? "hidden lg:block" : ""}`}>{look.why}</p>
-
-      {personal}
 
       {!compact ? (
         <div className="mt-8" role="list" aria-label="Pieces">
@@ -43,6 +41,7 @@ export function LookDetails({ look, eyebrow, compact = false, selection, persona
           </div>
         </div>
       ) : null}
+      {personal}
       {end}
     </div>
   );

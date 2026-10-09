@@ -476,6 +476,21 @@
   }
 }
 
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-topright {
+    gap: 4px;
+    padding: 0 8px;
+    border-radius: var(--r-control);
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  [data-concept="a"] .a-topright .a-tertiary {
+    color: var(--text);
+  }
+}
+
 @media (min-width: 1280px) {
   [data-concept="a"] .a-wordmark {
     margin-right: 40px;
@@ -690,15 +705,15 @@
 }
 
 /* Make it yours: two equal controls side by side. */
+/* Stacked, full width, so "See it on me" can say what it costs without being cut. */
 [data-concept="a"] .a-personal {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
 [data-concept="a"] .a-personal .a-control {
-  justify-content: center;
-  padding: 0 12px;
+  justify-content: space-between;
+  padding: 0 16px;
 }
 
 /* The story card preview in the share sheet: 9:16, hairline frame. */

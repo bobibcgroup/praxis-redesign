@@ -49,6 +49,7 @@ Browser storage (prototype only, replace with real persistence):
 | `praxis_lab_a_user` | `{ name, email, plus }` for the sign-in and Plus previews (`src/a/lib/user.ts`) |
 | `praxis_lab_a_mode` | `light` or `dark`; light is the default |
 | `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the session (sessionStorage) |
+| `praxis_lab_a_viewer_hint` | set once the full-screen look has been opened, so the swipe hint shows only the first time |
 
 ## What is a stand-in
 
@@ -102,7 +103,9 @@ src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 
 ## Restyle
 
-"Restyle me" on the results opens a sheet with the answers that change the looks: the feel, the budget, the occasion (each shows the current answer), and "Start a new look". Picking one opens that question with `restyle=1`; the answer goes straight back to the looks (a new occasion asks the place first). The PRAXIS wordmark always starts a fresh journey. On desktop the bar is 80 px with a 22 px wordmark and 15 px Sign in.
+"Restyle" (in the pinned action row) on the results opens a sheet with the answers that change the looks: the feel, the budget, the occasion (each shows the current answer), and "Start a new look". Picking one opens that question with `restyle=1`; the answer goes straight back to the looks (a new occasion asks the place first). The PRAXIS wordmark always starts a fresh journey. On desktop the bar is 80 px with a 22 px wordmark; Saved looks, Style DNA and Sign in sit top right on a light veil so they read over any photo, and the menu button is phone only. Starting over is always called "Start a new look"; the saved page is "Saved looks".
+
+Time of day offers sunrise and sunset only where they fit the occasion (`timesFor` in `src/shared/catalog.ts`); they warm the photo (`golden` on Frame), night darkens it. Check out is a short confirmation of the pieces ticked on the page, with one line on delivery and returns (stand-in copy; confirm with the houses before launch).
 
 ## Phones and iOS Safari
 

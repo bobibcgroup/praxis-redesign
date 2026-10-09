@@ -4,7 +4,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { OCCASIONS, SPEND, TIMES, VENUES, VIBES, type ChoiceOption } from "../../../shared/catalog";
+import { OCCASIONS, SPEND, VENUES, VIBES, timesFor, type ChoiceOption } from "../../../shared/catalog";
 import { useJourney, type Answers } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, resolveLooks } from "../../lib/looks";
 import { momentSpine, type MomentGroup } from "../../lib/spine";
@@ -38,7 +38,7 @@ const STEPS: Record<string, StepDef> = {
     prev: "moment/occasion",
     requires: ["occasion"],
   },
-  time: { key: "time", group: "room", step: 3, question: () => "Day or night?", options: () => TIMES, next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
+  time: { key: "time", group: "room", step: 3, question: (a) => (a.occasion === "WORK" ? "Day or night?" : "What time of day?"), options: (a) => timesFor(a.occasion), next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
   feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/time", requires: ["occasion", "venue", "time"] },
   spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/build", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
 };
@@ -79,7 +79,7 @@ export function Question({ step }: { step: string }) {
     <Stage
       spine={momentSpine(def.group, answers, href)}
       back={restyle ? href("moment/results", { restyle: null }) : def.prev === "" ? href("") : href(def.prev)}
-      canvas={<Frame image={image} alt={answers.occasion ? `${occasionLabel(answers.occasion)} look` : ""} night={preview.time === "NIGHT"} preview={OCCASIONS} reduced={reduced} />}
+      canvas={<Frame image={image} alt={answers.occasion ? `${occasionLabel(answers.occasion)} look` : ""} night={preview.time === "NIGHT"} golden={preview.time === "SUNRISE" || preview.time === "SUNSET" ? preview.time : null} preview={OCCASIONS} reduced={reduced} />}
     >
       {restyle ? <p className="a-label mb-3 text-[var(--muted)]">Restyle</p> : <Count step={def.step} total={MOMENT_STEPS} />}
       <h1 className="a-display">{def.question(answers)}</h1>

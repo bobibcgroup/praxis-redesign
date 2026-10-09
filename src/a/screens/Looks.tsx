@@ -53,7 +53,7 @@ export function Looks() {
       <div className="flex min-h-0 flex-col">
         {looks.length > 0 ? (
           <div className="flex items-baseline justify-between px-5 pt-6 lg:px-12 lg:pt-8">
-            <h1 className="a-display">Looks</h1>
+            <h1 className="a-display">Saved looks</h1>
           </div>
         ) : null}
         {removed ? (
@@ -68,7 +68,7 @@ export function Looks() {
             <h1 className="a-display">No saved looks yet.</h1>
             <p className="max-w-[36ch] leading-6 text-[var(--muted)]">Save a look you like and I’ll keep it here for you.</p>
             <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
-              Dress me for a moment
+              Start a new look
             </LinkButton>
           </div>
         ) : (

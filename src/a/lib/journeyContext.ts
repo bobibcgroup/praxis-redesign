@@ -6,7 +6,7 @@ import { createContext, useContext, useEffect, type MutableRefObject } from "rea
 import {
   OCCASIONS,
   SPEND,
-  TIMES,
+  timesFor,
   VENUES,
   VIBES,
   type OccasionId,
@@ -79,7 +79,7 @@ export function parseAnswers(params: URLSearchParams): Answers {
   return {
     occasion,
     venue,
-    time: oneOf<TimeId>(params.get("time"), TIMES),
+    time: oneOf<TimeId>(params.get("time"), timesFor(occasion)),
     vibe: oneOf<VibeId>(params.get("vibe"), VIBES),
     spend: oneOf<SpendId>(params.get("spend"), SPEND),
     face: params.get("face") === "own" ? "own" : params.get("face") === "sample" ? "sample" : null,

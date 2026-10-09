@@ -103,8 +103,8 @@ export function Results() {
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
-            <TextButton onClick={() => setRestyling(true)} className="a-desktop ml-auto lg:-mr-2">
-              Restyle me
+            <TextButton onClick={() => setRestyling(true)} className="lg:ml-auto lg:-mr-2">
+              Restyle
             </TextButton>
           </div>
         )
@@ -115,13 +115,6 @@ export function Results() {
         eyebrow={eyebrow}
         compact={done !== null}
         selection={selection}
-        end={
-          done || shared ? null : (
-            <TextButton onClick={() => setRestyling(true)} className="a-phone mt-2 self-start !px-0">
-              Restyle me
-            </TextButton>
-          )
-        }
         personal={
           done ? null : shared ? (
             <div className="mt-6">
@@ -136,7 +129,7 @@ export function Results() {
               <div className="a-personal mt-3">
                 <QuietButton onClick={seeOnMe}>
                   See it on me
-                  <PlusMark show={!plus} />
+                  <PlusMark show={!plus} price />
                 </QuietButton>
                 <QuietButton onClick={() => go("moment/you/item")}>
                   {ownedItem ? "Change my piece" : "Use something I own"}

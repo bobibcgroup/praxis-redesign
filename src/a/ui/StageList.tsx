@@ -3,5 +3,5 @@ import type { BuildStage } from "../../shared/guided";
 
 export function StageList({ stages, index }: { stages: readonly BuildStage[]; index: number }) {
   const current = stages[Math.min(index, stages.length - 1)];
-  return <p className="a-mono text-[13px] leading-5 text-[var(--text)]">{current?.label}</p>;
+  return <p className="text-[15px] leading-6 text-[var(--muted)]">{current?.label}</p>;
 }

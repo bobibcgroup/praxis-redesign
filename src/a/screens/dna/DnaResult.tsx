@@ -135,7 +135,7 @@ export function DnaHome() {
       actions={
         <div className="flex items-center gap-2">
           <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
-            Dress me for a moment
+            Start a new look
           </LinkButton>
           <TextButton onClick={() => gated("dna", () => go("dna/face", { ...FRESH, face: null }))}>
             Update my Style DNA

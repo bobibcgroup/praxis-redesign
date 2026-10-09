@@ -5,10 +5,10 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { X } from "lucide-react";
 import { FRESH, useJourney } from "../lib/journeyContext";
 import { stepsFor, type GateKind, type GateStep } from "../lib/user";
 import { useScrollLock } from "../lib/scrollLock";
-import { TextButton } from "./controls";
 import { PlusCard, PlusTop, SignInStep, usePlusPayment } from "./GateSteps";
 
 const STEP_LABEL: Record<GateStep, string> = { signin: "Sign in", plus: "Praxis Plus" };
@@ -123,12 +123,12 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
         className="a-gate relative"
       >
         <div className="flex h-14 shrink-0 items-center justify-between pl-5 pr-2 lg:pl-8 lg:pr-4">
-          <span className="a-mono text-[13px] text-[var(--muted)]" aria-live="polite">
+          <span className="a-label text-[var(--muted)]" aria-live="polite">
             {success || !step ? "" : `${index + 1} of ${steps.length}, ${STEP_LABEL[step]}`}
           </span>
-          <TextButton onClick={onClose} className="text-[13px]">
-            Close
-          </TextButton>
+          <button type="button" onClick={onClose} aria-label="Close" className="flex h-11 w-11 items-center justify-center text-[var(--text)] transition-colors duration-200 hover:text-[var(--muted)]">
+            <X size={20} strokeWidth={1.5} />
+          </button>
         </div>
         <div className="mx-auto mb-2 h-1 w-9 shrink-0 rounded-full bg-[var(--rule)] lg:hidden" aria-hidden="true" />
 
