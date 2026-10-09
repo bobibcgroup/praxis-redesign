@@ -99,7 +99,7 @@ export const OUTFITS: OutfitEntry[] = [
     budget: ["MID_RANGE"],
     priority_fit: ["SIMPLE", "SHARP"],
     image_url: "/images/work_safest_01.jpg",
-    title: "Professional Standard",
+    title: "Office Classic",
     items: {
       top: "Button-down shirt",
       bottom: "Tailored trousers",
@@ -137,7 +137,7 @@ export const OUTFITS: OutfitEntry[] = [
     image_url: "/images/work_relaxed_01.jpg",
     title: "Modern Workwear",
     items: {
-      top: "Knit polo or fine sweater",
+      top: "Fine knit polo",
       bottom: "Chinos",
       shoes: "Loafers",
     },
@@ -215,7 +215,7 @@ export const OUTFITS: OutfitEntry[] = [
     budget: ["EVERYDAY", "MID_RANGE"],
     priority_fit: ["SIMPLE", "COMFORT"],
     image_url: "/images/party_safest_01.jpg",
-    title: "Night Out Basic",
+    title: "Night Out Classic",
     items: {
       top: "Black t-shirt with a clean jacket",
       bottom: "Dark jeans",
@@ -235,7 +235,7 @@ export const OUTFITS: OutfitEntry[] = [
     image_url: "/images/party_sharper_01.jpg",
     title: "Sharp Statement",
     items: {
-      top: "Black shirt or fitted knit with a blazer",
+      top: "Black fitted knit with a blazer",
       bottom: "Slim dark trousers",
       shoes: "Chelsea boots",
     },
@@ -296,7 +296,7 @@ export const OUTFITS: OutfitEntry[] = [
       top: "Charcoal suit with a crisp shirt",
       bottom: "Matching suit trousers",
       shoes: "Black leather shoes",
-      extras: "Tie (optional)",
+      extras: "Navy silk tie",
     },
     reason: "Sharper option if you want a more serious formal presence.",
   },

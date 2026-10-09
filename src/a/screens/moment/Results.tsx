@@ -9,7 +9,7 @@ import { useGateAction, useGated, useJourney } from "../../lib/journeyContext";
 import { defaultHeroId, occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { Completion, CompletionActions } from "../../ui/Completion";
-import { LinkButton, PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
+import { PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
 import { BELOW, Frame } from "../../ui/Frame";
 import { LookDetails } from "../../ui/LookDetails";
 import { PiecesSheet } from "../../ui/PiecesSheet";
@@ -71,11 +71,7 @@ export function Results() {
               <TextButton onClick={() => gated("buy", openBuy)} className="a-desktop">
                 Get the pieces
               </TextButton>
-              <LinkButton to={href("moment/you")} variant="tertiary" className="lg:ml-auto">
-                Back
-              </LinkButton>
             </div>
-            {!plus ? <p className="mt-3 hidden text-[13px] leading-5 text-[var(--muted)] lg:block">With Plus, I can show every look on you and remember your Style DNA.</p> : null}
           </div>
         )
       }

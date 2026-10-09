@@ -52,7 +52,7 @@ export function Build() {
         />
       }
     >
-      <h1 className="a-display">Give me a moment. I’m putting your looks together.</h1>
+      <h1 className="a-display">I’m putting your looks together.</h1>
       <p className="sr-only" aria-live="polite">
         {build.current?.label ?? "Ready"}
       </p>

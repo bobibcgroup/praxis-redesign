@@ -113,8 +113,8 @@ export function TryOn() {
         </>
       ) : (
         <>
-          <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : "Here’s how it looks on you"} compact={done !== null} onOpenPieces={() => setSheet(true)} />
-          {done ? <Completion kind={done} /> : <Caption className="mt-4 hidden lg:block">A rendering, not a photograph. Use it to get a feel for the look. Fit may vary by piece.</Caption>}
+          <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : `On you, for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
+          {done ? <Completion kind={done} /> : <Caption className="mt-4 hidden lg:block">A rendering, not a photograph.</Caption>}
           <PiecesSheet
             look={hero}
             open={sheet}

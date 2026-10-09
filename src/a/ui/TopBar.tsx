@@ -121,7 +121,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const items = [
     { label: "New moment", to: href("", FRESH) },
     { label: "Looks", to: href("looks", { hero: null }) },
-    { label: store.dna ? "Style DNA" : "Build Style DNA", to: store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" }) },
+    { label: store.dna ? "Style DNA" : "Build my Style DNA", to: store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" }) },
   ];
 
   return (

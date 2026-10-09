@@ -6,7 +6,7 @@ export type MomentGroup = "occasion" | "room" | "feel" | "you" | "looks";
 
 const MOMENT_ORDER: readonly { id: MomentGroup; label: string; path: string }[] = [
   { id: "occasion", label: "Occasion", path: "moment/occasion" },
-  { id: "room", label: "Room", path: "moment/venue" },
+  { id: "room", label: "Place", path: "moment/venue" },
   { id: "feel", label: "Feel", path: "moment/feel" },
   { id: "you", label: "You", path: "moment/you" },
   { id: "looks", label: "Looks", path: "moment/results" },
@@ -35,7 +35,7 @@ export type DnaGroup = "face" | "fit" | "life" | "taste" | "dna";
 const DNA_ORDER: readonly { id: DnaGroup; label: string; path: string }[] = [
   { id: "face", label: "Photo", path: "dna/face" },
   { id: "fit", label: "Fit", path: "dna/fit" },
-  { id: "life", label: "Life", path: "dna/lifestyle" },
+  { id: "life", label: "Week", path: "dna/lifestyle" },
   { id: "taste", label: "Taste", path: "dna/inspiration" },
   { id: "dna", label: "Style DNA", path: "dna/result" },
 ];

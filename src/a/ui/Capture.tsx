@@ -20,7 +20,7 @@ interface CaptureProps {
 
 const CAMERA_ERROR = "The camera is not available here. Upload a photo or use a sample instead.";
 const WAYS = [
-  { id: "camera", label: "Take a photo", hint: "Face natural light" },
+  { id: "camera", label: "Take a photo", hint: "Best near a window" },
   { id: "upload", label: "Upload a photo" },
   { id: "sample", label: "Use a sample" },
 ] as const;

@@ -12,17 +12,17 @@ export type OccasionId = OccasionType;
 export interface OccasionOption {
   id: OccasionId;
   label: string;
-  hint: string;
+  hint?: string;
   /** Mood image for the occasion, taken from the catalog. */
   image: string;
 }
 
 export const OCCASIONS: readonly OccasionOption[] = [
-  { id: "DINNER", label: "Dinner", hint: "Restaurant, drinks after", image: "/images/dinner_sharper_01.jpg" },
-  { id: "WORK", label: "Work", hint: "Office, meeting, pitch", image: "/images/work_sharper_01.jpg" },
-  { id: "DATE", label: "Date", hint: "First or fiftieth", image: "/images/date_sharper_01.jpg" },
-  { id: "WEDDING", label: "Wedding", hint: "Guest, not groom", image: "/images/wedding_sharper_01.jpg" },
-  { id: "PARTY", label: "Party", hint: "Night out, birthday, launch", image: "/images/party_sharper_01.jpg" },
+  { id: "DINNER", label: "Dinner", image: "/images/dinner_sharper_01.jpg" },
+  { id: "WORK", label: "Work", image: "/images/work_sharper_01.jpg" },
+  { id: "DATE", label: "Date", image: "/images/date_sharper_01.jpg" },
+  { id: "WEDDING", label: "Wedding", image: "/images/wedding_sharper_01.jpg" },
+  { id: "PARTY", label: "Party", image: "/images/party_sharper_01.jpg" },
 ] as const;
 
 export interface ChoiceOption<T extends string = string> {
@@ -151,10 +151,23 @@ const ROLE_BY_TIER: Record<TierType, Look["role"]> = {
   RELAXED: "relaxed",
 };
 
-const WHY_BY_TIER: Record<TierType, string> = {
-  SAFEST: "This is the one that’s always right. Dark, matched and quiet, so nothing here can be wrong for the room.",
-  SHARPER: "This is the sharper of the three. One stronger contrast at the face gives it presence, and that’s what people remember.",
-  RELAXED: "This is the more relaxed option. A softer shoulder and an easier shoe, still finished, with less effort on show.",
+/** One sentence per look, true to its pieces. */
+const WHY_BY_LOOK: Record<string, string> = {
+  date_safest_01: "Easy and confident, so nothing here looks like you tried too hard.",
+  date_sharper_01: "The blazer lifts it, and the knit keeps it from feeling like work.",
+  date_relaxed_01: "A light jacket over a plain t-shirt feels easy and still looks put together.",
+  work_safest_01: "A clean shirt and tailored trousers are right in any office.",
+  work_sharper_01: "A blazer over a crisp shirt says you’re in charge of the room.",
+  work_relaxed_01: "A fine knit polo is comfortable all day and still looks professional.",
+  dinner_safest_01: "A dark knit and clean chinos look polished without overdoing it.",
+  dinner_sharper_01: "A blazer over a fitted knit looks intentional, and the boots finish it.",
+  dinner_relaxed_01: "An overshirt over a plain t-shirt keeps it relaxed and still neat.",
+  party_safest_01: "Black and a clean jacket work in any room after dark.",
+  party_sharper_01: "All black with a blazer stands out in a clean way.",
+  party_relaxed_01: "A bomber over a plain t-shirt is easy to move in and right for the night.",
+  wedding_safest_01: "A navy suit and a white shirt are always right at a wedding.",
+  wedding_sharper_01: "Charcoal and a tie give you a more serious presence.",
+  wedding_relaxed_01: "An open collar under a light blazer is elegant without feeling stiff.",
 };
 
 function toLook(entry: OutfitEntry): Look {
@@ -167,7 +180,7 @@ function toLook(entry: OutfitEntry): Look {
     title: entry.title,
     image: entry.image_url,
     reason: entry.reason,
-    why: WHY_BY_TIER[entry.tier],
+    why: WHY_BY_LOOK[entry.id] ?? entry.reason,
     pieces,
     total: pieces.reduce((sum, p) => sum + p.price, 0),
   };

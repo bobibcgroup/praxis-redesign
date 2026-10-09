@@ -68,7 +68,7 @@ export function PiecesSheet({ look, open, onClose, mode, onReserve }: PiecesShee
           </div>
           {mode === "buy" && onReserve ? (
             <>
-              <p className="mt-4 text-[13px] leading-5 text-[var(--muted)]">You’ll get each piece from the retailer directly. Nothing is charged here.</p>
+              <p className="mt-4 text-[13px] leading-5 text-[var(--muted)]">Each piece comes from its retailer.</p>
               <PrimaryButton className="mt-4 w-full" onClick={onReserve}>
                 Get the pieces
               </PrimaryButton>

@@ -1,7 +1,6 @@
 /**
  * One question per frame. Tapping an answer fills the control, lets the
- * canvas react, then advances after a beat. The spine and the "n of 6"
- * line say where he is.
+ * canvas react, then advances after a beat. The spine says where he is.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
@@ -9,7 +8,7 @@ import { OCCASIONS, SPEND, TIMES, VENUES, VIBES, type ChoiceOption } from "../..
 import { useJourney, type Answers } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, resolveLooks } from "../../lib/looks";
 import { momentSpine, type MomentGroup } from "../../lib/spine";
-import { ChoiceList, Count } from "../../ui/controls";
+import { ChoiceList } from "../../ui/controls";
 import { Frame } from "../../ui/Frame";
 import { Stage } from "../../ui/Stage";
 
@@ -74,7 +73,6 @@ export function Question({ step }: { step: string }) {
       canvas={<Frame image={image} alt={answers.occasion ? `${occasionLabel(answers.occasion)} look` : ""} night={preview.time === "NIGHT"} preview={OCCASIONS} reduced={reduced} />}
     >
       <h1 className="a-display">{def.question(answers)}</h1>
-      <Count step={def.step} total={6} />
       <div className="mt-6">
         <ChoiceList label={def.question(answers)} options={def.options(answers)} value={value} onChange={(id) => setPending(id)} />
       </div>

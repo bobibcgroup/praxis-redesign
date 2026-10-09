@@ -61,15 +61,6 @@ export function Caption({ children, className = "" }: { children: ReactNode; cla
   return <p className={`text-[13px] leading-5 text-[var(--muted)] ${className}`}>{children}</p>;
 }
 
-/** The "3 of 6" line under a question, so the end is always known. */
-export function Count({ step, total }: { step: number; total: number }) {
-  return (
-    <p className="a-mono mt-2 text-[13px] leading-5 text-[var(--muted)]">
-      {step} of {total}
-    </p>
-  );
-}
-
 interface ChoiceListProps<T extends string> {
   label: string;
   options: readonly { id: T; label: string; hint?: string }[];

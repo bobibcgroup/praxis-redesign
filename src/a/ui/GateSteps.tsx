@@ -26,10 +26,7 @@ export function SignInStep({ onSignedIn }: SignInProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="a-display">Sign in so I can remember you.</h2>
-        <p className="mt-4 leading-6">I’ll keep your looks and Style DNA ready for next time.</p>
-      </div>
+      <h2 className="a-display">Sign in so I can remember you.</h2>
       <div className="flex flex-col gap-2">
         <button type="button" className="a-control a-ink w-full" onClick={() => start("apple")} disabled={busy !== null} aria-busy={busy === "apple"}>
           {busy === "apple" ? null : <Apple size={16} strokeWidth={1.5} aria-hidden="true" className="mr-2" />}
@@ -55,7 +52,7 @@ export function SignInStep({ onSignedIn }: SignInProps) {
   );
 }
 
-const BENEFITS = ["See every look on you", "I remember your Style DNA", "Get dressed faster next time"];
+const BENEFITS = ["See every look on you", "Keep your Style DNA", "Start straight from the occasion next time"];
 
 function groups(v: string): string {
   return v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");

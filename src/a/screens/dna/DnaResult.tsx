@@ -4,13 +4,13 @@
  */
 import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
-import { FITS, LIFESTYLES, SAMPLE_TONES, STAND_IN_PORTRAIT, STYLE_PRESETS, type ToneResult } from "../../../shared/catalog";
+import { SAMPLE_TONES, STAND_IN_PORTRAIT, type ToneResult } from "../../../shared/catalog";
 import { DNA_STAGES, useGuidedBuild } from "../../../shared/guided";
 import type { SavedDna } from "../../../shared/store";
 import { FRESH, useGated, useJourney } from "../../lib/journeyContext";
 import { useDnaAnswers, useDnaPortrait } from "../../lib/dna";
 import { dnaSpine } from "../../lib/spine";
-import { Caption, LinkButton, PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
+import { LinkButton, PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
 import { BELOW, Frame, ProgressLine } from "../../ui/Frame";
 import { ModeRadio } from "../../ui/Mode";
 import { Stage } from "../../ui/Stage";
@@ -71,16 +71,11 @@ function Swatches({ tones }: { tones: ToneResult }) {
   );
 }
 
-function ToneSummary({ tones, fit, lifestyle, presetIds }: { tones: ToneResult; fit: string | null; lifestyle: string | null; presetIds: string[] }) {
-  const fitLabel = FITS.find((f) => f.id === fit)?.label;
-  const lifeLabel = LIFESTYLES.find((l) => l.id === lifestyle)?.label;
-  const presets = presetIds.map((id) => STYLE_PRESETS.find((p) => p.id === id)?.label).filter(Boolean);
-  const facts = [fitLabel && `${fitLabel} fit`, lifeLabel, presets.length ? presets.join(" and ") : null].filter(Boolean);
+function ToneSummary({ tones }: { tones: ToneResult }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="max-w-[40ch] leading-6">{tones.line}</p>
       <Swatches tones={tones} />
-      {facts.length ? <Caption className="hidden lg:block">{facts.join(". ")}.</Caption> : null}
     </div>
   );
 }
@@ -119,7 +114,7 @@ export function DnaResult() {
     >
       <h1 className="a-display">Your Style DNA</h1>
       <div className="mt-6">
-        <ToneSummary tones={SAMPLE_TONES} fit={dna.fit} lifestyle={dna.life} presetIds={dna.taste} />
+        <ToneSummary tones={SAMPLE_TONES} />
       </div>
     </Stage>
   );
@@ -143,7 +138,7 @@ export function DnaHome() {
             Dress me for a moment
           </LinkButton>
           <TextButton onClick={() => gated("dna", () => go("dna/face", { ...FRESH, face: null }))}>
-            Start again
+            Update my Style DNA
             <PlusMark show={!user?.plus} />
           </TextButton>
         </div>
@@ -151,7 +146,7 @@ export function DnaHome() {
     >
       <h1 className="a-display">Your Style DNA</h1>
       <div className="mt-6">
-        <ToneSummary tones={dna.tones} fit={dna.fit} lifestyle={dna.lifestyle} presetIds={dna.presetIds} />
+        <ToneSummary tones={dna.tones} />
       </div>
       <div className="mt-6 flex flex-col gap-3 border-t border-[var(--rule)] pt-6">
         <p className="text-[13px] text-[var(--muted)]">Appearance</p>

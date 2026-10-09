@@ -57,4 +57,4 @@ export function money(n: number): string {
 }
 
 export const ROLE_LABEL: Record<Look["role"], string> = { hero: "Classic", sharper: "Sharper", relaxed: "Relaxed" };
-export const SLOT_LABEL: Record<Slot, string> = { top: "Top", bottom: "Bottom", shoes: "Shoes", extras: "Extras" };
+export const SLOT_LABEL: Record<Slot, string> = { top: "Top", bottom: "Bottom", shoes: "Shoes", extras: "Accessory" };

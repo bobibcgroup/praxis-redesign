@@ -27,11 +27,6 @@ export function Looks() {
       <div className="flex min-h-0 flex-col">
         <div className="flex items-baseline justify-between px-5 pt-4 lg:px-12 lg:pt-6">
           <h1 className="a-display">{looks.length === 0 ? "No saved looks yet." : "Looks"}</h1>
-          {looks.length > 0 ? (
-            <span className="a-mono text-[13px] text-[var(--muted)]">
-              {looks.length} {looks.length === 1 ? "look" : "looks"}
-            </span>
-          ) : null}
         </div>
 
         {looks.length === 0 ? (

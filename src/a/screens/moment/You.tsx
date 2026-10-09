@@ -8,7 +8,7 @@ import { useJourney, type Slot } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, resolveLooks, SAMPLE_ITEMS, SLOT_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { fileToDataUrl, shrinkImage } from "../../lib/image";
-import { Caption, ChoiceList, Count, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { Caption, ChoiceList, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
 import { Capture } from "../../ui/Capture";
 import { Frame } from "../../ui/Frame";
 import { useAttachStream } from "../../lib/stream";
@@ -25,7 +25,7 @@ export function You() {
   const canvas = useYouCanvas();
   if (!answers.spend) return <Navigate to={href("moment/occasion")} replace />;
 
-  const faceLine = answers.face === "own" ? "Photo added" : answers.face === "sample" ? "Sample added" : store.dna?.portrait ? "Already saved" : "Add a photo";
+  const faceLine = answers.face === "own" ? "Photo added" : answers.face === "sample" ? "Sample added" : store.dna?.portrait ? "Using your Style DNA photo" : "Add a photo";
   const itemLine = answers.item && ownedItem ? ownedItem.name : "Add a piece";
   const anything = Boolean(answers.face || answers.item);
 
@@ -34,10 +34,9 @@ export function You() {
       spine={momentSpine("you", answers, href)}
       back={href("moment/spend")}
       canvas={<Frame {...canvas} reduced={reduced} />}
-      actions={<PrimaryButton onClick={() => go("moment/build")}>{anything ? "Find my looks" : "Not now"}</PrimaryButton>}
+      actions={<PrimaryButton onClick={() => go("moment/build")}>{anything ? "Show my looks" : "Skip and show my looks"}</PrimaryButton>}
     >
       <h1 className="a-display">Want me to make it more personal?</h1>
-      <Count step={6} total={6} />
       <Caption className="mt-4 max-w-[36ch]">I can show the looks on you or build them around something you already own.</Caption>
       <div className="a-answers mt-6">
         <button type="button" onClick={() => go("moment/you/face")} className="a-control" aria-pressed={faceLine !== "Add a photo"}>
@@ -71,7 +70,6 @@ export function YouFace() {
       actions={<QuietButton onClick={() => go("moment/you")}>Not now</QuietButton>}
     >
       <h1 className="a-display">Let’s see it on you.</h1>
-      <Count step={6} total={6} />
       <div className="mt-6">
         <Capture
           videoRef={videoRef}
@@ -130,7 +128,6 @@ export function YouItem() {
       actions={slot ? <TextButton onClick={() => setSlot(null)}>Choose another piece</TextButton> : undefined}
     >
       <h1 className="a-display">{slot ? `Show me the ${SLOT_LABEL[slot].toLowerCase()}.` : "What do you want me to work with?"}</h1>
-      <Count step={6} total={6} />
       <div className="mt-6">
         {!slot ? (
           <ChoiceList label="What do you want me to work with?" options={SLOT_OPTIONS} value={slot} onChange={(id) => setSlot(id)} />

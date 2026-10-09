@@ -18,7 +18,7 @@ export const MOMENT_STAGES: readonly BuildStage[] = [
   { id: "read", label: "Getting the occasion right", ms: 700 },
   { id: "filter", label: "Finding the right pieces", ms: 900 },
   { id: "compose", label: "Putting three looks together", ms: 1100 },
-  { id: "check", label: "Checking the colours on you", ms: 800 },
+  { id: "check", label: "Checking the colours work together", ms: 800 },
   { id: "render", label: "Finishing your looks", ms: 600 },
 ];
 

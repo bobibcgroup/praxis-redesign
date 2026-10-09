@@ -9,10 +9,11 @@ import { OCCASIONS, STAND_IN_PORTRAIT, type OccasionId } from "../../shared/cata
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
 import { ChoiceList, LinkButton, PlusMark, QuietButton, TextButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
-import { BELOW, Frame, FrameCaption } from "../ui/Frame";
+import { Frame } from "../ui/Frame";
 import { Stage } from "../ui/Stage";
 
-const LINE = "Tell me where you’re going. I’ll put together three looks for the occasion and show you how they’d look on you.";
+const LINE = "Tell me where you’re going. I’ll put together three looks.";
+const RETURNING_LINE = "Pick the occasion and I’ll put together three looks.";
 
 function DnaBlock() {
   const { store, go, user } = useJourney();
@@ -23,9 +24,9 @@ function DnaBlock() {
   if (store.dna) {
     return (
       <div className="flex items-center justify-between gap-4">
-        <p className="text-[15px] leading-5">I know your style.</p>
+        <p className="text-[15px] leading-5">Your Style DNA is saved.</p>
         <TextButton onClick={toDna}>
-          Update
+          Update my Style DNA
           <PlusMark show={!plus} />
         </TextButton>
       </div>
@@ -33,9 +34,7 @@ function DnaBlock() {
   }
   return (
     <div className="mt-4 border-t border-[var(--rule)] pt-4">
-      <p className="text-[13px] leading-5 text-[var(--muted)]">Style DNA</p>
-      <p className="a-display a-display-sm mt-2 lg:max-w-[30ch]">Let me get to know your style.</p>
-      <p className="mt-2 text-[15px] leading-5">Tell me what suits you and what you like. I’ll remember it for next time.</p>
+      <p className="a-display a-display-sm lg:max-w-[30ch]">Let me get to know your style.</p>
       <QuietButton onClick={toDna} className="mt-4">
         Build my Style DNA
         <PlusMark show={!plus} />
@@ -73,7 +72,7 @@ export function Home() {
     <Stage
       wordmark
       band="home"
-      canvas={<Frame image={image} alt="" preview={OCCASIONS} reduced={reduced} belowHeight={BELOW.caption} below={<FrameCaption>Your three looks appear here</FrameCaption>} />}
+      canvas={<Frame image={image} alt="" preview={OCCASIONS} reduced={reduced} />}
       actions={
         <div className="flex flex-col">
           {dna ? null : (
@@ -86,7 +85,7 @@ export function Home() {
       }
     >
       <h1 className="a-display max-w-[19ch]">{dna ? "Where are you going?" : "Know what to wear. Every time."}</h1>
-      <p className="mt-4 max-w-[40ch] leading-6">{LINE}</p>
+      <p className="mt-4 max-w-[40ch] leading-6">{dna ? RETURNING_LINE : LINE}</p>
       {dna ? (
         <div className="mt-6">
           <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
