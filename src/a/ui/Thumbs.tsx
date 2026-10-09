@@ -1,7 +1,7 @@
 /**
  * The three looks, always visible under the print once they exist. 64 x 85
- * prints, 12 px apart, inactive at 0.7; the one in the big frame carries a
- * 2 px accent underline 6 px below. Tapping another crossfades the print
+ * prints, 12 px apart, inactive at 0.7, each named under its print; the one
+ * in the big frame carries a 2 px accent underline 6 px below. Tapping another crossfades the print
  * and moves the underline. Nothing is ever removed.
  */
 import { AnimatePresence, motion } from "motion/react";
@@ -38,6 +38,9 @@ export function Thumbs({ looks, activeId, onPick, reduced }: Props) {
                 disabled={!onPick}
               >
                 <img src={look.image} alt="" draggable={false} />
+                <span className="a-thumb-label" aria-hidden="true">
+                  {ROLE_LABEL[look.role]}
+                </span>
               </button>
             </motion.li>
           );

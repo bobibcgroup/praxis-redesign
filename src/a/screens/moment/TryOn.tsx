@@ -38,7 +38,6 @@ export function TryOn() {
   }, [hero, label, rendering, store, go]);
   const openBuy = useCallback(() => setSheet(true), []);
   useGateAction("save", save);
-  useGateAction("buy", openBuy);
 
   if (!ready || !resolved || !hero) return <Navigate to={href("moment/occasion")} replace />;
 
@@ -90,7 +89,7 @@ export function TryOn() {
           <CompletionActions />
         ) : (
           <div className="flex flex-wrap items-center gap-2">
-            <PrimaryButton onClick={() => gated("buy", openBuy)}>Get the pieces</PrimaryButton>
+            <PrimaryButton onClick={openBuy}>Get the pieces</PrimaryButton>
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
@@ -115,16 +114,7 @@ export function TryOn() {
         <>
           <LookDetails look={hero} eyebrow={done ? `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}` : `On you, for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
           {done ? <Completion kind={done} /> : <Caption className="mt-4 hidden lg:block">A rendering, not a photograph.</Caption>}
-          <PiecesSheet
-            look={hero}
-            open={sheet}
-            onClose={() => setSheet(false)}
-            mode="buy"
-            onReserve={() => {
-              setSheet(false);
-              go("moment/tryon", { done: "reserved" }, { replace: true });
-            }}
-          />
+          <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} mode="buy" />
         </>
       )}
     </Stage>

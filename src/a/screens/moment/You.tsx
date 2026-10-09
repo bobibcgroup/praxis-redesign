@@ -85,10 +85,11 @@ export function YouFace() {
 }
 
 const SLOT_OPTIONS = (Object.keys(SLOT_LABEL) as Slot[]).map((id) => ({ id, label: SLOT_LABEL[id] }));
-const WAYS: readonly { id: "upload" | "sample"; label: string }[] = [
-  { id: "upload", label: "Upload a photo" },
-  { id: "sample", label: "Use a sample" },
-];
+/** "Your navy overshirt" becomes "Navy overshirt", the hint on the sample choice. */
+function sampleHint(slot: Slot): string {
+  const name = SAMPLE_ITEMS[slot].replace(/^Your /, "");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
 
 export function YouItem() {
   const { answers, href, go, setOwnedItem, reduced } = useJourney();
@@ -135,7 +136,10 @@ export function YouItem() {
           <div className="flex flex-col gap-4">
             <ChoiceList
               label="How to add the piece"
-              options={WAYS}
+              options={[
+                { id: "upload" as const, label: "Upload a photo" },
+                { id: "sample" as const, label: "Use a sample", hint: sampleHint(slot) },
+              ]}
               value={null}
               onChange={(id) => {
                 if (id === "upload") fileRef.current?.click();

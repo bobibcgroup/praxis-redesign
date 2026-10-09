@@ -22,7 +22,7 @@ export function defaultHeroId(looks: Look[], vibe: VibeId | null): string | null
 
 export function resolveLooks(answers: Answers, ownedItem: OwnedItem | null): ResolvedLooks | null {
   if (!answers.occasion) return null;
-  const base = getLooks(answers.occasion);
+  const base = getLooks(answers.occasion, answers.spend);
   const looks = answers.item && ownedItem ? base.map((l) => withOwnedItem(l, ownedItem.slot, ownedItem.name)) : base;
   if (looks.length === 0) return null;
   const hero = looks.find((l) => l.id === answers.hero) ?? looks.find((l) => l.id === defaultHeroId(looks, answers.vibe)) ?? looks[0];

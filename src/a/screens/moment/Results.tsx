@@ -31,7 +31,6 @@ export function Results() {
   }, [hero, label, store, go]);
   const openBuy = useCallback(() => setSheet(true), []);
   useGateAction("save", save);
-  useGateAction("buy", openBuy);
 
   if (!answers.spend || !resolved || !hero) return <Navigate to={href("moment/occasion")} replace />;
 
@@ -60,16 +59,14 @@ export function Results() {
           <CompletionActions />
         ) : (
           <div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1 lg:gap-2">
               <PrimaryButton onClick={() => gated("tryon", () => go("moment/tryon"))}>
                 See it on me
                 <PlusMark show={!plus} />
               </PrimaryButton>
+              <TextButton onClick={openBuy}>Get the pieces</TextButton>
               <TextButton onClick={() => gated("save", save)} disabled={saved}>
                 {saved ? "Saved" : "Save"}
-              </TextButton>
-              <TextButton onClick={() => gated("buy", openBuy)} className="a-desktop">
-                Get the pieces
               </TextButton>
             </div>
           </div>
@@ -78,10 +75,7 @@ export function Results() {
     >
       <LookDetails look={hero} eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`} compact={done !== null} onOpenPieces={() => setSheet(true)} />
       {done ? <Completion kind={done} /> : null}
-      <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} mode="buy" onReserve={() => {
-        setSheet(false);
-        go("moment/results", { done: "reserved" }, { replace: true });
-      }} />
+      <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} mode="buy" />
     </Stage>
   );
 }

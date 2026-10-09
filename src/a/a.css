@@ -361,6 +361,19 @@
   opacity: 1;
 }
 
+[data-concept="a"] .a-thumb-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-thumb.is-active .a-thumb-label {
+  color: var(--text);
+}
+
 [data-concept="a"] .a-thumb.is-active::after {
   content: "";
   position: absolute;

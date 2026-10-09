@@ -10,7 +10,7 @@ export interface LabUser {
   plus: boolean;
 }
 
-export type GateKind = "tryon" | "dna" | "save" | "buy" | "signin";
+export type GateKind = "tryon" | "dna" | "save" | "signin";
 export type GateStep = "signin" | "plus";
 
 const KEY = "praxis_lab_a_user";

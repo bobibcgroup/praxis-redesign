@@ -21,7 +21,7 @@ import type { GateKind, LabUser } from "./user";
 
 export type FaceSource = "sample" | "own";
 export type Slot = Piece["slot"];
-export type DoneKind = "saved" | "reserved" | "dna";
+export type DoneKind = "saved" | "dna";
 
 export interface Answers {
   occasion: OccasionId | null;
@@ -42,7 +42,7 @@ export interface OwnedItem {
 }
 
 const SLOTS: readonly Slot[] = ["top", "bottom", "shoes", "extras"];
-const DONE: readonly DoneKind[] = ["saved", "reserved", "dna"];
+const DONE: readonly DoneKind[] = ["saved", "dna"];
 export const FACE_KEY = "praxis_lab_a_face";
 export const ITEM_KEY = "praxis_lab_a_item";
 
@@ -91,7 +91,7 @@ export function parseAnswers(params: URLSearchParams): Answers {
 
 export type Patch = Partial<Record<keyof Answers | "fit" | "life" | "taste" | "gate", string | null>>;
 
-export const GATES: readonly GateKind[] = ["tryon", "dna", "save", "buy", "signin"];
+export const GATES: readonly GateKind[] = ["tryon", "dna", "save", "signin"];
 
 export function withPatch(params: URLSearchParams, patch: Patch): URLSearchParams {
   const next = new URLSearchParams(params);

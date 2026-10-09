@@ -1,4 +1,4 @@
-/** Mode controls: a two-option radiogroup for the You surface and one lab-only 44 px button in the corner. */
+/** Mode control: a two-option radiogroup for the Style DNA page. */
 import type { ModeId } from "../lib/mode";
 
 interface Props {
@@ -15,14 +15,5 @@ export function ModeRadio({ mode, onMode }: Props) {
         </button>
       ))}
     </div>
-  );
-}
-
-export function ModeButton({ mode, onMode }: Props) {
-  const next: ModeId = mode === "dark" ? "light" : "dark";
-  return (
-    <button type="button" className="a-control a-secondary a-mode-button" aria-label={`Switch to ${next} mode`} onClick={() => onMode(next)}>
-      {mode === "dark" ? "Dark" : "Light"}
-    </button>
   );
 }

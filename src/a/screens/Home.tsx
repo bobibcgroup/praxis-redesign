@@ -1,13 +1,13 @@
 /**
- * Home: always says what this is. Two paths of unequal weight: dress me for
- * a moment (primary) and, under a rule, the Style DNA block. With a saved
- * DNA the headline asks where he is going and the occasion chips sit under
- * it. After saving a DNA, the completion state.
+ * Home: always says what this is, with the occasion choices right under it
+ * so the first tap is an answer. Under a rule, the Style DNA block. With a
+ * saved DNA the headline asks where he is going. After saving a DNA, the
+ * completion state.
  */
 import { useEffect, useState } from "react";
 import { OCCASIONS, STAND_IN_PORTRAIT, type OccasionId } from "../../shared/catalog";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
-import { ChoiceList, LinkButton, PlusMark, QuietButton, TextButton } from "../ui/controls";
+import { ChoiceList, PlusMark, QuietButton, TextButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
 import { Frame } from "../ui/Frame";
 import { Stage } from "../ui/Stage";
@@ -33,7 +33,7 @@ function DnaBlock() {
     );
   }
   return (
-    <div className="mt-4 border-t border-[var(--rule)] pt-4">
+    <div>
       <p className="a-display a-display-sm lg:max-w-[30ch]">Let me get to know your style.</p>
       <QuietButton onClick={toDna} className="mt-4">
         Build my Style DNA
@@ -44,7 +44,7 @@ function DnaBlock() {
 }
 
 export function Home() {
-  const { answers, href, go, store, reduced, setFaceImage } = useJourney();
+  const { answers, go, store, reduced, setFaceImage } = useJourney();
   const [pending, setPending] = useState<OccasionId | null>(null);
   const dna = store.dna;
 
@@ -53,7 +53,7 @@ export function Home() {
     const own = dna?.portrait?.startsWith("data:") ? dna.portrait : null;
     const t = setTimeout(() => {
       if (own) setFaceImage(own);
-      go("moment/venue", { ...FRESH, occasion: pending, face: own ? "own" : "sample" });
+      go("moment/venue", { ...FRESH, occasion: pending, face: dna ? (own ? "own" : "sample") : null });
     }, reduced ? 0 : 260);
     return () => clearTimeout(t);
   }, [pending, go, reduced, dna, setFaceImage]);
@@ -73,24 +73,13 @@ export function Home() {
       wordmark
       band="home"
       canvas={<Frame image={image} alt="" preview={OCCASIONS} reduced={reduced} />}
-      actions={
-        <div className="flex flex-col">
-          {dna ? null : (
-            <LinkButton to={href("moment/occasion", FRESH)} variant="primary" className="self-start">
-              Dress me for a moment
-            </LinkButton>
-          )}
-          <DnaBlock />
-        </div>
-      }
+      actions={<DnaBlock />}
     >
       <h1 className="a-display max-w-[19ch]">{dna ? "Where are you going?" : "Know what to wear. Every time."}</h1>
       <p className="mt-4 max-w-[40ch] leading-6">{dna ? RETURNING_LINE : LINE}</p>
-      {dna ? (
-        <div className="mt-6">
-          <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
-        </div>
-      ) : null}
+      <div className="mt-6">
+        <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
+      </div>
     </Stage>
   );
 }

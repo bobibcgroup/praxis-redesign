@@ -91,11 +91,21 @@ export function useLabStore(concept: string) {
     [update],
   );
 
+  /** Puts a removed look back where it was, newest first. */
+  const restoreLook = useCallback(
+    (entry: SavedLook) =>
+      update((prev) => ({
+        ...prev,
+        looks: [...prev.looks.filter((l) => l.id !== entry.id), entry].sort((a, b) => b.savedAt.localeCompare(a.savedAt)),
+      })),
+    [update],
+  );
+
   const saveDna = useCallback((dna: SavedDna) => update((prev) => ({ ...prev, dna })), [update]);
 
   const clearDna = useCallback(() => update((prev) => ({ ...prev, dna: null })), [update]);
 
   const reset = useCallback(() => update(() => EMPTY), [update]);
 
-  return { ...state, saveLook, removeLook, saveDna, clearDna, reset };
+  return { ...state, saveLook, removeLook, restoreLook, saveDna, clearDna, reset };
 }

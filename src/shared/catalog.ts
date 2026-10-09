@@ -112,11 +112,11 @@ export interface Look {
 
 const VENDORS = ["Atelier Nord", "Harbour & Finch", "Maison Tarek", "Brass Lane", "Studio Oren"] as const;
 
-const PRICE_BY_SLOT: Record<Piece["slot"], number[]> = {
-  top: [89, 145, 220, 310],
-  bottom: [110, 160, 240],
-  shoes: [140, 195, 280, 420],
-  extras: [45, 70, 120],
+/** Stand-in prices per budget, so every total lands inside the range the client chose. */
+const PRICE_BY_SPEND: Record<SpendId, Record<Piece["slot"], number[]>> = {
+  SENSIBLE: { top: [49, 69, 89], bottom: [45, 59, 79], shoes: [65, 85, 99], extras: [19, 25, 29] },
+  ELEVATED: { top: [145, 195, 240], bottom: [110, 160, 195], shoes: [140, 195, 260], extras: [70, 95, 120] },
+  OPEN: { top: [310, 420, 560], bottom: [240, 320, 410], shoes: [280, 420, 560], extras: [120, 180, 240] },
 };
 
 function hash(input: string): number {
@@ -127,7 +127,7 @@ function pick<T>(list: readonly T[], seed: string): T {
   return list[hash(seed) % list.length];
 }
 
-function toPieces(entry: OutfitEntry): Piece[] {
+function toPieces(entry: OutfitEntry, spend: SpendId): Piece[] {
   const slots: Array<[Piece["slot"], string | undefined]> = [
     ["top", entry.items.top],
     ["bottom", entry.items.bottom],
@@ -141,7 +141,7 @@ function toPieces(entry: OutfitEntry): Piece[] {
       slot,
       name,
       vendor: pick(VENDORS, `${entry.id}${slot}`),
-      price: pick(PRICE_BY_SLOT[slot], `${entry.id}${slot}p`),
+      price: pick(PRICE_BY_SPEND[spend][slot], `${entry.id}${slot}p`),
     }));
 }
 
@@ -170,8 +170,8 @@ const WHY_BY_LOOK: Record<string, string> = {
   wedding_relaxed_01: "An open collar under a light blazer is elegant without feeling stiff.",
 };
 
-function toLook(entry: OutfitEntry): Look {
-  const pieces = toPieces(entry);
+function toLook(entry: OutfitEntry, spend: SpendId): Look {
+  const pieces = toPieces(entry, spend);
   return {
     id: entry.id,
     occasion: entry.occasion,
@@ -187,10 +187,10 @@ function toLook(entry: OutfitEntry): Look {
 }
 
 /** Returns hero, sharper, relaxed in that order for the occasion. */
-export function getLooks(occasion: OccasionId): Look[] {
+export function getLooks(occasion: OccasionId, spend: SpendId | null = null): Look[] {
   const order: TierType[] = ["SAFEST", "SHARPER", "RELAXED"];
   return OUTFITS.filter((o) => o.occasion === occasion)
-    .map(toLook)
+    .map((entry) => toLook(entry, spend ?? "ELEVATED"))
     .sort((a, b) => order.indexOf(a.tier) - order.indexOf(b.tier));
 }
 

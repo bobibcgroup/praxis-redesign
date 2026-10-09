@@ -2,16 +2,21 @@
  * Looks: a quiet library. The stage becomes a horizontal rail of saved
  * prints; tapping one opens it in the print with its pieces.
  */
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { FRESH, useGateAction, useGated, useJourney } from "../lib/journeyContext";
+import { FRESH, readSession, useJourney, writeSession } from "../lib/journeyContext";
+import type { SavedLook } from "../../shared/store";
 import { LinkButton, PrimaryButton, TextButton } from "../ui/controls";
 import { BELOW, Frame, FrameCaption } from "../ui/Frame";
 import { LookDetails } from "../ui/LookDetails";
 import { PiecesSheet } from "../ui/PiecesSheet";
 import { Stage } from "../ui/Stage";
 import { TopBar } from "../ui/TopBar";
+
+/** The look removed a moment ago, kept for the session so the rail can offer Undo. */
+const REMOVED_KEY = "praxis_lab_a_removed";
+const UNDO_MS = 6000;
 
 function savedOn(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long" });
@@ -20,6 +25,26 @@ function savedOn(iso: string): string {
 export function Looks() {
   const { href, store, reduced } = useJourney();
   const looks = store.looks;
+  const [removed, setRemoved] = useState<SavedLook | null>(() => readSession<SavedLook>(REMOVED_KEY));
+
+  useEffect(() => {
+    if (!removed) return;
+    const t = setTimeout(() => {
+      writeSession(REMOVED_KEY, null);
+      setRemoved(null);
+    }, UNDO_MS);
+    return () => clearTimeout(t);
+  }, [removed]);
+
+  /* Undo is only offered on the visit right after the remove. */
+  useEffect(() => () => writeSession(REMOVED_KEY, null), []);
+
+  const undo = () => {
+    if (!removed) return;
+    store.restoreLook(removed);
+    writeSession(REMOVED_KEY, null);
+    setRemoved(null);
+  };
 
   return (
     <div className="a-stage">
@@ -28,6 +53,12 @@ export function Looks() {
         <div className="flex items-baseline justify-between px-5 pt-4 lg:px-12 lg:pt-6">
           <h1 className="a-display">{looks.length === 0 ? "No saved looks yet." : "Looks"}</h1>
         </div>
+        {removed ? (
+          <div className="flex items-center gap-2 px-5 pt-2 lg:px-12" aria-live="polite">
+            <p className="text-[15px] leading-5 text-[var(--muted)]">Removed.</p>
+            <TextButton onClick={undo}>Undo</TextButton>
+          </div>
+        ) : null}
 
         {looks.length === 0 ? (
           <div className="flex flex-1 flex-col items-start justify-center gap-6 px-5 pb-16 lg:px-12">
@@ -61,10 +92,8 @@ export function Looks() {
 export function LookDetail() {
   const { id } = useParams();
   const { href, go, store, reduced } = useJourney();
-  const gated = useGated();
   const [sheet, setSheet] = useState(false);
   const openBuy = useCallback(() => setSheet(true), []);
-  useGateAction("buy", openBuy);
   const saved = store.looks.find((s) => s.id === id);
 
   if (!saved) return <Navigate to={href("looks")} replace />;
@@ -84,9 +113,10 @@ export function LookDetail() {
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <PrimaryButton onClick={() => gated("buy", openBuy)}>Get the pieces</PrimaryButton>
+          <PrimaryButton onClick={openBuy}>Get the pieces</PrimaryButton>
           <TextButton
             onClick={() => {
+              writeSession(REMOVED_KEY, saved);
               store.removeLook(saved.id);
               go("looks");
             }}
@@ -97,7 +127,7 @@ export function LookDetail() {
       }
     >
       <LookDetails look={saved.look} eyebrow={`${saved.occasionLabel}, saved ${savedOn(saved.savedAt)}`} onOpenPieces={() => setSheet(true)} />
-      <PiecesSheet look={saved.look} open={sheet} onClose={() => setSheet(false)} mode="buy" onReserve={() => setSheet(false)} />
+      <PiecesSheet look={saved.look} open={sheet} onClose={() => setSheet(false)} mode="buy" />
     </Stage>
   );
 }

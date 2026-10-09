@@ -102,4 +102,4 @@ export function FrameCaption({ children }: { children: ReactNode }) {
 }
 
 /* Heights reserved under the print, on the 8 px grid. */
-export const BELOW = { none: 0, caption: 32, line: 24, thumbs: 120, thumbsLine: 152, thumbsCaption: 168 } as const;
+export const BELOW = { none: 0, caption: 32, line: 24, thumbs: 144, thumbsLine: 176, thumbsCaption: 192 } as const;

@@ -4,7 +4,6 @@ import { LinkButton, PlusMark, QuietButton, TextButton } from "./controls";
 
 const LINE: Record<DoneKind, string> = {
   saved: "I’ve saved it to your Looks.",
-  reserved: "Your pieces are listed by retailer.",
   dna: "I’ll remember your Style DNA.",
 };
 

@@ -19,7 +19,7 @@ One full-viewport stage. The left column asks one question at a time; the right 
 
 Journeys:
 
-- **Style a moment**: occasion, venue, day or night, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three thumbnails beneath, try-on, save, share, get the pieces.
+- **Style a moment**: occasion (chosen on home), venue with day or night on one screen, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three labelled thumbnails beneath, try-on, save, share, get the pieces (a sheet listing the pieces by retailer; open to everyone, no sign in).
 - **Style DNA**: face, fit, lifestyle, up to two inspiration presets, a guided build, and a plain-language result (undertone, contrast, palette, one line of advice). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
 - **Style DNA**: the saved Style DNA, start again, sign out, light or dark.
@@ -32,14 +32,14 @@ Mounted at `/`. Step routes:
 
 ```
 /                                   home (first visit, or returning with DNA)
-/moment/occasion  /moment/venue  /moment/time  /moment/feel  /moment/spend
+/moment/occasion  /moment/venue  /moment/feel  /moment/spend   (/moment/time redirects to venue)
 /moment/you  /moment/you/face  /moment/you/item
 /moment/build  /moment/results  /moment/tryon
 /looks  /looks/:id
 /dna  /dna/face  /dna/fit  /dna/lifestyle  /dna/inspiration  /dna/build  /dna/result
 ```
 
-Answers travel in search params so reload restores any step: `occasion, venue, time, vibe, spend, face, item, hero, done, mode`; DNA: `face, fit, life, taste`. The gate popup uses `?gate=tryon|dna|save|buy|signin`.
+Answers travel in search params so reload restores any step: `occasion, venue, time, vibe, spend, face, item, hero, done, mode`; DNA: `face, fit, life, taste`. The gate popup uses `?gate=tryon|dna|save|signin`.
 
 Browser storage (prototype only, replace with real persistence):
 
@@ -53,7 +53,7 @@ Browser storage (prototype only, replace with real persistence):
 ## What is a stand-in
 
 - **Sign-in and payment** (`src/a/ui/Gate.tsx`, `GateSteps.tsx`): visual previews of Apple, Google and email sign-in, and of a "Praxis Plus" purchase with Apple Pay or card. No Clerk or Stripe calls. Replace with Clerk for identity and a Stripe Payment Element (Apple Pay enabled) for the purchase, then check the entitlement server-side before try-on and DNA endpoints run. The plan shape (one membership, $9 a month) and the price are placeholders.
-- **Looks and pieces** (`src/shared/catalog.ts`): built from the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented vendors and prices. Replace with the vendor catalog.
+- **Looks and pieces** (`src/shared/catalog.ts`): built from the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented vendors and prices; prices are picked from the band the client chose so every total fits the budget. Replace with the vendor catalog, filtered by budget.
 - **Guided build** (`src/shared/guided.ts`): fixed, named stages with fixed durations. Keep the stage names and drive the progress from real backend events instead of timers.
 - **Try-on**: the shared stand-in portrait with a different crop. Replace with the rendering pipeline; keep the wipe, the "Here’s how it looks on you" caption and the note.
 - **DNA result**: `SAMPLE_TONES` for every capture. Replace with the face pipeline.
@@ -77,7 +77,7 @@ Type: Source Serif 4 at 600 with optical sizing for the question, the home headl
 
 Control rules (`src/a/ui/controls.tsx`, `a.css`): every control is 44 px tall with text centred by the box; label 15 px medium and hint 13 px muted on one baseline, 8 px apart; 2 px corners on controls, 0 on the print and sheets; 1 px rule borders; selected is ink fill; hover is surface fill; pressed scales to 0.98; focus is a 2 px accent ring with a 2 px gap. Prices are tabular figures on one right edge. The active thumbnail carries a 2 px accent underline flush to its width, 6 px below. Everything sits on an 8 px grid with 48 px desktop and 20 px mobile gutters.
 
-Layout rules: the primary action is pinned at the bottom of the column under one rule and is never below the fold; the print is sized from the available height; the stage is capped at 1600 px wide. On phones the print band is 40% of the viewport while answering and 50% on results and try-on. Verified at 1440x900, 1920x1080, 2000x1120, 1280x720, 390x844 and 375x667.
+Layout rules: on phones the primary action is pinned at the bottom of the column under one rule and is never below the fold; on desktop the action row follows the content under the same rule, so it sits where the eye already is; the print is sized from the available height; the stage is capped at 1600 px wide. On phones the print band is 40% of the viewport while answering and 50% on results and try-on. Verified at 1440x900, 1920x1080, 2000x1120, 1280x720, 390x844 and 375x667.
 
 Motion is `motion/react` only, transform and opacity only, and every animation respects `prefers-reduced-motion`.
 

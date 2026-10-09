@@ -13,6 +13,7 @@ import { Frame } from "../../ui/Frame";
 import { Stage } from "../../ui/Stage";
 
 type QuestionKey = "occasion" | "venue" | "time" | "vibe" | "spend";
+/* "time" is answered on the place step; it stays a key so later steps can require it. */
 
 interface StepDef {
   key: QuestionKey;
@@ -34,18 +35,81 @@ const STEPS: Record<string, StepDef> = {
     step: 2,
     question: () => "Where is it?",
     options: (a) => (a.occasion ? VENUES[a.occasion] : []),
-    next: "moment/time",
+    next: "moment/feel",
     prev: "moment/occasion",
     requires: ["occasion"],
   },
-  time: { key: "time", group: "room", step: 3, question: () => "Day or night?", options: () => TIMES, next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
-  feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/time", requires: ["occasion", "venue", "time"] },
+  feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/venue", requires: ["occasion", "venue", "time"] },
   spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/you", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
 };
 
 const ADVANCE_MS = 260;
 
+/** The old time route: day or night now sits on the place step. */
+export function TimeRedirect() {
+  const { href } = useJourney();
+  return <Navigate to={href("moment/venue")} replace />;
+}
+
 export function Question({ step }: { step: string }) {
+  return step === "venue" ? <Place /> : <OneQuestion step={step} />;
+}
+
+/** Where it is, and day or night, on one screen. Advances once both are answered. */
+function Place() {
+  const def = STEPS.venue;
+  const { answers, href, go, ownedItem, reduced } = useJourney();
+  const [venue, setVenue] = useState<string | null>(answers.venue);
+  const [time, setTime] = useState<string | null>(answers.time);
+  const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    if (!touched || !venue || !time) return;
+    const t = setTimeout(() => go(def.next, { venue, time, hero: null }), reduced ? 0 : ADVANCE_MS);
+    return () => clearTimeout(t);
+  }, [touched, venue, time, def, go, reduced]);
+
+  if (!answers.occasion) return <Navigate to={href("moment/occasion")} replace />;
+
+  const preview = { ...answers, venue, time } as Answers;
+  const image = canvasImage(preview, resolveLooks(preview, ownedItem));
+
+  return (
+    <Stage
+      spine={momentSpine(def.group, answers, href)}
+      back={href(def.prev)}
+      canvas={<Frame image={image} alt={`${occasionLabel(answers.occasion)} look`} night={time === "NIGHT"} preview={OCCASIONS} reduced={reduced} />}
+    >
+      <h1 className="a-display">{def.question(answers)}</h1>
+      <div className="mt-6">
+        <ChoiceList
+          label={def.question(answers)}
+          options={def.options(answers)}
+          value={venue}
+          onChange={(id) => {
+            setVenue(id);
+            setTouched(true);
+          }}
+        />
+      </div>
+      <p className="mt-6 text-[13px] leading-5 text-[var(--muted)]">Day or night?</p>
+      <div className="mt-2">
+        <ChoiceList
+          label="Day or night?"
+          options={TIMES}
+          value={time}
+          columns={2}
+          onChange={(id) => {
+            setTime(id);
+            setTouched(true);
+          }}
+        />
+      </div>
+    </Stage>
+  );
+}
+
+function OneQuestion({ step }: { step: string }) {
   const def = STEPS[step];
   const { answers, href, go, ownedItem, reduced } = useJourney();
   const [pending, setPending] = useState<string | null>(null);
@@ -59,7 +123,7 @@ export function Question({ step }: { step: string }) {
     return () => clearTimeout(t);
   }, [pending, def, go, reduced]);
 
-  if (missing) return <Navigate to={href(`moment/${missing === "vibe" ? "feel" : missing}`)} replace />;
+  if (missing) return <Navigate to={href(`moment/${missing === "vibe" ? "feel" : missing === "time" ? "venue" : missing}`)} replace />;
 
   const value = pending ?? answers[def.key];
   const preview: Answers = pending ? { ...answers, [def.key]: pending } : answers;

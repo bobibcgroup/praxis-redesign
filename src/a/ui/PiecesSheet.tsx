@@ -1,7 +1,6 @@
-/** The pieces by vendor with a total; in buy mode, "Reserve" lands in the completion state, never a store. */
+/** The pieces by vendor with a total. The sheet is the end point: it stays open as the list the client acts on. */
 import type { Look, Piece } from "../../shared/catalog";
 import { money, SLOT_LABEL } from "../lib/looks";
-import { PrimaryButton } from "./controls";
 import { Sheet } from "./Sheet";
 
 interface PiecesSheetProps {
@@ -9,7 +8,6 @@ interface PiecesSheetProps {
   open: boolean;
   onClose: () => void;
   mode: "pieces" | "buy";
-  onReserve?: () => void;
 }
 
 function groupByVendor(pieces: Piece[]): Array<{ vendor: string; pieces: Piece[] }> {
@@ -22,7 +20,7 @@ function groupByVendor(pieces: Piece[]): Array<{ vendor: string; pieces: Piece[]
     }, []);
 }
 
-export function PiecesSheet({ look, open, onClose, mode, onReserve }: PiecesSheetProps) {
+export function PiecesSheet({ look, open, onClose, mode }: PiecesSheetProps) {
   const owned = look.pieces.filter((p) => p.owned);
   const groups = groupByVendor(look.pieces);
 
@@ -66,14 +64,7 @@ export function PiecesSheet({ look, open, onClose, mode, onReserve }: PiecesShee
             <span>Total</span>
             <span className="a-mono">{money(look.total)}</span>
           </div>
-          {mode === "buy" && onReserve ? (
-            <>
-              <p className="mt-4 text-[13px] leading-5 text-[var(--muted)]">Each piece comes from its retailer.</p>
-              <PrimaryButton className="mt-4 w-full" onClick={onReserve}>
-                Get the pieces
-              </PrimaryButton>
-            </>
-          ) : null}
+          {mode === "buy" ? <p className="mt-4 text-[13px] leading-5 text-[var(--muted)]">Each piece comes from its retailer.</p> : null}
         </div>
       </div>
     </Sheet>
