@@ -19,7 +19,7 @@ One full-viewport stage. The left column asks one question at a time; the right 
 
 Journeys:
 
-- **Style a moment**: occasion (chosen on home), venue with day or night on one screen, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three labelled thumbnails beneath, try-on, save, share, get the pieces (a sheet listing the pieces by retailer; open to everyone, no sign in).
+- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, an optional "You" step (face by camera, upload or sample; one owned item by slot), a guided build, three looks with the hero in the print and three labelled thumbnails beneath, try-on, save, share, get the pieces (a sheet listing the pieces by retailer; open to everyone, no sign in).
 - **Style DNA**: face, fit, lifestyle, up to two inspiration presets, a guided build, and a plain-language result (undertone, contrast, palette, one line of advice). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
 - **Style DNA**: the saved Style DNA, start again, sign out, light or dark.
@@ -32,7 +32,7 @@ Mounted at `/`. Step routes:
 
 ```
 /                                   home (first visit, or returning with DNA)
-/moment/occasion  /moment/venue  /moment/feel  /moment/spend   (/moment/time redirects to venue)
+/moment/occasion  /moment/venue  /moment/time  /moment/feel  /moment/spend
 /moment/you  /moment/you/face  /moment/you/item
 /moment/build  /moment/results  /moment/tryon
 /looks  /looks/:id

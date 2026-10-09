@@ -12,7 +12,7 @@ import { useJourney } from "./lib/journeyContext";
 import { Home } from "./screens/Home";
 import { LookDetail, Looks } from "./screens/Looks";
 import { Build } from "./screens/moment/Build";
-import { Question, TimeRedirect } from "./screens/moment/Question";
+import { Question } from "./screens/moment/Question";
 import { Results } from "./screens/moment/Results";
 import { TryOn } from "./screens/moment/TryOn";
 import { You, YouFace, YouItem } from "./screens/moment/You";
@@ -36,7 +36,7 @@ function Shell() {
         <Route path="moment" element={<Fallback />} />
         <Route path="moment/occasion" element={<Question key="occasion" step="occasion" />} />
         <Route path="moment/venue" element={<Question key="venue" step="venue" />} />
-        <Route path="moment/time" element={<TimeRedirect />} />
+        <Route path="moment/time" element={<Question key="time" step="time" />} />
         <Route path="moment/feel" element={<Question key="feel" step="feel" />} />
         <Route path="moment/spend" element={<Question key="spend" step="spend" />} />
         <Route path="moment/you" element={<You />} />
