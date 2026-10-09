@@ -118,6 +118,20 @@
   font-weight: 500;
 }
 
+[data-concept="a"] .a-spine-current {
+  position: relative;
+}
+
+[data-concept="a"] .a-spine-current::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0.14em;
+  bottom: 10px;
+  height: 1px;
+  background: currentColor;
+}
+
 /* ---------- Controls: the box sets the height; text is centred by flex, never by padding. ---------- */
 [data-concept="a"] .a-control {
   display: inline-flex;
