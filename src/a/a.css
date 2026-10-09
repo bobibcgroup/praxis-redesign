@@ -477,17 +477,18 @@
 }
 
 @media (min-width: 1024px) {
+  /* No box: the links sit straight on the photo in ink, with a soft ivory halo that only shows where the photo is dark. */
   [data-concept="a"] .a-topright {
     gap: 4px;
-    padding: 0 8px;
-    border-radius: var(--r-control);
-    background: color-mix(in srgb, var(--bg) 84%, transparent);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
   }
 
   [data-concept="a"] .a-topright .a-tertiary {
     color: var(--text);
+    text-shadow: 0 0 16px color-mix(in srgb, var(--bg) 75%, transparent);
+  }
+
+  [data-concept="a"] .a-topright .a-tertiary:hover {
+    color: var(--muted);
   }
 }
 
