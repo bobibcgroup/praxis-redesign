@@ -13,6 +13,7 @@ import { momentSpine } from "../../lib/spine";
 import { Completion, CompletionActions } from "../../ui/Completion";
 import { LinkButton, PlusMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
 import { LookViewer } from "../../ui/LookViewer";
+import { RestyleSheet } from "../../ui/RestyleSheet";
 import { ShareSheet } from "../../ui/ShareSheet";
 import { BELOW, Frame } from "../../ui/Frame";
 import { LookDetails } from "../../ui/LookDetails";
@@ -27,6 +28,7 @@ export function Results() {
   const [sheet, setSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [restyling, setRestyling] = useState(false);
   const hero = resolved?.hero ?? null;
   const selection = usePieceSelection(hero);
   const label = occasionLabel(answers.occasion);
@@ -101,9 +103,9 @@ export function Results() {
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
-            <LinkButton to={fresh} variant="tertiary" className="a-desktop ml-auto lg:-mr-2">
-              Try a new look
-            </LinkButton>
+            <TextButton onClick={() => setRestyling(true)} className="a-desktop ml-auto lg:-mr-2">
+              Restyle me
+            </TextButton>
           </div>
         )
       }
@@ -115,9 +117,9 @@ export function Results() {
         selection={selection}
         end={
           done || shared ? null : (
-            <LinkButton to={fresh} variant="tertiary" className="a-phone mt-2 self-start !px-0">
-              Try a new look
-            </LinkButton>
+            <TextButton onClick={() => setRestyling(true)} className="a-phone mt-2 self-start !px-0">
+              Restyle me
+            </TextButton>
           )
         }
         personal={
@@ -158,6 +160,7 @@ export function Results() {
         reduced={reduced}
       />
       <ShareSheet look={hero} eyebrow={eyebrow} occasion={label.toLowerCase()} open={sharing} onClose={() => setSharing(false)} />
+      <RestyleSheet open={restyling} onClose={() => setRestyling(false)} />
       <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
     </Stage>
   );

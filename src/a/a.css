@@ -445,9 +445,26 @@
   text-transform: uppercase;
 }
 
+/* Desktop: the bar is taller and the house name reads at a size that holds its own beside a full-height print. */
 @media (min-width: 1024px) {
   [data-concept="a"] .a-wordmark {
-    margin-right: 32px;
+    font-size: 22px;
+    margin-right: 24px;
+  }
+
+  [data-concept="a"] .a-spine {
+    font-size: 12px;
+  }
+
+  [data-concept="a"] .a-signin {
+    font-size: 15px;
+    letter-spacing: 0.02em;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-concept="a"] .a-wordmark {
+    margin-right: 40px;
   }
 }
 

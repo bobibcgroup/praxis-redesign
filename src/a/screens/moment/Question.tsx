@@ -49,7 +49,9 @@ export const MOMENT_STEPS = 5;
 
 export function Question({ step }: { step: string }) {
   const def = STEPS[step];
-  const { answers, href, go, ownedItem, reduced } = useJourney();
+  const { answers, params, href, go, ownedItem, reduced } = useJourney();
+  /* Sent here from the results to change one answer: go straight back to the looks after it. */
+  const restyle = params.get("restyle") !== null;
   const [pending, setPending] = useState<string | null>(null);
 
   const missing = def.requires.find((k) => !answers[k]);
@@ -57,9 +59,14 @@ export function Question({ step }: { step: string }) {
 
   useEffect(() => {
     if (!pending) return;
-    const t = setTimeout(() => go(def.next, { [def.key]: pending, hero: null }), reduced ? 0 : ADVANCE_MS);
+    const t = setTimeout(() => {
+      if (!restyle) go(def.next, { [def.key]: pending, hero: null });
+      /* A new occasion has its own places, so the place is asked again before the looks. */
+      else if (def.key === "occasion") go("moment/venue", { occasion: pending, venue: null, hero: null });
+      else go("moment/build", { [def.key]: pending, hero: null, restyle: null });
+    }, reduced ? 0 : ADVANCE_MS);
     return () => clearTimeout(t);
-  }, [pending, def, go, reduced]);
+  }, [pending, def, go, reduced, restyle]);
 
   if (missing) return <Navigate to={href(`moment/${missing === "vibe" ? "feel" : missing}`)} replace />;
 
@@ -71,10 +78,10 @@ export function Question({ step }: { step: string }) {
   return (
     <Stage
       spine={momentSpine(def.group, answers, href)}
-      back={def.prev === "" ? href("") : href(def.prev)}
+      back={restyle ? href("moment/results", { restyle: null }) : def.prev === "" ? href("") : href(def.prev)}
       canvas={<Frame image={image} alt={answers.occasion ? `${occasionLabel(answers.occasion)} look` : ""} night={preview.time === "NIGHT"} preview={OCCASIONS} reduced={reduced} />}
     >
-      <Count step={def.step} total={MOMENT_STEPS} />
+      {restyle ? <p className="a-label mb-3 text-[var(--muted)]">Restyle</p> : <Count step={def.step} total={MOMENT_STEPS} />}
       <h1 className="a-display">{def.question(answers)}</h1>
       <div className="mt-8">
         <ChoiceList label={def.question(answers)} options={def.options(answers)} value={value} onChange={(id) => setPending(id)} />

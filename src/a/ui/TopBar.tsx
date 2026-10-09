@@ -32,7 +32,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
   const [menu, setMenu] = useState(false);
 
   return (
-    <header className="relative z-10 flex h-14 items-center justify-between pl-2 pr-2 lg:pl-8 lg:pr-6">
+    <header className="relative z-10 flex h-14 items-center justify-between pl-2 pr-2 lg:h-20 lg:pl-10 lg:pr-8">
       <div className="flex min-w-0 items-center gap-1">
         {back && (
           <button
@@ -58,7 +58,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
             </span>
           </button>
         ) : (
-          <button type="button" onClick={() => openGate("signin")} className="a-control a-tertiary a-desktop text-[13px]">
+          <button type="button" onClick={() => openGate("signin")} className="a-control a-tertiary a-desktop a-signin">
             Sign in
           </button>
         )}
@@ -69,7 +69,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
           onClick={() => setMenu(true)}
           className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text)] transition-colors duration-300 hover:text-[var(--muted)]"
         >
-          <MenuIcon size={20} strokeWidth={1.25} />
+          <MenuIcon size={22} strokeWidth={1.25} />
         </button>
       </div>
 

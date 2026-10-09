@@ -38,6 +38,10 @@
 }
 
 @media (min-width: 1024px) {
+  .a-stage {
+    grid-template-rows: 80px minmax(0, 1fr);
+  }
+
   .a-split,
   .a-split[data-band="looks"],
   .a-split[data-band="home"] {

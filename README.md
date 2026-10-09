@@ -100,6 +100,10 @@ src/shared/             catalog, guided build, fonts, store
 src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 ```
 
+## Restyle
+
+"Restyle me" on the results opens a sheet with the answers that change the looks: the feel, the budget, the occasion (each shows the current answer), and "Start a new look". Picking one opens that question with `restyle=1`; the answer goes straight back to the looks (a new occasion asks the place first). The PRAXIS wordmark always starts a fresh journey. On desktop the bar is 80 px with a 22 px wordmark and 15 px Sign in.
+
 ## Phones and iOS Safari
 
 - Under 1024 px the page itself scrolls, never a box inside it: the photo band takes a fixed share of `100svh` (so it does not jump when Safari's toolbar hides), the top bar sticks to the top and the action row sticks to the bottom (`a-layout.css`, the max-width 1023 px block). Desktop keeps the fixed split.
