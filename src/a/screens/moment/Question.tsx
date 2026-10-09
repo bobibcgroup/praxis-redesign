@@ -76,7 +76,7 @@ export function Question({ step }: { step: string }) {
     >
       <Count step={def.step} total={MOMENT_STEPS} />
       <h1 className="a-display">{def.question(answers)}</h1>
-      <div className="mt-6">
+      <div className="mt-8">
         <ChoiceList label={def.question(answers)} options={def.options(answers)} value={value} onChange={(id) => setPending(id)} />
       </div>
     </Stage>

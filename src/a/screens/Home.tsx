@@ -66,18 +66,18 @@ export function Home() {
     );
   }
 
-  const image = pending ? OCCASIONS.find((o) => o.id === pending)?.image ?? null : null;
+  const image = OCCASIONS.find((o) => o.id === (pending ?? "WEDDING"))?.image ?? null;
 
   return (
     <Stage
       wordmark
       band="home"
-      canvas={<Frame image={image} alt="" preview={OCCASIONS} reduced={reduced} />}
+      canvas={<Frame image={image} alt="" reduced={reduced} />}
       actions={<DnaBlock />}
     >
       <h1 className="a-display max-w-[19ch]">{dna ? "Where are you going?" : "Know what to wear. Every time."}</h1>
       <p className="mt-4 max-w-[40ch] leading-6">{dna ? RETURNING_LINE : LINE}</p>
-      <div className="mt-6">
+      <div className="mt-8">
         <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
       </div>
     </Stage>

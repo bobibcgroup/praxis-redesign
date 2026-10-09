@@ -5,9 +5,9 @@
  */
 
 [data-concept="a"] {
-  --font-display: "Source Serif 4", "Source Serif Pro", Georgia, serif;
-  --font-display-weight: 600;
-  --font-display-tracking: -0.01em;
+  --font-display: "Playfair Display", "Didot", Georgia, serif;
+  --font-display-weight: 400;
+  --font-display-tracking: 0.02em;
   --font-body: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --r-control: 2px;
@@ -33,32 +33,32 @@
 }
 
 [data-concept="a"][data-mode="light"] {
-  --bg: #efeae0;
-  --surface: #e4ded2;
-  --text: #1b1f1c;
-  --muted: #5a5e56;
-  --rule: #d0c9ba;
-  --accent: #1f3a2e;
-  --accent-fg: #efeae0;
-  --accent-tint: #dbe4db;
-  --ink: #1b1f1c;
-  --ink-fg: #efeae0;
-  --scrim: rgba(27, 31, 28, 0.42);
+  --bg: #f1ede1;
+  --surface: #e8e3d6;
+  --text: #1e1d1a;
+  --muted: #6b665c;
+  --rule: #dcd5c6;
+  --accent: #1e1d1a;
+  --accent-fg: #f1ede1;
+  --accent-tint: #e4ded0;
+  --ink: #1e1d1a;
+  --ink-fg: #f1ede1;
+  --scrim: rgba(30, 29, 26, 0.42);
   --error: #8a2f2f;
   color-scheme: light;
 }
 
 [data-concept="a"][data-mode="dark"] {
-  --bg: #121614;
-  --surface: #1a201c;
-  --text: #ece7dc;
-  --muted: #9a9b95;
-  --rule: #263029;
-  --accent: #7fb090;
-  --accent-fg: #121614;
-  --accent-tint: #1f2e26;
-  --ink: #ece7dc;
-  --ink-fg: #121614;
+  --bg: #12110f;
+  --surface: #1b1a17;
+  --text: #eee9dd;
+  --muted: #9c978c;
+  --rule: #2a2824;
+  --accent: #eee9dd;
+  --accent-fg: #12110f;
+  --accent-tint: #24221e;
+  --ink: #eee9dd;
+  --ink-fg: #12110f;
   --scrim: rgba(0, 0, 0, 0.6);
   --error: #e08a8a;
   color-scheme: dark;
@@ -84,15 +84,15 @@
   font-weight: var(--font-display-weight);
   font-optical-sizing: auto;
   letter-spacing: var(--font-display-tracking);
-  font-size: 30px;
-  line-height: 32px;
+  font-size: 38px;
+  line-height: 44px;
   text-wrap: balance;
 }
 
 @media (min-width: 1024px) {
   [data-concept="a"] .a-display {
-    font-size: 40px;
-    line-height: 40px;
+    font-size: 52px;
+    line-height: 56px;
   }
 }
 
@@ -134,7 +134,7 @@
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
+  transition: background-color 280ms ease, border-color 280ms ease, color 280ms ease, transform 160ms ease;
   outline: none;
 }
 
@@ -404,4 +404,57 @@
   width: 100%;
   transform-origin: left;
   background: var(--accent);
+}
+
+/* Atelier: answers read as the stylist's words, set in the display serif. */
+[data-concept="a"] .a-answers .a-control {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 400;
+}
+
+[data-concept="a"] .a-answers .a-control .hint {
+  font-family: var(--font-body);
+}
+
+/* Atelier: small labels are tracked capitals, like a fitting card. */
+[data-concept="a"] .a-label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Atelier: the house wordmark, centred in spaced capitals. */
+[data-concept="a"] .a-wordmark {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 44px;
+  letter-spacing: 0.36em;
+  margin-right: -0.36em;
+  text-transform: uppercase;
+}
+
+/* Atelier: a piece reads like a fitting card, house above, name in the serif. */
+[data-concept="a"] .a-piece {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  column-gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-piece .house {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-piece .name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 24px;
 }

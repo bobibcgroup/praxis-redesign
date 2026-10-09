@@ -14,7 +14,7 @@
 .a-split {
   display: grid;
   min-height: 0;
-  grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-rows: minmax(0, 45fr) minmax(0, 55fr);
 }
 
 .a-split[data-band="looks"] {
@@ -22,7 +22,7 @@
 }
 
 .a-split[data-band="home"] {
-  grid-template-rows: minmax(0, 36fr) minmax(0, 64fr);
+  grid-template-rows: minmax(0, 42fr) minmax(0, 58fr);
 }
 
 .a-split > .a-canvas {
@@ -104,6 +104,25 @@
   border-radius: var(--r-frame);
   overflow: hidden;
   background: var(--surface);
+}
+
+/* Full bleed: with nothing under it, the print fills the canvas edge to edge, like a lookbook page. */
+.a-canvas:has(> .a-frame-room[data-bleed]) {
+  padding: 0;
+}
+
+.a-frame-room[data-bleed] .a-print {
+  width: 100%;
+  height: 100%;
+}
+
+.a-frame-room[data-bleed] .a-frame {
+  aspect-ratio: auto;
+  height: 100%;
+}
+
+.a-frame-room[data-bleed] img {
+  object-position: center 12%;
 }
 
 /* Horizontal gallery without a visible scrollbar. */

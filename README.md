@@ -61,19 +61,23 @@ Browser storage (prototype only, replace with real persistence):
 
 ## Brand and element rules
 
-Forest and Bone with the Hairline element system. Tokens live in `src/a/a.css` under `[data-mode="light"]` and `[data-mode="dark"]`.
+Atelier (ivory and charcoal, after the stylist reference) with the Hairline element system. Tokens live in `src/a/a.css` under `[data-mode="light"]` and `[data-mode="dark"]`. One ink, no other hues.
 
 | Role | Light | Dark |
 |---|---|---|
-| Background (bone) | `#EFEAE0` | `#121614` |
-| Surface | `#E4DED2` | `#1A201C` |
-| Text | `#1B1F1C` | `#ECE7DC` |
-| Muted | `#5A5E56` | `#9A9B95` |
-| Rule | `#D0C9BA` | `#263029` |
-| Accent (forest) | `#1F3A2E` | `#7FB090` |
-| Accent tint | `#DBE4DB` | `#1F2E26` |
+| Background (ivory) | `#F1EDE1` | `#12110F` |
+| Surface | `#E8E3D6` | `#1B1A17` |
+| Text | `#1E1D1A` | `#EEE9DD` |
+| Muted | `#6B665C` | `#9C978C` |
+| Rule | `#DCD5C6` | `#2A2824` |
+| Accent (charcoal ink) | `#1E1D1A` | `#EEE9DD` |
+| Accent tint | `#E4DED0` | `#24221E` |
 
-Type: Source Serif 4 at 600 with optical sizing for the question, the home headline and the look title only; Geist 400 and 500 for everything else; Geist Mono for prices, stage names and counts. Body text 16 px on mobile, 15 px on desktop. Fonts load from Google Fonts in `src/shared/fonts.ts`; self-host them for production.
+Type: Playfair Display 400 for the question, the home headline, the look title, answer choices and piece names (38 px on mobile, 52 px on desktop for display); Geist 400 and 500 for everything else; small labels (step count, eyebrows, piece houses) in 11 px tracked capitals (`.a-label`); Geist Mono for prices. Body text 16 px on mobile, 15 px on desktop. Fonts load from Google Fonts in `src/shared/fonts.ts`; self-host them for production.
+
+Header: a centred PRAXIS wordmark in tracked capitals and a menu icon. The progress spine shows on desktop only; on mobile the step count and back arrow carry progress.
+
+Imagery: with nothing under it, the print runs full bleed across the canvas like a lookbook page; results keep the framed print with thumbnails. Motion: fades 0.7 s, page entry 0.6 s, reduced motion respected.
 
 Control rules (`src/a/ui/controls.tsx`, `a.css`): every control is 44 px tall with text centred by the box; label 15 px medium and hint 13 px muted on one baseline, 8 px apart; 2 px corners on controls, 0 on the print and sheets; 1 px rule borders; selected is ink fill; hover is surface fill; pressed scales to 0.98; focus is a 2 px accent ring with a 2 px gap. Prices are tabular figures on one right edge. The active thumbnail carries a 2 px accent underline flush to its width, 6 px below. Everything sits on an 8 px grid with 48 px desktop and 20 px mobile gutters.
 

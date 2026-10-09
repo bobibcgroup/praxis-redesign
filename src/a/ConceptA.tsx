@@ -20,7 +20,7 @@ import { DnaBuild, DnaHome, DnaResult } from "./screens/dna/DnaResult";
 import { DnaFace, DnaFit, DnaInspiration, DnaLifestyle } from "./screens/dna/DnaSteps";
 import { Gate } from "./ui/Gate";
 
-const FONTS = "https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600&family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap";
+const FONTS = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap";
 
 function Fallback() {
   const { href } = useJourney();

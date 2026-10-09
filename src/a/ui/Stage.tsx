@@ -34,10 +34,10 @@ export function Stage({ spine, back, wordmark, canvas, children, actions, band =
           <div className="a-body">
             <motion.div
               key={pathname}
-              initial={reduced ? false : { opacity: 0, y: 12 }}
+              initial={reduced ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
-              className="flex min-h-0 w-full flex-col pt-2 lg:max-w-[480px] lg:pt-4"
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="flex min-h-0 w-full flex-col pt-6 lg:max-w-[480px] lg:pt-12"
             >
               {children}
             </motion.div>

@@ -29,13 +29,13 @@ export function PiecesSheet({ look, open, onClose, mode }: PiecesSheetProps) {
       <div className="flex flex-col gap-6">
         {groups.map((g) => (
           <section key={g.vendor} aria-label={g.vendor}>
-            <h3 className="text-[13px] font-medium text-[var(--muted)]">{g.vendor}</h3>
+            <h3 className="a-label text-[var(--muted)]">{g.vendor}</h3>
             <div className="mt-2" role="list">
               {g.pieces.map((p) => (
-                <div key={p.id} className="a-row" role="listitem">
+                <div key={p.id} className="a-piece" role="listitem">
                   <span>
-                    {p.name}
-                    <span className="vendor">{SLOT_LABEL[p.slot]}</span>
+                    <span className="house a-label">{SLOT_LABEL[p.slot]}</span>
+                    <span className="name">{p.name}</span>
                   </span>
                   <span className="a-mono">{money(p.price)}</span>
                 </div>
@@ -45,13 +45,13 @@ export function PiecesSheet({ look, open, onClose, mode }: PiecesSheetProps) {
         ))}
         {owned.length > 0 ? (
           <section aria-label="Already yours">
-            <h3 className="text-[13px] font-medium text-[var(--muted)]">Already yours</h3>
+            <h3 className="a-label text-[var(--muted)]">Already yours</h3>
             <div className="mt-2" role="list">
               {owned.map((p) => (
-                <div key={p.id} className="a-row" role="listitem">
+                <div key={p.id} className="a-piece" role="listitem">
                   <span>
-                    {p.name}
-                    <span className="vendor">{SLOT_LABEL[p.slot]}</span>
+                    <span className="house a-label">{SLOT_LABEL[p.slot]}</span>
+                    <span className="name">{p.name}</span>
                   </span>
                   <span className="a-mono text-[var(--muted)]">Owned</span>
                 </div>

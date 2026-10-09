@@ -23,14 +23,14 @@ export interface FrameProps {
   belowHeight?: number;
 }
 
-const FADE = { duration: 0.4, ease: "easeOut" as const };
+const FADE = { duration: 0.7, ease: "easeInOut" as const };
 
 export function Frame({ image, alt, preview, night = false, liveRef, live = false, overlay, reduced, below, belowHeight = 0 }: FrameProps) {
   const fade = reduced ? { duration: 0 } : FADE;
   const style = { "--below": `${belowHeight}px` } as CSSProperties;
 
   return (
-    <div className="a-frame-room">
+    <div className="a-frame-room" data-bleed={below ? undefined : ""}>
       <div className="a-print" style={style}>
         <div className="a-frame">
           <div className="relative h-full w-full overflow-hidden bg-[var(--surface)]">

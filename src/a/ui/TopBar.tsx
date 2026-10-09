@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, Menu as MenuIcon, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { FRESH, useJourney } from "../lib/journeyContext";
 import { TextButton } from "./controls";
@@ -21,10 +21,11 @@ interface TopBarProps {
   spine?: SpineStep[];
   /** Where the arrow goes. "back" uses history. */
   back?: string | "back" | null;
+  /** Kept for callers; the wordmark now sits centred on every screen. */
   wordmark?: boolean;
 }
 
-export function TopBar({ spine, back = null, wordmark = false }: TopBarProps) {
+export function TopBar({ spine, back = null }: TopBarProps) {
   const { href, begun, user, openGate } = useJourney();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
@@ -42,13 +43,12 @@ export function TopBar({ spine, back = null, wordmark = false }: TopBarProps) {
             <ArrowLeft size={20} strokeWidth={1.5} />
           </button>
         )}
-        {wordmark && (
-          <Link to={href("", FRESH)} className="a-display ml-3 text-[24px] leading-none text-[var(--text)] lg:ml-0 lg:text-[24px]">
-            Praxis
-          </Link>
-        )}
         {spine && <Spine steps={spine} />}
       </div>
+
+      <Link to={href("", FRESH)} aria-label="Praxis, home" className="a-wordmark absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--text)]">
+        Praxis
+      </Link>
 
       <div className="flex items-center">
         {begun ? (
@@ -72,9 +72,9 @@ export function TopBar({ spine, back = null, wordmark = false }: TopBarProps) {
           aria-label="Menu"
           aria-expanded={menu}
           onClick={() => setMenu(true)}
-          className="a-display flex h-11 w-11 shrink-0 items-center justify-center text-[26px] leading-none text-[var(--text)] transition-colors duration-200 hover:text-[var(--accent)] lg:text-[26px]"
+          className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text)] transition-colors duration-300 hover:text-[var(--muted)]"
         >
-          P
+          <MenuIcon size={20} strokeWidth={1.25} />
         </button>
       </div>
 
@@ -85,7 +85,7 @@ export function TopBar({ spine, back = null, wordmark = false }: TopBarProps) {
 
 function Spine({ steps }: { steps: SpineStep[] }) {
   return (
-    <nav aria-label="Progress" className="a-spine ml-1 lg:ml-2">
+    <nav aria-label="Progress" className="a-spine a-desktop ml-1 lg:ml-2">
       <ol className="flex items-center gap-3 sm:gap-5">
         {steps.map((s) => {
           const color = s.state === "done" ? "text-[var(--accent)]" : s.state === "current" ? "text-[var(--text)]" : "text-[var(--muted)]";
@@ -134,7 +134,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reduced ? 0 : 0.2 }}
+          transition={{ duration: reduced ? 0 : 0.45, ease: "easeInOut" }}
           className="fixed inset-0 z-50 flex flex-col bg-[var(--bg)]"
         >
           <div className="flex h-14 items-center justify-end pr-2 lg:pr-6">
@@ -145,7 +145,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
           <nav className="flex flex-1 flex-col justify-center px-5 pb-14 lg:px-12" aria-label="Sections">
             <ul className="flex flex-col gap-2">
               {items.map((item, i) => (
-                <motion.li key={item.label} initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.24, delay: reduced ? 0 : 0.05 * i, ease: "easeOut" }}>
+                <motion.li key={item.label} initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.5, delay: reduced ? 0 : 0.08 * i, ease: "easeOut" }}>
                   <Link to={item.to} onClick={onClose} className="a-display inline-block py-2 text-[var(--text)] transition-colors duration-200 hover:text-[var(--accent)]">
                     {item.label}
                   </Link>
