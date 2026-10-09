@@ -10,7 +10,7 @@ import { useDnaAnswers, useDnaPortrait } from "../../lib/dna";
 import { useAttachStream } from "../../lib/stream";
 import { dnaSpine } from "../../lib/spine";
 import { Capture } from "../../ui/Capture";
-import { Caption, ChoiceList, PrimaryButton, TextButton } from "../../ui/controls";
+import { Caption, ChoiceList, Count, PrimaryButton, TextButton } from "../../ui/controls";
 import { Frame } from "../../ui/Frame";
 import { Stage } from "../../ui/Stage";
 
@@ -38,6 +38,7 @@ export function DnaFace() {
         ) : undefined
       }
     >
+      <Count step={1} total={4} />
       <h1 className="a-display">Let’s find your colours.</h1>
       <Caption className="mt-4 max-w-[36ch]">A daylight photo with no filter shows me which colours suit you.</Caption>
       {!portrait ? (
@@ -72,6 +73,7 @@ export function DnaFit() {
 
   return (
     <Stage spine={dnaSpine("fit", href)} back={href("dna/face")} canvas={<Frame image={portrait} alt="Your portrait" reduced={reduced} />}>
+      <Count step={2} total={4} />
       <h1 className="a-display">How do you like your clothes to fit?</h1>
       <div className="mt-6">
         <ChoiceList label="How do you like your clothes to fit?" options={FITS} value={pending ?? dna.fit} onChange={(id) => setPending(id)} />
@@ -96,6 +98,7 @@ export function DnaLifestyle() {
 
   return (
     <Stage spine={dnaSpine("life", href)} back={href("dna/fit")} canvas={<Frame image={portrait} alt="Your portrait" reduced={reduced} />}>
+      <Count step={3} total={4} />
       <h1 className="a-display">What does most of your week look like?</h1>
       <div className="mt-6">
         <ChoiceList label="What does most of your week look like?" options={LIFESTYLES} value={pending ?? dna.life} onChange={(id) => setPending(id)} />
@@ -125,6 +128,7 @@ export function DnaInspiration() {
       canvas={<Frame image={last?.images[0] ?? portrait} alt={last ? `${last.label} look` : "Your portrait"} reduced={reduced} />}
       actions={<PrimaryButton onClick={() => go("dna/build", { taste: picked.length ? picked.join(",") : null })}>{picked.length ? "Build my Style DNA" : "Skip this"}</PrimaryButton>}
     >
+      <Count step={4} total={4} />
       <h1 className="a-display">Which of these feel most like you?</h1>
       <Caption className="mt-4">Pick up to two.</Caption>
       <div role="group" aria-label="Inspiration" className="a-answers mt-6 grid grid-cols-2">

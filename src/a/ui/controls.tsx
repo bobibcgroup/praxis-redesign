@@ -57,6 +57,15 @@ export function Field({ id, label, value, onChange, placeholder, type = "text", 
   );
 }
 
+/** "Step 2 of 5" above a question, so the end is always in sight. */
+export function Count({ step, total }: { step: number; total: number }) {
+  return (
+    <p className="a-mono mb-2 text-[13px] leading-5 text-[var(--muted)]">
+      Step {step} of {total}
+    </p>
+  );
+}
+
 export function Caption({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <p className={`text-[13px] leading-5 text-[var(--muted)] ${className}`}>{children}</p>;
 }

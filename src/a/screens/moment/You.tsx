@@ -1,5 +1,5 @@
 /**
- * The optional sixth step: add your face, add one item, or skip both.
+ * The optional fifth step: add your face, add one item, or skip both.
  * Face capture and the item live on their own routes so Back works.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -8,7 +8,8 @@ import { useJourney, type Slot } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, resolveLooks, SAMPLE_ITEMS, SLOT_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { fileToDataUrl, shrinkImage } from "../../lib/image";
-import { Caption, ChoiceList, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { Caption, ChoiceList, Count, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { MOMENT_STEPS } from "./Question";
 import { Capture } from "../../ui/Capture";
 import { Frame } from "../../ui/Frame";
 import { useAttachStream } from "../../lib/stream";
@@ -36,6 +37,7 @@ export function You() {
       canvas={<Frame {...canvas} reduced={reduced} />}
       actions={<PrimaryButton onClick={() => go("moment/build")}>{anything ? "Show my looks" : "Skip and show my looks"}</PrimaryButton>}
     >
+      <Count step={5} total={MOMENT_STEPS} />
       <h1 className="a-display">Want me to make it more personal?</h1>
       <Caption className="mt-4 max-w-[36ch]">I can show the looks on you or build them around something you already own.</Caption>
       <div className="a-answers mt-6">
@@ -69,6 +71,7 @@ export function YouFace() {
       canvas={<Frame {...canvas} liveRef={videoRef} live={Boolean(stream)} reduced={reduced} />}
       actions={<QuietButton onClick={() => go("moment/you")}>Not now</QuietButton>}
     >
+      <Count step={5} total={MOMENT_STEPS} />
       <h1 className="a-display">Let’s see it on you.</h1>
       <div className="mt-6">
         <Capture
@@ -128,6 +131,7 @@ export function YouItem() {
       canvas={<Frame {...canvas} reduced={reduced} />}
       actions={slot ? <TextButton onClick={() => setSlot(null)}>Choose another piece</TextButton> : undefined}
     >
+      <Count step={5} total={MOMENT_STEPS} />
       <h1 className="a-display">{slot ? `Show me the ${SLOT_LABEL[slot].toLowerCase()}.` : "What do you want me to work with?"}</h1>
       <div className="mt-6">
         {!slot ? (

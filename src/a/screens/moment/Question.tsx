@@ -8,7 +8,7 @@ import { OCCASIONS, SPEND, TIMES, VENUES, VIBES, type ChoiceOption } from "../..
 import { useJourney, type Answers } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, resolveLooks } from "../../lib/looks";
 import { momentSpine, type MomentGroup } from "../../lib/spine";
-import { ChoiceList } from "../../ui/controls";
+import { ChoiceList, Count } from "../../ui/controls";
 import { Frame } from "../../ui/Frame";
 import { Stage } from "../../ui/Stage";
 
@@ -39,11 +39,13 @@ const STEPS: Record<string, StepDef> = {
     prev: "moment/occasion",
     requires: ["occasion"],
   },
-  feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/venue", requires: ["occasion", "venue", "time"] },
-  spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/you", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
+  feel: { key: "vibe", group: "feel", step: 3, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/venue", requires: ["occasion", "venue", "time"] },
+  spend: { key: "spend", group: "feel", step: 4, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/you", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
 };
 
 const ADVANCE_MS = 260;
+/** Occasion, place, feel, spend, you. */
+export const MOMENT_STEPS = 5;
 
 /** The old time route: day or night now sits on the place step. */
 export function TimeRedirect() {
@@ -80,6 +82,7 @@ function Place() {
       back={href(def.prev)}
       canvas={<Frame image={image} alt={`${occasionLabel(answers.occasion)} look`} night={time === "NIGHT"} preview={OCCASIONS} reduced={reduced} />}
     >
+      <Count step={def.step} total={MOMENT_STEPS} />
       <h1 className="a-display">{def.question(answers)}</h1>
       <div className="mt-6">
         <ChoiceList
@@ -136,6 +139,7 @@ function OneQuestion({ step }: { step: string }) {
       back={def.prev === "" ? href("") : href(def.prev)}
       canvas={<Frame image={image} alt={answers.occasion ? `${occasionLabel(answers.occasion)} look` : ""} night={preview.time === "NIGHT"} preview={OCCASIONS} reduced={reduced} />}
     >
+      <Count step={def.step} total={MOMENT_STEPS} />
       <h1 className="a-display">{def.question(answers)}</h1>
       <div className="mt-6">
         <ChoiceList label={def.question(answers)} options={def.options(answers)} value={value} onChange={(id) => setPending(id)} />
