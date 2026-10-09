@@ -14,10 +14,11 @@ interface Props {
   activeId: string;
   onPick: (id: string) => void;
   onClose: () => void;
+  onShare?: () => void;
   reduced: boolean;
 }
 
-export function LookViewer({ open, looks, activeId, onPick, onClose, reduced }: Props) {
+export function LookViewer({ open, looks, activeId, onPick, onClose, onShare, reduced }: Props) {
   const index = Math.max(0, looks.findIndex((l) => l.id === activeId));
   const look = looks[index];
 
@@ -91,6 +92,11 @@ export function LookViewer({ open, looks, activeId, onPick, onClose, reduced }: 
               ))}
             </div>
             <p className="text-[13px] leading-5 text-[var(--muted)]">Swipe for the other looks. Swipe down to close.</p>
+            {onShare ? (
+              <button type="button" onClick={onShare} className="a-control a-secondary mt-1">
+                Share this look
+              </button>
+            ) : null}
           </div>
         </motion.div>
       ) : null}

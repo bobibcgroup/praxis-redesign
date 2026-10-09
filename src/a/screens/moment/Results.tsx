@@ -13,6 +13,7 @@ import { momentSpine } from "../../lib/spine";
 import { Completion, CompletionActions } from "../../ui/Completion";
 import { LinkButton, PlusMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
 import { LookViewer } from "../../ui/LookViewer";
+import { ShareSheet } from "../../ui/ShareSheet";
 import { BELOW, Frame } from "../../ui/Frame";
 import { LookDetails } from "../../ui/LookDetails";
 import { PiecesSheet } from "../../ui/PiecesSheet";
@@ -25,6 +26,7 @@ export function Results() {
   const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
   const [sheet, setSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const hero = resolved?.hero ?? null;
   const selection = usePieceSelection(hero);
   const label = occasionLabel(answers.occasion);
@@ -46,6 +48,7 @@ export function Results() {
   const isPick = hero.id === defaultHeroId(looks, answers.vibe);
   const pick = (id: string) => go("moment/results", { hero: id }, { replace: true });
   const hasFace = Boolean(answers.face || store.dna?.portrait);
+  const eyebrow = isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`;
   const seeOnMe = () => gated("tryon", () => go(hasFace ? "moment/tryon" : "moment/you/face"));
 
   return (
@@ -81,10 +84,11 @@ export function Results() {
               Check out
               <span className="hint">{money(selection.total)}</span>
             </PrimaryButton>
+            <TextButton onClick={() => setSharing(true)}>Share</TextButton>
             <TextButton onClick={() => gated("save", save)} disabled={saved}>
               {saved ? "Saved" : "Save"}
             </TextButton>
-            <LinkButton to={href("", FRESH)} variant="tertiary" className="ml-auto lg:-mr-4">
+            <LinkButton to={href("", FRESH)} variant="tertiary" className="a-desktop ml-auto lg:-mr-2">
               Try a new look
             </LinkButton>
           </div>
@@ -93,9 +97,16 @@ export function Results() {
     >
       <LookDetails
         look={hero}
-        eyebrow={isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`}
+        eyebrow={eyebrow}
         compact={done !== null}
         selection={selection}
+        end={
+          done ? null : (
+            <LinkButton to={href("", FRESH)} variant="tertiary" className="a-phone mt-2 self-start !px-0">
+              Try a new look
+            </LinkButton>
+          )
+        }
         personal={
           done ? null : (
             <div className="mt-6">
@@ -114,7 +125,19 @@ export function Results() {
         }
       />
       {done ? <Completion kind={done} /> : null}
-      <LookViewer open={viewer} looks={looks} activeId={hero.id} onPick={pick} onClose={() => setViewer(false)} reduced={reduced} />
+      <LookViewer
+        open={viewer}
+        looks={looks}
+        activeId={hero.id}
+        onPick={pick}
+        onClose={() => setViewer(false)}
+        onShare={() => {
+          setViewer(false);
+          setSharing(true);
+        }}
+        reduced={reduced}
+      />
+      <ShareSheet look={hero} eyebrow={eyebrow} occasion={label.toLowerCase()} open={sharing} onClose={() => setSharing(false)} />
       <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
     </Stage>
   );
