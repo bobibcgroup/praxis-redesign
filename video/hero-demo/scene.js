@@ -7,15 +7,14 @@
  * The story, 8.5 s, looping:
  *   0.0  the occasions, as on the home page; Dinner is tapped
  *   1.0  the Dinner photograph opens to fill the frame
- *   1.6  the build: "I'm putting your looks together." with the real stage names
+ *   1.6  the build: "I'm putting your looks together." over a filling hairline, as in the app
  *   2.9  the three dinner looks develop out of the build's ghost prints
  *   5.3  the Sharper look is tapped and opens as the results page does: the print, the
  *        stylist's note, the pieces, the three looks as thumbnails
  *   7.0  back to the three looks, held
  *   8.0  the occasions return over it, which is frame one again
  *
- * Copy, looks, pieces and stage names are the app's own (src/lib/outfitLibrary.ts,
- * src/shared/catalog.ts, src/shared/guided.ts). No vendors or prices are shown.
+ * Copy, looks and pieces are the app's own (src/lib/outfitLibrary.ts, src/shared/catalog.ts). No vendors or prices are shown.
  */
 (function () {
   const params = new URLSearchParams(location.search);
@@ -38,7 +37,6 @@
   const PICK = 1;
   const NOTE = "A blazer over a fitted knit looks intentional, and the boots finish it.";
   const PIECES = ["Blazer over a fitted knit", "Tailored trousers", "Chelsea boots"];
-  const STAGES = ["Finding the right pieces", "Putting three looks together"];
 
   // ---------- layout (CSS px; rendered at 2x) ----------
   const L = MOBILE ? mobileLayout() : desktopLayout();
@@ -62,7 +60,6 @@
       eyebrow: { y: 50, size: 11 },
       headline: { y: 70, size: 28, lh: 36 },
       progress: { y: 118, w: inner },
-      stage: { y: 128, size: 12 },
       printLabel: { gap: 14, size: 11, title: 17 },
       hero: { x: P, y: 50, w: 232, h: 482 },
       col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 28, note: 124, noteSize: 15, noteLh: 22, rows: 214, rowH: 44, rowSize: 15, box: 16 },
@@ -96,7 +93,6 @@
       eyebrow: { y: 30, size: 10 },
       headline: { y: 46, size: 21, lh: 28 },
       progress: { y: 86, w: inner },
-      stage: { y: 94, size: 11 },
       printLabel: { gap: 10, size: 10, title: 14 },
       hero: { x: P, y: 28, w: heroW, h: 292 },
       col: { x: colX, w: colW, eyebrow: 32, title: 50, titleSize: 22, note: 112, noteSize: 13, noteLh: 19, rows: 208, rowH: 38, rowSize: 12, box: 14 },
@@ -173,7 +169,6 @@
     buildLine: el("div", "abs serif", stage, "I’m putting your looks together."),
     track: el("div", "abs"),
     fill: el("div", "abs"),
-    stages: STAGES.map((s) => el("div", "abs", stage, s)),
     resultEyebrow: el("div", "abs label", stage, "My picks for dinner"),
     resultLine: el("div", "abs serif", stage, "Three looks for dinner."),
   };
@@ -185,7 +180,6 @@
   place(header.fill, { x: L.P, y: L.progress.y, w: L.progress.w, h: 1 });
   header.fill.style.background = "#1e1d1a";
   header.fill.style.transformOrigin = "left center";
-  for (const e of header.stages) text(e, { x: L.P, y: L.stage.y, size: L.stage.size, color: "#6b665c" });
 
   const prints = LOOKS.map((look) => {
     const c = el("div", "abs print");
@@ -293,8 +287,9 @@
     d.c.style.borderRadius = lerp(2, 0, open) + "px";
     d.img.style.transform = `scale(${1 + 0.05 * sel - 0.05 * sel * open + 0.04 * inOut(span(t, 1.2, 2.0))})`;
     d.dim.style.opacity = 0.2 * sel * (1 - open) + 0.32 * open;
-    d.name.style.opacity = 1 - out(span(t, 1.0, 1.25));
-    d.arrow.style.opacity = 1 - out(span(t, 1.0, 1.25));
+    const named = t >= 8.0 ? 1 : 1 - out(span(t, 1.0, 1.25));
+    d.name.style.opacity = named;
+    d.arrow.style.opacity = named;
     d.arrow.style.transform = `translateX(${4 * sel}px)`;
     d.c.style.opacity = t < 1.5 ? 1 : t >= 8.0 ? back : 1 - inOut(span(t, 1.5, 1.95));
     place(ring, pushed);
@@ -310,8 +305,6 @@
     header.track.style.opacity = buildOn;
     header.fill.style.opacity = buildOn;
     header.fill.style.transform = `scaleX(${inOut(span(t, 1.85, 2.85))})`;
-    header.stages[0].style.opacity = window_(t, 1.9, 0.2, 2.42, 0.12);
-    header.stages[1].style.opacity = Math.min(window_(t, 2.42, 0.2, 2.95, 0.2), 1);
 
     // The results header, while the three looks are on screen.
     const resultOn = Math.min(out(span(t, 3.0, 3.35)), 1 - out(span(t, 5.35, 5.55))) || out(span(t, 7.3, 7.7));
