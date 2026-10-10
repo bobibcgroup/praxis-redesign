@@ -10,4 +10,3 @@ Free photos from Unsplash, used under the Unsplash License (free for commercial 
 | wedding | https://unsplash.com/photos/white-flower-arrangement-i4NqeIHNbTI |
 | party | https://unsplash.com/photos/clear-martini-glass-on-brown-wooden-table-QjUY7auDzUQ |
 | dna (Style DNA) | https://unsplash.com/photos/a-close-up-of-a-brown-and-black-fabric-t3mSDMjd9ZY |
-| backdrop (behind the demo) | https://unsplash.com/photos/a-table-set-for-two-with-wine-and-candles-KfuBPFru1CQ |
