@@ -377,12 +377,16 @@
   object-fit: cover;
   object-position: top;
   opacity: 0.7;
-  transition: opacity 160ms ease;
+  transition: opacity 250ms ease;
 }
 
 [data-concept="a"] .a-thumb.is-active img,
 [data-concept="a"] .a-thumb:hover img {
   opacity: 1;
+}
+
+[data-concept="a"] .a-thumb:not(.is-active):hover .a-thumb-label {
+  color: var(--text);
 }
 
 [data-concept="a"] .a-thumb-label {
@@ -392,13 +396,15 @@
   line-height: 16px;
   text-align: center;
   color: var(--muted);
+  transition: color 250ms ease;
 }
 
 [data-concept="a"] .a-thumb.is-active .a-thumb-label {
   color: var(--text);
 }
 
-[data-concept="a"] .a-thumb.is-active::after {
+/* The underline draws in under the look that is shown, and out from the one that was. */
+[data-concept="a"] .a-thumb::after {
   content: "";
   position: absolute;
   left: 0;
@@ -406,6 +412,19 @@
   bottom: -6px;
   height: 2px;
   background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+[data-concept="a"] .a-thumb.is-active::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-concept="a"] .a-thumb::after,
+  [data-concept="a"] .a-thumb-label {
+    transition: none;
+  }
 }
 
 [data-concept="a"] .a-thumb:focus-visible {
@@ -630,7 +649,7 @@
   font-weight: 400;
 }
 
-/* The full-screen look on a phone. */
+/* A look opened large, on every screen: the photo on the page's ivory, a few quiet controls. */
 [data-concept="a"] .a-viewer {
   position: fixed;
   inset: 0;
@@ -645,27 +664,147 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 8px 0 20px;
+  height: calc(56px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
   flex: none;
 }
 
-[data-concept="a"] .a-viewer-stage {
+[data-concept="a"] .a-viewer-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  border-radius: var(--r-control);
+}
+
+[data-concept="a"] .a-viewer-btn:disabled,
+[data-concept="a"] .a-viewer-btn[aria-disabled="true"] {
+  opacity: 0.3;
+  cursor: default;
+}
+
+[data-concept="a"] .a-viewer-room {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
-  touch-action: none;
 }
 
-[data-concept="a"] .a-viewer-stage img {
+/* The gesture surface: the browser's own panning and zooming stop here, so a pinch zooms the photo, not the page. */
+[data-concept="a"] .a-viewer-stage {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  cursor: zoom-in;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-concept="a"] .a-viewer-stage[data-zoomed] {
+  cursor: grab;
+}
+
+[data-concept="a"] .a-viewer-stage[data-zoomed]:active {
+  cursor: grabbing;
+}
+
+[data-concept="a"] .a-viewer-slide {
+  position: absolute;
+  inset: 0;
+}
+
+/* Centred on the room by its own margins, so a photo wider than a phone crops evenly on both sides. */
+[data-concept="a"] .a-viewer-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: block;
+  max-width: none;
   object-fit: cover;
-  object-position: center top;
+  transform-origin: 50% 50%;
+  will-change: transform;
   user-select: none;
   -webkit-user-drag: none;
+  pointer-events: none;
+  transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+[data-concept="a"] .a-viewer-img[data-live] {
+  transition: none;
+}
+
+/* Previous and next: quiet chevrons on the ivory at either side, from a tablet up. */
+[data-concept="a"] .a-viewer-side {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  display: none;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+[data-concept="a"] .a-viewer-side[data-side="prev"] {
+  left: max(16px, env(safe-area-inset-left));
+}
+
+[data-concept="a"] .a-viewer-side[data-side="next"] {
+  right: max(16px, env(safe-area-inset-right));
+}
+
+@media (min-width: 640px) {
+  [data-concept="a"] .a-viewer-side {
+    display: grid;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-viewer-side[data-side="prev"] {
+    left: 32px;
+  }
+
+  [data-concept="a"] .a-viewer-side[data-side="next"] {
+    right: 32px;
+  }
+}
+
+/* Zoom out, zoom in, and Reset once zoomed: a small group in the corner, over the photo's edge. */
+[data-concept="a"] .a-viewer-zoom {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+/* On a phone the photo runs edge to edge, so the group sits top right on the plain backdrop, clear of the shoes. */
+@media (max-width: 639px) {
+  [data-concept="a"] .a-viewer-zoom {
+    top: 16px;
+    bottom: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-viewer-zoom {
+    right: 32px;
+    bottom: 24px;
+  }
+}
+
+[data-concept="a"] .a-viewer-reset {
+  height: 44px;
+  padding: 0 12px 0 16px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--text);
+  border-right: 1px solid var(--rule);
 }
 
 [data-concept="a"] .a-viewer-foot {
@@ -676,6 +815,13 @@
   gap: 8px;
   padding: 16px 20px max(16px, env(safe-area-inset-bottom));
   text-align: center;
+}
+
+[data-concept="a"] .a-viewer-title {
+  font-family: var(--font-display);
+  font-weight: var(--font-display-weight);
+  font-size: 22px;
+  line-height: 30px;
 }
 
 [data-concept="a"] .a-viewer-dots {
@@ -694,16 +840,94 @@
   background: var(--ink);
 }
 
-/* The tap target that opens the viewer, over the print on a phone. */
+/* The results print opens the viewer: a tap or click anywhere on it, a sideways swipe moves between
+   the looks, and up or down stays with the page (and the page can still be zoomed). */
 [data-concept="a"] .a-enlarge {
   position: absolute;
   inset: 0;
   cursor: zoom-in;
+  touch-action: pan-y pinch-zoom;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Accent at the edge, page colour inside it: one of the two always shows on a light or a dark photo. */
+[data-concept="a"] .a-enlarge:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 4px var(--bg);
+}
+
+/* The cue that the photo opens larger: a small glass in the corner; on desktop it reads View details on hover. */
+[data-concept="a"] .a-zoom-cue {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 8px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--r-control);
+  pointer-events: none;
+}
+
+[data-concept="a"] .a-zoom-cue-text {
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  transition: max-width 300ms ease, opacity 200ms ease, margin 300ms ease;
 }
 
 @media (min-width: 1024px) {
-  [data-concept="a"] .a-enlarge {
-    display: none;
+  [data-concept="a"] .a-zoom-cue {
+    right: 32px;
+    bottom: 32px;
+    height: 44px;
+    padding: 0 14px;
+  }
+
+  [data-concept="a"] .a-enlarge:hover ~ .a-zoom-cue .a-zoom-cue-text,
+  [data-concept="a"] .a-enlarge:focus-visible ~ .a-zoom-cue .a-zoom-cue-text {
+    max-width: 140px;
+    opacity: 1;
+    margin-left: 10px;
+  }
+}
+
+/* Previous, which of three, next: bottom left of the desktop print. */
+[data-concept="a"] .a-look-nav {
+  position: absolute;
+  left: 32px;
+  bottom: 32px;
+  display: none;
+  align-items: center;
+  height: 44px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--r-control);
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-look-nav {
+    display: flex;
+  }
+}
+
+[data-concept="a"] .a-look-nav .a-label {
+  min-width: 64px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-concept="a"] .a-viewer-img,
+  [data-concept="a"] .a-zoom-cue-text {
+    transition: none;
   }
 }
 

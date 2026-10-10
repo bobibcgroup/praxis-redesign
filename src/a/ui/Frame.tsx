@@ -4,7 +4,7 @@
  * line, thumbnails, caption) is part of the same block so the print sizes
  * itself around them and never outgrows the column.
  */
-import type { CSSProperties, ReactNode, RefObject } from "react";
+import type { CSSProperties, KeyboardEventHandler, ReactNode, RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 export interface FrameProps {
@@ -27,20 +27,42 @@ export interface FrameProps {
   bleedDesktop?: boolean;
   /** A result page: the print keeps its hard lookbook edge instead of fading into the page. */
   book?: boolean;
+  /** Beside the print on a phone or tablet instead of under it (the three looks on the results). */
+  aside?: ReactNode;
+  /**
+   * Moving between looks: the new photo glides in from the side it came from (dir) over a short
+   * crossfade, and mid-swipe the photo follows the finger (drag, in px).
+   */
+  swap?: { dir: number; drag: number };
+  /** Names the print and its looks as one group, for keys that move between them. */
+  label?: string;
+  onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 }
 
 const FADE = { duration: 0.7, ease: "easeInOut" as const };
+const SWAP = { duration: 0.3, ease: [0.22, 0.61, 0.36, 1] as const };
+const SWAP_SHIFT = 32;
 
-export function Frame({ image, alt, preview, night = false, golden = null, liveRef, live = false, overlay, reduced, below, belowHeight = 0, bleedDesktop = false, book = false }: FrameProps) {
+export function Frame({ image, alt, preview, night = false, golden = null, liveRef, live = false, overlay, reduced, below, belowHeight = 0, bleedDesktop = false, book = false, aside, swap, label, onKeyDown }: FrameProps) {
   const fade = reduced ? { duration: 0 } : FADE;
   const style = { "--below": `${belowHeight}px` } as CSSProperties;
+  const framed = Boolean(below || aside);
+  const shift = reduced ? 0 : SWAP_SHIFT * (swap?.dir ?? 0);
 
   return (
-    <div className="a-frame-room" data-bleed={below ? (bleedDesktop ? "desktop" : undefined) : "always"} data-book={book ? "" : undefined}>
+    <div
+      className="a-frame-room"
+      data-bleed={framed ? (bleedDesktop ? "desktop" : undefined) : "always"}
+      data-book={book ? "" : undefined}
+      data-aside={aside ? "" : undefined}
+      role={label ? "group" : undefined}
+      aria-label={label}
+      onKeyDown={onKeyDown}
+    >
       <div className="a-print" style={style}>
         <div className="a-frame">
           <div className="relative h-full w-full overflow-hidden bg-[var(--surface)]">
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} custom={shift}>
               {preview && !image && !live && (
                 <motion.div
                   key="preview"
@@ -56,7 +78,22 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
                   ))}
                 </motion.div>
               )}
-              {image && !live && (
+              {image && !live && swap ? (
+                <motion.img
+                  key={image}
+                  src={image}
+                  alt={alt}
+                  custom={shift}
+                  /* Leaves from where the swipe let go, onward the same way, on its own timing. */
+                  variants={{ leave: (s: number, now: { x?: string | number }) => ({ opacity: 0, x: Number(now.x ?? 0) - s, transition: reduced ? { duration: 0 } : SWAP }) }}
+                  initial={{ opacity: 0, x: shift }}
+                  animate={{ opacity: 1, x: swap.drag }}
+                  exit="leave"
+                  transition={reduced ? { duration: 0 } : swap.drag !== 0 ? { x: { duration: 0 }, opacity: SWAP } : SWAP}
+                  className="absolute inset-0 h-full w-full object-cover object-top"
+                  draggable={false}
+                />
+              ) : image && !live ? (
                 <motion.img
                   key={image}
                   src={image}
@@ -68,7 +105,7 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
                   className="absolute inset-0 h-full w-full object-cover object-top"
                   draggable={false}
                 />
-              )}
+              ) : null}
             </AnimatePresence>
 
             {!image && !preview && !live ? (
@@ -104,6 +141,7 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
         </div>
         {below}
       </div>
+      {aside ? <div className="a-aside">{aside}</div> : null}
     </div>
   );
 }

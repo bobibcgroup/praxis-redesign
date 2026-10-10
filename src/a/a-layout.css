@@ -170,6 +170,11 @@
 @media (min-width: 1024px) {
   .a-body {
     flex: 0 1 auto;
+    /* A scrolling box clips ink that hangs below its content: the serif's descenders (the g of
+       "together") reach past the last line box, and the page entry starts 8 px low. This room
+       keeps them whole; the negative margin keeps every layout exactly where it was. */
+    padding-bottom: 16px;
+    margin-bottom: -16px;
   }
 
   [data-concept="a"] .a-actions {
@@ -243,6 +248,101 @@
 
   .a-frame-room[data-bleed="desktop"] .a-frame > div > img {
     object-position: center 20%;
+  }
+}
+
+/* Results on a phone or tablet: the three looks stand beside the print, like the index on
+   desktop, so the print keeps the full height of the band. */
+@media (max-width: 1023px) {
+  .a-frame-room[data-aside] {
+    --aside: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .a-frame-room[data-aside] .a-print {
+    flex: none;
+    width: min(calc(100cqw - var(--aside) - 12px), calc(100cqh * 0.75));
+  }
+
+  .a-aside {
+    flex: none;
+  }
+
+  [data-concept="a"] .a-aside .a-thumbs-vertical {
+    gap: 12px;
+    padding: 10px;
+  }
+
+  [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb,
+  [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb img {
+    width: 56px;
+  }
+
+  [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb img {
+    height: 75px;
+  }
+
+  @container (max-height: 340px) {
+    .a-print {
+      --aside: 60px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical {
+      gap: 8px;
+      padding: 8px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb,
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb img {
+      width: 44px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb img {
+      height: 59px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb-label {
+      margin-top: 4px;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+    }
+  }
+
+  /* The smallest phones: the column shrinks once more so all three still fit the band. */
+  @container (max-height: 268px) and (max-width: 399px) {
+    .a-print {
+      --aside: 52px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb,
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb img {
+      width: 36px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical .a-thumb img {
+      height: 48px;
+    }
+  }
+
+  /* A room too short for the column (a phone on its side): the looks lie in a row beside the print. */
+  @container (max-height: 268px) and (min-width: 400px) {
+    .a-print {
+      --aside: 172px;
+    }
+
+    [data-concept="a"] .a-aside .a-thumbs-vertical {
+      flex-direction: row;
+      gap: 12px;
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .a-frame-room > .a-aside {
+    display: none;
   }
 }
 
