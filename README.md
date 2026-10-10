@@ -101,6 +101,12 @@ src/shared/             catalog, guided build, fonts, store
 src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 ```
 
+## Home
+
+`src/a/screens/Home.tsx` is a page that scrolls, not a split. Hero: "Your personal stylist", the headline with "Every time." in italic, one line ("Choose your occasion. Discover three looks designed for it."), then the occasions as tiles, three then two (`src/a/ui/OccasionTiles.tsx`; the tile classes carry `a-transition` so the lab rule in `src/index.css` does not switch their transitions off). Beside it (under it on a phone), `src/a/ui/HomeDemo.tsx` plays `public/media/demo.mp4` (WebM fallback, poster `demo-poster.jpg`; the poster replaces the video when motion is reduced). Below: How it works in three steps, then Style DNA as its own section with a Premium tag and "Explore Style DNA".
+
+The demo is a screen recording of this app on a 390 x 844 phone (home, tap Dinner, the build, the results, browse the three), about 10 seconds, muted and looping. Re-record it whenever the home or results screens change visibly.
+
 ## Restyle
 
 "Restyle" (in the pinned action row) on the results opens a sheet with the answers that change the looks: the feel, the budget, the occasion (each shows the current answer), and "Start a new look". Picking one opens that question with `restyle=1`; the answer goes straight back to the looks (a new occasion asks the place first). The PRAXIS wordmark always starts a fresh journey. On desktop the bar is 80 px with a 22 px wordmark; Saved looks, Style DNA and Sign in sit top right straight on the photo, in ink with a soft ivory halo so they read over dark photos too, and the menu button is phone only. Starting over is always called "Start a new look"; the saved page is "Saved looks".

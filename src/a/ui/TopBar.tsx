@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Menu as MenuIcon, X } from "lucide-react";
+import { ArrowLeft, Bookmark, Menu as MenuIcon, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { FRESH, useJourney } from "../lib/journeyContext";
 import { useScrollLock } from "../lib/scrollLock";
@@ -53,18 +53,15 @@ export function TopBar({ spine, back = null }: TopBarProps) {
       {/* On desktop the few places to go sit in the bar; a light veil keeps them readable over any photo. */}
       <div className="a-topright flex items-center">
         <nav aria-label="Praxis" className="a-desktop items-center">
-          <Link to={href("looks", { hero: null })} className="a-control a-tertiary a-signin">
+          <Link to={href("looks", { hero: null })} className="a-control a-tertiary a-signin gap-2">
+            <Bookmark size={15} strokeWidth={1.5} aria-hidden="true" />
             Saved looks
           </Link>
-          {store.dna ? (
-            <Link to={href("dna", { hero: null })} className="a-control a-tertiary a-signin">
-              Style DNA
-            </Link>
-          ) : (
-            <Link to={href("", { ...FRESH, gate: "dna" })} className="a-control a-tertiary a-signin">
-              Style DNA
-            </Link>
-          )}
+          <span className="a-bar-rule" aria-hidden="true" />
+          <Link to={store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" })} className="a-control a-tertiary a-signin">
+            Style DNA
+          </Link>
+          <span className="a-bar-rule" aria-hidden="true" />
         </nav>
         {user ? (
           <button type="button" onClick={() => setMenu(true)} aria-label={`${user.name}, open menu`} className="a-desktop mr-1 items-center justify-center" style={{ width: 44, height: 44 }}>
@@ -133,7 +130,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const items = [
     { label: "Start a new look", to: href("", FRESH) },
     { label: "Saved looks", to: href("looks", { hero: null }) },
-    { label: store.dna ? "Style DNA" : "Build my Style DNA", to: store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" }) },
+    { label: "Style DNA", to: store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" }) },
   ];
 
   return (

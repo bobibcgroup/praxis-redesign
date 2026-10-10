@@ -366,3 +366,290 @@
     display: none;
   }
 }
+
+/* ---------- Home: a page that scrolls. Hero (copy and tiles, then the demo), how it works, Style DNA. ---------- */
+[data-concept="a"] .a-home {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+[data-concept="a"] .a-home > header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-home main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+}
+
+[data-concept="a"] .a-hero {
+  display: grid;
+  gap: 40px;
+  padding-top: 32px;
+}
+
+[data-concept="a"] .a-hero-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+[data-concept="a"] .a-hero-title em {
+  font-style: italic;
+}
+
+/* The tiles: three, then two, on every screen. Names in the serif, an arrow that moves on hover. */
+[data-concept="a"] .a-tiles {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+[data-concept="a"] .a-tile {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-concept="a"] .a-tile:nth-child(n + 4) {
+  grid-column: span 3;
+}
+
+[data-concept="a"] .a-tile-arrow {
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+@media (hover: hover) {
+  [data-concept="a"] .a-tile:hover {
+    background: var(--surface);
+    border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  }
+
+  [data-concept="a"] .a-tile:hover .a-tile-arrow {
+    color: var(--text);
+    transform: translateX(4px);
+  }
+}
+
+[data-concept="a"] .a-tile:active {
+  background: var(--surface);
+}
+
+[data-concept="a"] .a-tile[aria-checked="true"] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+[data-concept="a"] .a-tile[aria-checked="true"] .a-tile-arrow {
+  color: var(--bg);
+  transform: translateX(4px);
+}
+
+[data-concept="a"] .a-tile:focus-visible {
+  outline: 1px solid var(--text);
+  outline-offset: 2px;
+}
+
+/* The demo: the phone recording on a quiet panel, smaller than the copy beside it. */
+[data-concept="a"] .a-demo {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 32px 0;
+  background: var(--surface);
+  border-radius: var(--r-frame);
+}
+
+[data-concept="a"] .a-demo-device {
+  width: min(232px, 60vw);
+  aspect-ratio: 390 / 844;
+  overflow: hidden;
+  border: 6px solid var(--text);
+  border-radius: 32px;
+  background: var(--bg);
+  box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--text) 40%, transparent);
+}
+
+[data-concept="a"] .a-demo-device video,
+[data-concept="a"] .a-demo-device img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* How it works: three numbered steps under one hairline. */
+[data-concept="a"] .a-steps {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-steps ol {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+[data-concept="a"] .a-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+[data-concept="a"] .a-step-n {
+  flex: none;
+  width: 40px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 28px;
+  line-height: 32px;
+}
+
+[data-concept="a"] .a-step-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 24px;
+}
+
+[data-concept="a"] .a-step-line {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+}
+
+/* Style DNA: its own section, photo then copy, with a quiet Premium tag. */
+[data-concept="a"] .a-dna {
+  display: grid;
+  margin-top: 56px;
+  background: var(--surface);
+  border-radius: var(--r-frame);
+  overflow: hidden;
+}
+
+[data-concept="a"] .a-dna-image {
+  height: 280px;
+}
+
+[data-concept="a"] .a-dna-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+[data-concept="a"] .a-dna-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 32px 20px 40px;
+}
+
+[data-concept="a"] .a-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-home main {
+    padding: 0 64px 64px;
+  }
+
+  [data-concept="a"] .a-hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    align-items: center;
+    gap: 64px;
+    min-height: calc(100vh - 80px - 160px);
+    padding-top: 48px;
+  }
+
+  [data-concept="a"] .a-hero-copy {
+    max-width: 560px;
+  }
+
+  [data-concept="a"] .a-tile {
+    min-height: 64px;
+    padding: 0 20px;
+    font-size: 19px;
+  }
+
+  [data-concept="a"] .a-demo {
+    height: clamp(400px, 58vh, 540px);
+    padding: 0;
+  }
+
+  [data-concept="a"] .a-demo-device {
+    width: auto;
+    height: calc(100% - 64px);
+  }
+
+  [data-concept="a"] .a-steps ol {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  [data-concept="a"] .a-steps li + li {
+    padding-left: 32px;
+    border-left: 1px solid var(--rule);
+  }
+
+  [data-concept="a"] .a-dna {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    min-height: 320px;
+  }
+
+  [data-concept="a"] .a-dna-image {
+    height: auto;
+  }
+
+  [data-concept="a"] .a-dna-copy {
+    justify-content: center;
+    padding: 48px 56px;
+  }
+}
+
+/* The hairlines between the top-right links on desktop. */
+[data-concept="a"] .a-bar-rule {
+  width: 1px;
+  height: 16px;
+  background: var(--rule);
+}
+
+/* The narrowest phones: tighter tiles so "Dinner" and its arrow still fit a third of the row. */
+@media (max-width: 359px) {
+  [data-concept="a"] .a-tile {
+    padding: 0 10px;
+    font-size: 16px;
+  }
+}

@@ -1,45 +1,63 @@
 /**
- * Home: always says what this is, with the occasion choices right under it
- * so the first tap is an answer. Under a rule, the Style DNA block. With a
- * saved DNA the headline asks where he is going. After saving a DNA, the
- * completion state.
+ * Home: the headline, one line on what happens, and the occasions as tiles; the first tap starts
+ * the looks. Beside it, a short recording of the real journey. Under the fold, how it works in three
+ * steps, then Style DNA in its own section so the premium feature never competes with the first tap.
+ * After saving a Style DNA, the completion state.
  */
 import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { OCCASIONS, STAND_IN_PORTRAIT, type OccasionId } from "../../shared/catalog";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
-import { ChoiceList, LinkButton, PlusMark, QuietButton, TextButton } from "../ui/controls";
+import { LinkButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
 import { Frame } from "../ui/Frame";
+import { HomeDemo } from "../ui/HomeDemo";
+import { OccasionTiles } from "../ui/OccasionTiles";
 import { Stage } from "../ui/Stage";
+import { TopBar } from "../ui/TopBar";
 
-const LINE = "Tell me where you’re going. I’ll put together three looks.";
-const RETURNING_LINE = "Pick the occasion and I’ll put together three looks.";
+const LINE = "Choose your occasion. Discover three looks designed for it.";
+const STEPS = [
+  { n: "01", title: "Choose your occasion", line: "Tell me where you’re going." },
+  { n: "02", title: "Discover three looks", line: "Real pieces, put together for the moment." },
+  { n: "03", title: "Save or share", line: "Keep your favorites or send them to a friend." },
+];
+const DNA_IMAGE = "/images/date_relaxed_01.jpg";
 
-function DnaBlock() {
-  const { store, go, user } = useJourney();
+function StyleDna() {
+  const { store, go, href } = useJourney();
   const gated = useGated();
-  const plus = user?.plus ?? false;
-  const toDna = () => gated("dna", () => go("dna/face", { ...FRESH, face: null }));
+  const explore = () => gated("dna", () => go("dna/face", { ...FRESH, face: null }));
 
-  if (store.dna) {
-    return (
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-[15px] leading-5">Your Style DNA is saved.</p>
-        <TextButton onClick={toDna}>
-          Update my Style DNA
-          <PlusMark show={!plus} />
-        </TextButton>
-      </div>
-    );
-  }
   return (
-    <div>
-      <p className="a-display a-display-sm lg:max-w-[30ch]">Let me get to know your style.</p>
-      <QuietButton onClick={toDna} className="mt-4">
-        Build my Style DNA
-        <PlusMark show={!plus} />
-      </QuietButton>
-    </div>
+    <section className="a-dna" aria-labelledby="dna-title">
+      <div className="a-dna-image">
+        <img src={DNA_IMAGE} alt="" loading="lazy" />
+      </div>
+      <div className="a-dna-copy">
+        <p className="a-label flex items-center gap-3 text-[var(--muted)]">
+          Introducing Style DNA
+          <span className="a-tag">Premium</span>
+        </p>
+        <h2 id="dna-title" className="a-display a-display-md mt-4">
+          Your style. More personal.
+        </h2>
+        <p className="mt-4 max-w-[44ch] text-[16px] leading-6 text-[var(--muted)]">
+          {store.dna ? "Your Style DNA is saved. Every look I put together starts from it." : "Discover a styling experience shaped around your preferences with Style DNA."}
+        </p>
+        {store.dna ? (
+          <LinkButton to={href("dna", { hero: null })} variant="secondary" className="mt-6 gap-2">
+            See my Style DNA
+            <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
+          </LinkButton>
+        ) : (
+          <button type="button" onClick={explore} className="a-control a-secondary mt-6 gap-2">
+            Explore Style DNA
+            <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -66,26 +84,50 @@ export function Home() {
     );
   }
 
-  const image = OCCASIONS.find((o) => o.id === (pending ?? "WEDDING"))?.image ?? null;
-
   return (
-    <Stage
-      wordmark
-      band="home"
-      canvas={<Frame image={image} alt="" reduced={reduced} />}
-      actions={<DnaBlock />}
-    >
-      <h1 className="a-display max-w-[19ch]">{dna ? "Where are you going?" : "Know what to wear. Every time."}</h1>
-      <p className="mt-4 max-w-[40ch] text-[16px] leading-6">{dna ? RETURNING_LINE : LINE}</p>
-      <div className="a-home-answers mt-8">
-        <ChoiceList label="Where are you going?" options={OCCASIONS} value={pending} onChange={(id) => setPending(id)} />
-      </div>
-      {store.looks.length > 0 ? (
-        <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="mt-4 self-start !px-0">
-          Saved looks
-          <span className="hint">{store.looks.length}</span>
-        </LinkButton>
-      ) : null}
-    </Stage>
+    <div className="a-home">
+      <TopBar />
+      <main>
+        <section className="a-hero">
+          <div className="a-hero-copy">
+            <p className="a-label text-[var(--muted)]">Your personal stylist</p>
+            <h1 className="a-display a-hero-title mt-4">
+              Know what to wear. <em>Every time.</em>
+            </h1>
+            <p className="mt-5 max-w-[44ch] text-[16px] leading-6 lg:text-[17px] lg:leading-7">{LINE}</p>
+            <p className="a-label mt-10 text-[var(--muted)]">Where are you going?</p>
+            <div className="mt-4">
+              <OccasionTiles options={OCCASIONS} value={pending} onChange={setPending} />
+            </div>
+            {store.looks.length > 0 ? (
+              <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="a-phone mt-4 self-start !px-0">
+                Saved looks
+                <span className="hint">{store.looks.length}</span>
+              </LinkButton>
+            ) : null}
+          </div>
+          <HomeDemo reduced={reduced} />
+        </section>
+
+        <section className="a-steps" aria-labelledby="steps-title">
+          <h2 id="steps-title" className="a-label text-[var(--muted)]">
+            How it works
+          </h2>
+          <ol>
+            {STEPS.map((step) => (
+              <li key={step.n}>
+                <span className="a-step-n">{step.n}</span>
+                <span>
+                  <span className="a-step-title">{step.title}</span>
+                  <span className="a-step-line">{step.line}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <StyleDna />
+      </main>
+    </div>
   );
 }
