@@ -45,6 +45,7 @@
   --ink-fg: #f1ede1;
   --scrim: rgba(30, 29, 26, 0.42);
   --error: #8a2f2f;
+  --stone: #e2dac9;
   color-scheme: light;
 }
 
@@ -61,6 +62,7 @@
   --ink-fg: #12110f;
   --scrim: rgba(0, 0, 0, 0.6);
   --error: #e08a8a;
+  --stone: #1d1b17;
   color-scheme: dark;
 }
 

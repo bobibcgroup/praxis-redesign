@@ -367,7 +367,7 @@
   }
 }
 
-/* ---------- Home: a page that scrolls. Hero (copy and tiles, then the demo), how it works, Style DNA. ---------- */
+/* ---------- Home: a page that scrolls. Hero (copy and photo cards, then the demo), how it works, Style DNA. ---------- */
 [data-concept="a"] .a-home {
   min-height: 100vh;
   min-height: 100svh;
@@ -382,9 +382,9 @@
 }
 
 [data-concept="a"] .a-home main {
-  max-width: 1280px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 0 20px 48px;
+  padding: 0 16px 48px;
 }
 
 [data-concept="a"] .a-hero {
@@ -399,97 +399,185 @@
   min-width: 0;
 }
 
+[data-concept="a"] .a-hero-title {
+  font-size: clamp(38px, 10.4vw, 44px);
+  line-height: 1.06;
+}
+
 [data-concept="a"] .a-hero-title em {
   font-style: italic;
 }
 
-/* The tiles: three, then two, on every screen. Names in the serif, an arrow that moves on hover. */
-[data-concept="a"] .a-tiles {
+/* The occasion cards: a photograph each, the name in the serif over a soft shade at the foot,
+   an arrow at the right. Two to a row on a phone with Party across the width; three then two on desktop. */
+[data-concept="a"] .a-cards {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
-[data-concept="a"] .a-tile {
-  grid-column: span 2;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 56px;
-  padding: 0 16px;
-  border: 1px solid var(--rule);
+[data-concept="a"] .a-card {
+  position: relative;
+  display: block;
+  height: 128px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
   border-radius: var(--r-control);
-  background: transparent;
-  color: var(--text);
-  font-family: var(--font-display);
-  font-size: 18px;
+  background: #2b2722;
+  color: #f6f2e8;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  isolation: isolate;
+  transition: box-shadow 0.3s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
-[data-concept="a"] .a-tile:nth-child(n + 4) {
-  grid-column: span 3;
+[data-concept="a"] .a-card:nth-child(5) {
+  grid-column: span 2;
+  height: 112px;
 }
 
-[data-concept="a"] .a-tile-arrow {
-  flex: none;
-  color: var(--muted);
-  transition: transform 0.3s ease, color 0.3s ease;
+[data-concept="a"] .a-card-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.001);
+  transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+[data-concept="a"] .a-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(20, 17, 13, 0.72) 0%, rgba(20, 17, 13, 0.24) 46%, rgba(20, 17, 13, 0.04) 72%);
+  transition: background-color 0.3s ease;
+}
+
+[data-concept="a"] .a-card-name,
+[data-concept="a"] .a-card-arrow {
+  position: absolute;
+  z-index: 1;
+  bottom: 12px;
+}
+
+[data-concept="a"] .a-card-name {
+  left: 14px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+
+[data-concept="a"] .a-card-arrow {
+  right: 14px;
+  bottom: 16px;
+  transition: transform 0.3s ease;
 }
 
 @media (hover: hover) {
-  [data-concept="a"] .a-tile:hover {
-    background: var(--surface);
-    border-color: color-mix(in srgb, var(--text) 30%, transparent);
+  [data-concept="a"] .a-card:hover .a-card-photo {
+    transform: scale(1.035);
   }
 
-  [data-concept="a"] .a-tile:hover .a-tile-arrow {
-    color: var(--text);
+  [data-concept="a"] .a-card:hover::after {
+    background-color: rgba(20, 17, 13, 0.1);
+  }
+
+  [data-concept="a"] .a-card:hover .a-card-arrow {
     transform: translateX(4px);
   }
 }
 
-[data-concept="a"] .a-tile:active {
-  background: var(--surface);
+[data-concept="a"] .a-card:active .a-card-photo {
+  transform: scale(1.02);
 }
 
-[data-concept="a"] .a-tile[aria-checked="true"] {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--bg);
+[data-concept="a"] .a-card:active::after,
+[data-concept="a"] .a-card[aria-checked="true"]::after {
+  background-color: rgba(20, 17, 13, 0.24);
 }
 
-[data-concept="a"] .a-tile[aria-checked="true"] .a-tile-arrow {
-  color: var(--bg);
+[data-concept="a"] .a-card[aria-checked="true"] {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text);
+}
+
+[data-concept="a"] .a-card[aria-checked="true"] .a-card-arrow {
   transform: translateX(4px);
 }
 
-[data-concept="a"] .a-tile:focus-visible {
-  outline: 1px solid var(--text);
-  outline-offset: 2px;
+[data-concept="a"] .a-card:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
 }
 
-/* The demo: the phone recording on a quiet panel, smaller than the copy beside it. */
+/* The demo, staged: a dim restaurant photograph, two of the looks as prints, the phone in front. */
 [data-concept="a"] .a-demo {
-  display: grid;
-  place-items: center;
+  position: relative;
+  height: 400px;
   margin: 0;
-  padding: 32px 0;
-  background: var(--surface);
-  border-radius: var(--r-frame);
+  overflow: hidden;
+  border-radius: var(--r-control);
+  background: #2b2722;
+  isolation: isolate;
+}
+
+[data-concept="a"] .a-demo-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.86) saturate(0.9);
+}
+
+[data-concept="a"] .a-demo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(ellipse at 40% 55%, rgba(20, 17, 13, 0) 30%, rgba(20, 17, 13, 0.38) 100%);
+  pointer-events: none;
+}
+
+[data-concept="a"] .a-demo-prints img {
+  position: absolute;
+  z-index: 1;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center 30%;
+  border: 4px solid #f3efe4;
+  box-shadow: 0 18px 36px -16px rgba(0, 0, 0, 0.6);
+}
+
+[data-concept="a"] .a-demo-prints img:nth-child(1) {
+  top: 9%;
+  right: 4%;
+  width: 34%;
+}
+
+[data-concept="a"] .a-demo-prints img:nth-child(2) {
+  top: 34%;
+  left: 4%;
+  width: 30%;
 }
 
 [data-concept="a"] .a-demo-device {
-  width: min(232px, 60vw);
+  position: absolute;
+  z-index: 2;
+  top: 6%;
+  left: 50%;
+  height: 88%;
   aspect-ratio: 390 / 844;
   overflow: hidden;
-  border: 6px solid var(--text);
-  border-radius: 32px;
-  background: var(--bg);
-  box-shadow: 0 24px 48px -24px color-mix(in srgb, var(--text) 40%, transparent);
+  border: 6px solid #141210;
+  border-radius: 30px;
+  background: #f1ede1;
+  transform: translateX(-50%);
+  box-shadow: 0 32px 64px -24px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 [data-concept="a"] .a-demo-device video,
@@ -500,9 +588,35 @@
   object-fit: cover;
 }
 
+[data-concept="a"] .a-demo-toggle {
+  position: absolute;
+  z-index: 3;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r-control);
+  background: rgba(20, 17, 13, 0.42);
+  color: #f6f2e8;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+[data-concept="a"] .a-demo-toggle:hover {
+  background: rgba(20, 17, 13, 0.64);
+}
+
+[data-concept="a"] .a-demo-toggle:focus-visible {
+  outline: 2px solid #f6f2e8;
+  outline-offset: -4px;
+}
+
 /* How it works: three numbered steps under one hairline. */
 [data-concept="a"] .a-steps {
-  margin-top: 56px;
+  margin-top: 48px;
   padding-top: 24px;
   border-top: 1px solid var(--rule);
 }
@@ -543,24 +657,23 @@
   color: var(--muted);
 }
 
-/* Style DNA: its own section, photo then copy, with a quiet Premium tag. */
+/* Style DNA: its own section on a deeper stone, a photograph of cloth and leather beside the copy. */
 [data-concept="a"] .a-dna {
   display: grid;
-  margin-top: 56px;
-  background: var(--surface);
-  border-radius: var(--r-frame);
+  margin-top: 48px;
+  background: var(--stone);
+  border-radius: var(--r-control);
   overflow: hidden;
 }
 
 [data-concept="a"] .a-dna-image {
-  height: 280px;
+  height: 240px;
 }
 
 [data-concept="a"] .a-dna-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 18%;
 }
 
 [data-concept="a"] .a-dna-copy {
@@ -575,43 +688,114 @@
   align-items: center;
   height: 20px;
   padding: 0 8px;
-  border: 1px solid var(--rule);
+  border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
   border-radius: var(--r-control);
   letter-spacing: 0.08em;
   color: var(--text);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 640px) and (max-width: 1023px) {
   [data-concept="a"] .a-home main {
-    padding: 0 64px 64px;
+    padding: 0 32px 56px;
   }
 
-  [data-concept="a"] .a-hero {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    align-items: center;
-    gap: 64px;
-    min-height: calc(100vh - 80px - 160px);
-    padding-top: 48px;
+  [data-concept="a"] .a-card {
+    height: 160px;
   }
 
-  [data-concept="a"] .a-hero-copy {
-    max-width: 560px;
-  }
-
-  [data-concept="a"] .a-tile {
-    min-height: 64px;
-    padding: 0 20px;
-    font-size: 19px;
+  [data-concept="a"] .a-card:nth-child(5) {
+    height: 140px;
   }
 
   [data-concept="a"] .a-demo {
-    height: clamp(400px, 58vh, 540px);
-    padding: 0;
+    height: 520px;
+  }
+
+  [data-concept="a"] .a-demo-prints img:nth-child(1) {
+    right: 10%;
+    width: 24%;
+  }
+
+  [data-concept="a"] .a-demo-prints img:nth-child(2) {
+    left: 10%;
+    width: 22%;
+  }
+
+  [data-concept="a"] .a-dna-image {
+    height: 320px;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-home main {
+    padding: 0 56px 64px;
+  }
+
+  [data-concept="a"] .a-hero {
+    grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
+    align-items: center;
+    gap: clamp(40px, 4vw, 72px);
+    padding-top: clamp(32px, 4.5vh, 56px);
+  }
+
+  [data-concept="a"] .a-hero-title {
+    font-size: clamp(48px, min(4.4vw, 7.4vh), 68px);
+    line-height: 1.04;
+  }
+
+  [data-concept="a"] .a-cards {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  [data-concept="a"] .a-card,
+  [data-concept="a"] .a-card:nth-child(5) {
+    grid-column: span 2;
+    height: clamp(112px, 15.5vh, 156px);
+  }
+
+  [data-concept="a"] .a-card:nth-child(n + 4) {
+    grid-column: span 3;
+  }
+
+  [data-concept="a"] .a-card-name {
+    left: 16px;
+    bottom: 14px;
+    font-size: 21px;
+  }
+
+  [data-concept="a"] .a-card-arrow {
+    right: 16px;
+    bottom: 18px;
+  }
+
+  [data-concept="a"] .a-demo {
+    height: clamp(440px, calc(100vh - 80px - 240px), 580px);
   }
 
   [data-concept="a"] .a-demo-device {
-    width: auto;
-    height: calc(100% - 64px);
+    left: 14%;
+    top: 7%;
+    height: 86%;
+    transform: none;
+  }
+
+  [data-concept="a"] .a-demo-prints img:nth-child(1) {
+    top: 10%;
+    right: 6%;
+    left: auto;
+    width: 32%;
+  }
+
+  [data-concept="a"] .a-demo-prints img:nth-child(2) {
+    top: 36%;
+    right: 27%;
+    left: auto;
+    width: 27%;
+  }
+
+  [data-concept="a"] .a-steps {
+    margin-top: 56px;
   }
 
   [data-concept="a"] .a-steps ol {
@@ -625,17 +809,19 @@
   }
 
   [data-concept="a"] .a-dna {
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    min-height: 320px;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    height: clamp(320px, 26vw, 380px);
+    margin-top: 56px;
   }
 
   [data-concept="a"] .a-dna-image {
-    height: auto;
+    height: 100%;
+    min-height: 0;
   }
 
   [data-concept="a"] .a-dna-copy {
     justify-content: center;
-    padding: 48px 56px;
+    padding: 48px clamp(40px, 5vw, 80px);
   }
 }
 
@@ -646,10 +832,9 @@
   background: var(--rule);
 }
 
-/* The narrowest phones: tighter tiles so "Dinner" and its arrow still fit a third of the row. */
-@media (max-width: 359px) {
-  [data-concept="a"] .a-tile {
-    padding: 0 10px;
-    font-size: 16px;
+@media (prefers-reduced-motion: reduce) {
+  [data-concept="a"] .a-card-photo,
+  [data-concept="a"] .a-card-arrow {
+    transition: none;
   }
 }

@@ -1,6 +1,6 @@
 /**
- * Home: the headline, one line on what happens, and the occasions as tiles; the first tap starts
- * the looks. Beside it, a short recording of the real journey. Under the fold, how it works in three
+ * Home: the headline, one line on what happens, and the occasions as photographs; the first tap
+ * starts the looks. Beside it, a short recording of the real journey, staged with photographs. Under the fold, how it works in three
  * steps, then Style DNA in its own section so the premium feature never competes with the first tap.
  * After saving a Style DNA, the completion state.
  */
@@ -12,7 +12,7 @@ import { LinkButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
 import { Frame } from "../ui/Frame";
 import { HomeDemo } from "../ui/HomeDemo";
-import { OccasionTiles } from "../ui/OccasionTiles";
+import { OccasionCards, photoSet } from "../ui/OccasionCards";
 import { Stage } from "../ui/Stage";
 import { TopBar } from "../ui/TopBar";
 
@@ -22,7 +22,7 @@ const STEPS = [
   { n: "02", title: "Discover three looks", line: "Real pieces, put together for the moment." },
   { n: "03", title: "Save or share", line: "Keep your favorites or send them to a friend." },
 ];
-const DNA_IMAGE = "/images/date_relaxed_01.jpg";
+const DNA_IMAGE = "/images/home/dna";
 
 function StyleDna() {
   const { store, go, href } = useJourney();
@@ -32,7 +32,7 @@ function StyleDna() {
   return (
     <section className="a-dna" aria-labelledby="dna-title">
       <div className="a-dna-image">
-        <img src={DNA_IMAGE} alt="" loading="lazy" />
+        <img {...photoSet(DNA_IMAGE)} sizes="(min-width: 1024px) 40vw, 100vw" alt="Folds of tailoring cloth in camel, houndstooth and brown" loading="lazy" decoding="async" />
       </div>
       <div className="a-dna-copy">
         <p className="a-label flex items-center gap-3 text-[var(--muted)]">
@@ -95,9 +95,9 @@ export function Home() {
               Know what to wear. <em>Every time.</em>
             </h1>
             <p className="mt-5 max-w-[44ch] text-[16px] leading-6 lg:text-[17px] lg:leading-7">{LINE}</p>
-            <p className="a-label mt-10 text-[var(--muted)]">Where are you going?</p>
+            <p className="a-label mt-8 text-[var(--muted)] lg:mt-10">Where are you going?</p>
             <div className="mt-4">
-              <OccasionTiles options={OCCASIONS} value={pending} onChange={setPending} />
+              <OccasionCards options={OCCASIONS} value={pending} onChange={setPending} />
             </div>
             {store.looks.length > 0 ? (
               <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="a-phone mt-4 self-start !px-0">
