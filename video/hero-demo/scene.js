@@ -50,9 +50,11 @@
       .concat([0, 1].map((i) => ({ x: P + i * (cw2 + 10), y: gridTop + ch + 10, w: cw2, h: ch })));
     const pw = (inner - 20) / 3;
     const prints = [0, 1, 2].map((i) => ({ x: P + i * (pw + 10), y: 154, w: pw, h: 318 }));
-    const colX = 284, colW = W - P - colX;
-    const tw = 64, tg = (colW - 3 * tw) / 2;
-    const thumbs = [0, 1, 2].map((i) => ({ x: colX + i * (tw + tg), y: 410, w: tw, h: 88 }));
+    // The results page: the print, the three looks as an index beside it, the column after.
+    const hero = { x: P, y: 50, w: 210, h: 482 };
+    const index = { x: 246, y: 151, w: 56, h: 280 };
+    const thumbs = [0, 1, 2].map((i) => ({ x: index.x + 6, y: index.y + 8 + i * 88, w: 44, h: 60 }));
+    const colX = 314, colW = W - P - colX;
     return {
       W, H, P, cards, prints, thumbs,
       occLabel: { y: 72, size: 11 },
@@ -61,9 +63,9 @@
       headline: { y: 70, size: 28, lh: 36 },
       progress: { y: 118, w: inner },
       printLabel: { gap: 14, size: 11, title: 17 },
-      hero: { x: P, y: 50, w: 232, h: 482 },
-      col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 28, note: 124, noteSize: 15, noteLh: 22, rows: 214, rowH: 44, rowSize: 15, box: 16 },
-      thumbLabel: { size: 10 },
+      hero, index, counter: true, chip: 28,
+      col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 26, note: 120, noteSize: 13.5, noteLh: 20, rows: 186, rowH: 42, rowSize: 14, box: 15 },
+      thumbLabel: { size: 9 },
       touch: 44,
     };
   }
@@ -82,10 +84,10 @@
     ];
     const pw = (inner - 16) / 3;
     const prints = [0, 1, 2].map((i) => ({ x: P + i * (pw + 8), y: 116, w: pw, h: 246 }));
-    const heroW = 156;
-    const tw = 46, tg = (heroW - 3 * tw) / 2;
-    const thumbs = [0, 1, 2].map((i) => ({ x: P + i * (tw + tg), y: 334, w: tw, h: 62 }));
-    const colX = P + heroW + 14, colW = W - P - colX;
+    // As on a phone: the print with the index beside it in the band, the name and note under them.
+    const hero = { x: P, y: 20, w: 232, h: 282 };
+    const index = { x: 256, y: 20, w: 88, h: 282 };
+    const thumbs = [0, 1, 2].map((i) => ({ x: index.x + 18, y: index.y + 8 + i * 92, w: 52, h: 66 }));
     return {
       W, H, P, cards, prints, thumbs,
       occLabel: { y: 36, size: 10 },
@@ -94,8 +96,8 @@
       headline: { y: 46, size: 21, lh: 28 },
       progress: { y: 86, w: inner },
       printLabel: { gap: 10, size: 10, title: 14 },
-      hero: { x: P, y: 28, w: heroW, h: 292 },
-      col: { x: colX, w: colW, eyebrow: 32, title: 50, titleSize: 22, note: 112, noteSize: 13, noteLh: 19, rows: 208, rowH: 38, rowSize: 12, box: 14 },
+      hero, index, counter: false, chip: 26,
+      col: { x: P, w: inner, eyebrow: 318, title: 336, titleSize: 22, note: 370, noteSize: 13, noteLh: 19, rows: null },
       thumbLabel: { size: 8 },
       touch: 38,
     };
@@ -191,10 +193,10 @@
   });
 
   const col = {
-    eyebrow: el("div", "abs label", stage, "My pick for dinner"),
+    eyebrow: el("div", "abs label", stage, `${LOOKS[PICK].label} for dinner`),
     title: el("div", "abs serif", stage, LOOKS[PICK].title),
     note: el("div", "abs serif", stage, NOTE),
-    rows: PIECES.map((p) => {
+    rows: (L.col.rows == null ? [] : PIECES).map((p) => {
       const r = el("div", "abs row");
       const b = el("span", "box", r, CHECK(L.col.box - 4));
       b.style.width = b.style.height = L.col.box + "px";
@@ -210,6 +212,10 @@
   text(col.note, { x: L.col.x, y: L.col.note, size: L.col.noteSize, lh: L.col.noteLh, w: L.col.w, italic: true });
   col.rows.forEach((r, i) => place(r, { x: L.col.x, y: L.col.rows + i * L.col.rowH, w: L.col.w, h: L.col.rowH }));
 
+  const panel = el("div", "abs");
+  place(panel, L.index);
+  panel.style.background = "#f1ede1";
+  panel.style.borderRadius = "2px";
   const thumbs = LOOKS.map((look, i) => {
     const c = el("div", "abs print");
     const img = el("img", "", c);
@@ -217,18 +223,34 @@
     place(c, L.thumbs[i]);
     const label = el("div", "abs label", stage, look.label);
     const r = L.thumbs[i];
-    text(label, { x: r.x - 20, y: r.y + r.h + 6, size: L.thumbLabel.size, lh: 14, w: r.w + 40, color: i === PICK ? "#1e1d1a" : "#6b665c" });
+    text(label, { x: L.index.x, y: r.y + r.h + 4, size: L.thumbLabel.size, lh: 12, w: L.index.w, color: i === PICK ? "#1e1d1a" : "#6b665c" });
     label.style.textAlign = "center";
-    if (MOBILE) label.style.letterSpacing = "0.1em";
     return { c, label };
   });
   const underline = el("div", "abs");
   {
     const r = L.thumbs[PICK];
-    place(underline, { x: r.x, y: r.y + r.h + 26, w: r.w, h: 2 });
+    place(underline, { x: r.x, y: r.y + r.h + 19, w: r.w, h: 1.5 });
     underline.style.background = "#1e1d1a";
     underline.style.transformOrigin = "center";
   }
+
+  // The ivory chips on the print's bottom edge: the counter with its arrows (desktop) and the glass.
+  const CHEVRON = (d) =>
+    `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+  const GLASS = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>`;
+  const chipStyle = (e) => {
+    e.style.display = "flex";
+    e.style.alignItems = "center";
+    e.style.justifyContent = "center";
+    e.style.background = "#f1ede1";
+    e.style.borderRadius = "2px";
+    e.style.color = "#1e1d1a";
+  };
+  const counter = L.counter ? el("div", "abs", stage, `${CHEVRON("m15 18-6-6 6-6")}<span class="label" style="font-size:9px;margin:0 12px 0 14px">2 of 3</span>${CHEVRON("m9 18 6-6-6-6")}`) : null;
+  const glass = el("div", "abs", stage, GLASS);
+  if (counter) chipStyle(counter);
+  chipStyle(glass);
 
   const occ = {
     bg: el("div", "abs"),
@@ -359,6 +381,15 @@
       th.c.style.transform = `translateY(${6 * (1 - out(span(t, 5.9 + i * 0.06, 6.3 + i * 0.06)))}px)`;
       th.label.style.opacity = Math.min(out(span(t, 6.0, 6.3)), 1 - out(span(t, 6.9, 7.05)));
     });
+    const chipsOn = Math.min(out(span(t, 6.1, 6.4)), 1 - out(span(t, 6.85, 7.0)));
+    const hr = L.hero, cs = L.chip;
+    place(glass, { x: hr.x + hr.w - cs - 8, y: hr.y + hr.h - cs - 8, w: cs, h: cs });
+    glass.style.opacity = chipsOn;
+    if (counter) {
+      place(counter, { x: hr.x + 8, y: hr.y + hr.h - cs - 8, w: 96, h: cs });
+      counter.style.opacity = chipsOn;
+    }
+    panel.style.opacity = Math.min(out(span(t, 5.85, 6.2)), 1 - out(span(t, 6.9, 7.1)));
     underline.style.opacity = Math.min(out(span(t, 6.05, 6.35)), 1 - out(span(t, 6.9, 7.05)));
     underline.style.transform = `scaleX(${out(span(t, 6.05, 6.4))})`;
   }
