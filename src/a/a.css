@@ -45,21 +45,21 @@
  *   --ink, --ink-fg the dark action and its text  --shadow-*    soft warm shadows
  */
 [data-concept="a"][data-mode="light"] {
-  --bg: #f4ede1;
-  --bg-2: #efe3d3;
-  --surface: #ebdfcd;
-  --raised: #faf5ed;
-  --champagne: #e8d9c5;
-  --stone: #e6d6c0;
-  --text: #25221e;
-  --muted: #6e665d;
-  --faint: #85796c;
-  --rule: #d9ccba;
-  --accent: #292620;
-  --accent-fg: #fff9f0;
-  --accent-tint: #e8d9c5;
-  --ink: #292620;
-  --ink-fg: #fff9f0;
+  --bg: #efe2cc;
+  --bg-2: #e9d8bd;
+  --surface: #e5d1b4;
+  --raised: #f8efe1;
+  --champagne: #e1caa8;
+  --stone: #dcc4a2;
+  --text: #2a241d;
+  --muted: #665a4c;
+  --faint: #8c7b66;
+  --rule: #d4bf9f;
+  --accent: #2c251d;
+  --accent-fg: #fbf3e6;
+  --accent-tint: #e1caa8;
+  --ink: #2c251d;
+  --ink-fg: #fbf3e6;
   --scrim: rgba(41, 34, 26, 0.42);
   --shadow-soft: 0 1px 2px rgba(64, 48, 30, 0.06), 0 6px 18px rgba(64, 48, 30, 0.08);
   --shadow-lift: 0 2px 4px rgba(64, 48, 30, 0.08), 0 14px 32px rgba(64, 48, 30, 0.14);
@@ -68,25 +68,25 @@
   color-scheme: light;
 }
 
-/* Dark: the same warmth at night, espresso and candlelight rather than grey. */
+/* Dark: the same warmth by lamplight, mocha and champagne rather than black. */
 [data-concept="a"][data-mode="dark"] {
-  --bg: #15120f;
-  --bg-2: #1a1713;
-  --surface: #211d18;
-  --raised: #1d1915;
-  --champagne: #2c261f;
-  --stone: #1f1b16;
-  --text: #f1e9dc;
-  --muted: #ab9f90;
-  --faint: #7d7266;
-  --rule: #322c25;
-  --accent: #f1e9dc;
-  --accent-fg: #15120f;
-  --accent-tint: #2c261f;
-  --ink: #f1e9dc;
-  --ink-fg: #15120f;
+  --bg: #2b241d;
+  --bg-2: #30281f;
+  --surface: #3b3127;
+  --raised: #352c23;
+  --champagne: #4a3d2f;
+  --stone: #3a2f25;
+  --text: #f4e9d6;
+  --muted: #c9b79d;
+  --faint: #94826b;
+  --rule: #4d4134;
+  --accent: #ecd9b8;
+  --accent-fg: #2b241d;
+  --accent-tint: #4a3d2f;
+  --ink: #ecd9b8;
+  --ink-fg: #2b241d;
   --scrim: rgba(0, 0, 0, 0.6);
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.3);
+  --shadow-soft: 0 1px 2px rgba(15, 10, 5, 0.25), 0 6px 18px rgba(15, 10, 5, 0.25);
   --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 14px 32px rgba(0, 0, 0, 0.4);
   --shadow-deep: 0 10px 24px rgba(0, 0, 0, 0.4), 0 34px 70px rgba(0, 0, 0, 0.5);
   --error: #e08a8a;
