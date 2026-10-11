@@ -45,9 +45,9 @@
   // ---------- layout (CSS px; rendered at 2x) ----------
   const L = DEVICE ? deviceLayout() : MOBILE ? mobileLayout() : desktopLayout();
 
-  // Colours. The device cut sits in the warmer homepage composition, so it takes the warmer palette.
+  // Colours. The device cut sits in the champagne homepage composition, so it takes the app's light tokens (src/a/a.css).
   const C = DEVICE
-    ? { stage: "#f4ede1", text: "#25221e", muted: "#6e665d", rule: "#d9ccba", ink: "#292620", inkFg: "#fff9f0", chip: "#faf5ed", print: "#e8d9c5" }
+    ? { stage: "#efe2cc", text: "#2a241d", muted: "#665a4c", rule: "#d4bf9f", ink: "#2c251d", inkFg: "#fbf3e6", chip: "#f8efe1", print: "#e1caa8" }
     : { stage: "#e8e3d6", text: "#1e1d1a", muted: "#6b665c", rule: "#dcd5c6", ink: "#1e1d1a", inkFg: "#f1ede1", chip: "#f1ede1", print: "#e3d8c6" };
   for (const [k, v] of Object.entries(C)) document.documentElement.style.setProperty(`--${k}`, v);
 
@@ -86,14 +86,15 @@
   function deviceLayout() {
     const W = 360, H = 780, P = 16, BAR = 56;
     const inner = W - 2 * P;
-    const cw = (inner - 8) / 2, ch = 168;
-    const gridTop = 222;
+    // Home as the app sets it on a phone: a 3:2 photo over a name strip, two to a row, the fifth across.
+    const cw = (inner - 8) / 2, foot = 44, ch = Math.round(cw / 1.5) + foot;
+    const gridTop = 250;
     const cards = [
       { x: P, y: gridTop, w: cw, h: ch },
       { x: P + cw + 8, y: gridTop, w: cw, h: ch },
       { x: P, y: gridTop + ch + 8, w: cw, h: ch },
       { x: P + cw + 8, y: gridTop + ch + 8, w: cw, h: ch },
-      { x: P, y: gridTop + 2 * (ch + 8), w: inner, h: 132 },
+      { x: P, y: gridTop + 2 * (ch + 8), w: inner, h: Math.round(inner / 3) + foot },
     ];
     const pw = (inner - 16) / 3;
     const prints = [0, 1, 2].map((i) => ({ x: P + i * (pw + 8), y: 236, w: pw, h: 436 }));
@@ -103,9 +104,9 @@
     return {
       W, H, P, cards, prints, thumbs, bar: BAR,
       full: { x: 0, y: BAR + 1, w: W, h: H - BAR - 1 },
-      home: { eyebrow: 80, title: 100, size: 34, lh: 40 },
-      occLabel: { y: 198, size: 11 },
-      cardName: 20, cardPad: 12,
+      home: { title: 82, size: 34, lh: 40, line: 170, lineSize: 15, lineLh: 22 },
+      occLabel: { y: 226, size: 11 },
+      cardName: 15, cardPad: 12, foot: 44,
       eyebrow: { y: 84, size: 11 },
       headline: { y: 104, size: 28, lh: 34, w: inner },
       status: { y: 180, size: 13 },
@@ -196,6 +197,7 @@
     `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
 
   function makeCard(o, parent) {
+    if (L.foot) return makeFootCard(o, parent);
     const c = el("div", "abs photo", parent);
     const img = el("img", "", c);
     img.src = o.photo;
@@ -211,6 +213,23 @@
     arrow.style.bottom = L.cardPad + "px";
     arrow.style.height = "16px";
     return { c, img, dim, name, arrow };
+  }
+
+  // The app's occasion card (src/a/ui/OccasionCards.tsx): raised paper, 6 px corners, a soft shadow,
+  // the photo on top, the name and a round arrow under it. Selected fills the arrow with ink.
+  function makeFootCard(o, parent) {
+    const c = el("div", "abs photo", parent);
+    Object.assign(c.style, { background: C.chip, borderRadius: "6px", boxShadow: "0 1px 2px rgba(64,48,30,.06), 0 6px 18px rgba(64,48,30,.08)" });
+    const img = el("img", "", c);
+    img.src = o.photo;
+    Object.assign(img.style, { bottom: "auto", height: `calc(100% - ${L.foot}px)` });
+    const dim = el("div", "card-dim", c);
+    Object.assign(dim.style, { bottom: "auto", height: `calc(100% - ${L.foot}px)` });
+    const name = el("span", "card-name", c, o.name);
+    Object.assign(name.style, { left: L.cardPad + "px", bottom: "0", lineHeight: L.foot + "px", fontSize: L.cardName + "px", fontWeight: "500", color: C.text, textShadow: "none", fontFamily: "Geist, system-ui, sans-serif" });
+    const arrow = el("span", "card-arrow", c, ARROW(14));
+    Object.assign(arrow.style, { right: L.cardPad - 2 + "px", bottom: (L.foot - 26) / 2 + "px", width: "26px", height: "26px", borderRadius: "50%", border: `1px solid ${C.text}`, color: C.text, display: "grid", placeItems: "center" });
+    return { c, img, dim, name, arrow, foot: true };
   }
 
   // Layer order, back to front: header copy, prints and their labels, the results column,
@@ -321,13 +340,13 @@
   OCCASIONS.forEach((_, i) => place(occ.cards[i].c, L.cards[i]));
   const home = L.home
     ? {
-        eyebrow: el("div", "abs label", stage, "Your personal stylist"),
         title: el("div", "abs serif", stage, "Know what to wear. <em>Every time.</em>"),
+        line: el("div", "abs", stage, "Choose your occasion. Discover three looks designed for it."),
       }
     : null;
   if (home) {
-    text(home.eyebrow, { x: L.P, y: L.home.eyebrow, size: 11, lh: 16, color: C.muted });
     text(home.title, { x: L.P, y: L.home.title, size: L.home.size, lh: L.home.lh, w: L.W - 2 * L.P - 40 });
+    text(home.line, { x: L.P, y: L.home.line, size: L.home.lineSize, lh: L.home.lineLh, w: L.W - 2 * L.P - 20, color: C.text });
   }
   const ring = el("div", "abs");
   ring.style.borderRadius = "3px";
@@ -362,7 +381,7 @@
     const pushOrigin = center(L.cards[0]);
     occ.bg.style.opacity = t < 1.6 ? 1 - inOut(span(t, 1.5, 1.95)) : t >= 8.0 ? veil : 0;
     occ.label.style.opacity = occOn;
-    if (home) home.eyebrow.style.opacity = home.title.style.opacity = occOn;
+    if (home) home.line.style.opacity = home.title.style.opacity = occOn;
     const origin = `${pushOrigin.x}px ${pushOrigin.y}px`;
     for (let i = 1; i < 5; i++) {
       const c = occ.cards[i];
@@ -386,7 +405,14 @@
     };
     const r = lerpRect(pushed, full, open);
     place(d.c, r);
-    d.c.style.borderRadius = lerp(2, 0, open) + "px";
+    d.c.style.borderRadius = lerp(d.foot ? 6 : 2, 0, open) + "px";
+    if (d.foot) {
+      // The photo grows over the name strip as the card opens to fill the screen; the arrow fills when tapped.
+      d.img.style.height = `calc(100% - ${L.foot * (1 - open)}px)`;
+      d.dim.style.height = d.img.style.height;
+      d.arrow.style.background = sel > 0.5 ? C.ink : "transparent";
+      d.arrow.style.color = sel > 0.5 ? C.inkFg : C.text;
+    }
     d.img.style.transform = `scale(${1 + 0.05 * sel - 0.05 * sel * open + 0.04 * inOut(span(t, 1.2, 2.0))})`;
     d.dim.style.opacity = 0.2 * sel * (1 - open) + 0.32 * open;
     const named = t >= 8.0 ? 1 : 1 - out(span(t, 1.0, 1.25));
@@ -395,7 +421,7 @@
     d.arrow.style.transform = `translateX(${4 * sel}px)`;
     d.c.style.opacity = t < 1.5 ? 1 : t >= 8.0 ? back : 1 - inOut(span(t, 1.5, 1.95));
     place(ring, pushed);
-    ring.style.opacity = sel * (1 - out(span(t, 1.0, 1.15)));
+    ring.style.opacity = d.foot ? 0 : sel * (1 - out(span(t, 1.0, 1.15)));
 
     touchAt(touch1, center(pushed), t, 0.5);
 
