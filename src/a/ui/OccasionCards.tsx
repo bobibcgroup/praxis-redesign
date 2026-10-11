@@ -32,6 +32,7 @@ export function OccasionCards({ options, value, onChange, collection }: Props) {
           <button key={o.id} type="button" role="radio" aria-checked={value === o.id} onClick={() => onChange(o.id)} className="a-card a-transition">
             <span className="a-card-frame">
               <CardImage key={photo.base} photo={photo} />
+              {photo.place ? <span className="a-card-place">{photo.place}</span> : null}
             </span>
             <span className="a-card-foot">
               <span className="a-card-name">{o.label}</span>

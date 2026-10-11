@@ -47,11 +47,11 @@ No address, coordinates or city is ever recorded.
 ## Adding or activating a country
 
 1. Add or find its entry in `src/config/occasionCollections.ts` (code, English name, cities). New entries start `pending`; a pending country shows the default photos.
-2. Put five photos in `public/images/occasions/<CODE>/`: `dinner`, `work`, `date`, `wedding`, `party`, each as `-480.webp` and `-960.webp`, portrait at about 2:3 (480 x 720 and 960 x 1440), WebP quality about 80. Keep faces and key architecture inside the middle 70 percent so the phone crop keeps them.
+2. Put five photos in `public/images/occasions/<CODE>/`: `dinner`, `work`, `date`, `wedding`, `party`, each as `-480.webp` and `-960.webp`, 4:3 like the cards (480 x 360 and 960 x 720), WebP quality about 80. Keep faces and key architecture inside the middle third vertically: on a phone Party is shown at 3:1. Add `places` (the city, only where the photo page confirms it) to show it small on the card.
 3. Write `CREDITS.md` in that folder: for each photo, the source page, photographer, licence, and where it was taken.
 4. Preview with `/?photos=<CODE>` on any build. That shows a pending set without activating it.
 5. Look at every photo against the brief below and the quality rules. File names prove nothing.
-6. Add `alt` text for all five, set `status: "active"`, bump `version` if photos changed, then run `npm run photos:check`. It fails if any file is missing, the wrong size, landscape, without alt text, or without credits.
+6. Add `alt` text for all five, set `status: "active"`, bump `version` if photos changed, then run `npm run photos:check`. It fails if any file is missing, the wrong size or shape, without alt text, or without credits.
 7. `npm run build`, `npm run e2e`, push.
 
 Home code does not change when a country is added.
@@ -107,4 +107,4 @@ Next European countries (Belgium, Portugal, Greece, Sweden, Norway, Denmark, Fin
 
 ## Status
 
-No country is active yet; every visitor sees the default collection until a country's five photos are sourced, reviewed and activated. `npm run photos:check` lists the active ones.
+Active: China (CN) and Lebanon (LB), both from free Unsplash photos, credited in their folders. Every other country shows the default collection until its five photos are sourced, reviewed and activated. When a country's own photos show, each card carries its city small in the corner and a line under the cards reads "Photographed in <country>. Change". `npm run photos:check` lists the active ones.

@@ -5,7 +5,7 @@
  * and the creative brief for each, are in docs/OCCASION-PHOTOS.md; `npm run photos:check` verifies it.
  *
  * A country's photos live in public/images/occasions/<CODE>/ as dinner, work, date, wedding and party,
- * each at -480.webp and -960.webp (portrait, about 2:3). A country is shown to visitors only when its
+ * each at -480.webp and -960.webp (4:3, 480 x 360 and 960 x 720, the cards' own shape). A country is shown to visitors only when its
  * status is "active", which needs all five photos present, licensed, credited in that folder's
  * CREDITS.md, and reviewed. A "pending" country shows the default collection. Nothing ever borrows
  * another country's photos.
@@ -31,6 +31,8 @@ export interface CountryCollection {
   cities: readonly string[];
   /** Alt text per photo, required before a country can be activated. */
   alt?: Partial<Record<OccasionId, string>>;
+  /** The city shown small on each card, only where the photo page confirms it. */
+  places?: Partial<Record<OccasionId, string>>;
   position?: Partial<Record<OccasionId, string>>;
 }
 
@@ -59,12 +61,38 @@ const pending = (name: string, cities: string[]): CountryCollection => ({ name, 
 export const COUNTRY_COLLECTIONS: Record<string, CountryCollection> = {
   /* Highest priority */
   PL: pending("Poland", ["Warsaw", "Kraków", "Gdańsk", "Wrocław"]),
-  LB: pending("Lebanon", ["Beirut", "Byblos", "Batroun", "Mount Lebanon"]),
+  LB: {
+    name: "Lebanon",
+    status: "active",
+    version: 1,
+    cities: ["Beirut", "Byblos", "Batroun", "Mount Lebanon"],
+    alt: {
+      DINNER: "A long table under the triple arched windows of a Beirut house",
+      WORK: "A man in a navy suit and blue shirt",
+      DATE: "A seafront restaurant lit at dusk on the Beirut coast",
+      WEDDING: "A bride with a sunflower bouquet, in black and white",
+      PARTY: "A bar open to the street in Gemmayzeh at evening, a scooter outside",
+    },
+    places: { DINNER: "Beirut", WORK: "Beirut", DATE: "Beirut", WEDDING: "Beirut", PARTY: "Gemmayzeh" },
+  },
   AE: pending("United Arab Emirates", ["Dubai", "Abu Dhabi"]),
   SA: pending("Saudi Arabia", ["Riyadh", "Jeddah", "AlUla"]),
   FR: pending("France", ["Paris", "Lyon", "Bordeaux", "Nice"]),
   NL: pending("Netherlands", ["Amsterdam", "Rotterdam", "The Hague", "Utrecht"]),
-  CN: pending("China", ["Shanghai", "Beijing", "Shenzhen", "Hangzhou"]),
+  CN: {
+    name: "China",
+    status: "active",
+    version: 1,
+    cities: ["Shanghai", "Beijing", "Shenzhen", "Hangzhou"],
+    alt: {
+      DINNER: "A dark fine dining room in Shanghai under low pendant lights",
+      WORK: "A man in a suit crossing a Shanghai street between stone buildings and towers",
+      DATE: "A lantern lit pleasure boat on West Lake in the evening",
+      WEDDING: "A gold bridal crown on a red wedding table",
+      PARTY: "The Shanghai skyline lit at night along the river",
+    },
+    places: { DINNER: "Shanghai", WORK: "Shanghai", DATE: "Hangzhou", PARTY: "Shanghai" },
+  },
   /* High priority */
   AT: pending("Austria", ["Vienna", "Salzburg", "Innsbruck"]),
   DE: pending("Germany", ["Berlin", "Munich", "Hamburg", "Düsseldorf"]),

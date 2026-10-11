@@ -1,6 +1,6 @@
 /**
  * The occasion photo registry and the country resolution. Run on its own with `npm run photos:check`.
- * An active country must have all ten files (five photos at two widths), portrait, with alt text and a
+ * An active country must have all ten files (five photos at two widths), 4:3, with alt text and a
  * CREDITS.md; nothing may point at another country's folder.
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -42,7 +42,7 @@ describe("occasion photo registry", () => {
   });
 
   for (const [cc, entry] of Object.entries(COUNTRY_COLLECTIONS).filter(([, e]) => e.status === "active")) {
-    it(`${cc} (${entry.name}) is complete, portrait, described and credited`, () => {
+    it(`${cc} (${entry.name}) is complete, 4:3, described and credited`, () => {
       const dir = join(PUBLIC, "images/occasions", cc);
       expect(existsSync(join(dir, "CREDITS.md")), "CREDITS.md").toBe(true);
       for (const id of OCCASIONS) {
@@ -52,7 +52,7 @@ describe("occasion photo registry", () => {
           expect(existsSync(file), file).toBe(true);
           const size = webpSize(file);
           expect(size?.w, file).toBe(w);
-          expect(size!.h / size!.w, `${file} is portrait`).toBeGreaterThanOrEqual(1.2);
+          expect(size!.h / size!.w, `${file} is 4:3 like the cards`).toBeCloseTo(0.75, 2);
         }
       }
     });

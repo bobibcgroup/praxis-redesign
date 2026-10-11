@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { track } from "../../core/analytics";
 import { OCCASIONS, STAND_IN_PORTRAIT, timesFor, type OccasionId } from "../../shared/catalog";
+import { COUNTRY_COLLECTIONS } from "../../config/occasionCollections";
 import { collectionFor, previewCode, useCountry } from "../lib/country";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
 import { LinkButton } from "../ui/controls";
@@ -138,6 +139,14 @@ export function Home() {
             <div className="mt-4">
               <OccasionCards options={OCCASIONS} value={pending ?? answers.occasion} onChange={choose} collection={collection} />
             </div>
+            {collection.code ? (
+              <p className="a-photos-from">
+                Photographed in {COUNTRY_COLLECTIONS[collection.code].name}.{" "}
+                <button type="button" onClick={() => setPicker(true)} aria-haspopup="dialog" className="a-photos-change">
+                  Change
+                </button>
+              </p>
+            ) : null}
             {store.looks.length > 0 ? (
               <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="a-phone mt-4 self-start !px-0">
                 Saved looks

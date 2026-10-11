@@ -56,6 +56,8 @@ export function resolveCountry(s: Signals, now = new Date()): CountryResolution 
 }
 
 export interface CardPhoto extends OccasionPhoto {
+  /** Where the photo was taken, shown small on the card; only for a country's own photos. */
+  place?: string;
   /** The default photo for the same occasion, swapped in if this one fails to load. */
   fallback: string;
 }
@@ -78,7 +80,7 @@ export function collectionFor(code: string | null, preview: string | null = null
   for (const id of OCCASION_IDS) {
     const fallback = DEFAULT_COLLECTION.photos[id];
     photos[id] = usable
-      ? { base: `/images/occasions/${target}/${OCCASION_FILES[id]}`, alt: entry.alt?.[id] ?? fallback.alt, position: entry.position?.[id], fallback: fallback.base }
+      ? { base: `/images/occasions/${target}/${OCCASION_FILES[id]}`, alt: entry.alt?.[id] ?? fallback.alt, place: entry.places?.[id], position: entry.position?.[id], fallback: fallback.base }
       : { ...fallback, fallback: fallback.base };
   }
   return usable ? { code: target, version: entry.version, photos } : { code: null, version: DEFAULT_COLLECTION.version, photos };

@@ -679,6 +679,9 @@ for (const device of ["desktop", "phone"]) {
       const ownSet = photos.every((x, i) => x.photo === `/images/occasions/${cc}/${OCC[i]}`);
       const defaultSet = photos.every((x, i) => x.photo === `/images/home/${OCC[i]}`);
       check(ownSet || defaultSet, `either all five ${cc} photos or all five default ones (${ownSet ? "own" : "default"})`);
+      const line = await p.locator(".a-photos-from").count();
+      check(ownSet ? line === 1 && (await p.locator(".a-photos-from").innerText()).includes(NAMES[cc]) : line === 0, ownSet ? "Photographed in ... shows under the cards" : "no photographed line on default photos");
+      if (ownSet) check((await p.locator(".a-card-place").count()) >= 4, "the cards carry their city");
       check(!imageRequests.some((u) => u.includes("/images/occasions/") && !u.includes(`/occasions/${cc}/`)), "no other country's photos are requested");
       const ev = (await events(p)).find((e) => e.eventName === "country_collection_loaded");
       check(ev?.properties.country === cc && ev.properties.source === "ip" && ev.properties.localized === ownSet, "country_collection_loaded records the code, source and set");
