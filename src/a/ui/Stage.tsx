@@ -18,7 +18,7 @@ interface StageProps {
   children: ReactNode;
   /** The pinned action row. Omit it when no primary action exists. */
   actions?: ReactNode;
-  /** Mobile band: 40% of the viewport while answering, 50% once looks exist. */
+  /** Mobile band: 45% of the viewport while answering, 42% once looks exist. */
   band?: "answer" | "looks" | "home";
 }
 

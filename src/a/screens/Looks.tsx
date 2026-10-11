@@ -25,7 +25,10 @@ function savedOn(iso: string): string {
 }
 
 export function Looks() {
-  const { href, store, reduced } = useJourney();
+  const { href, store, reduced, answers } = useJourney();
+  /* Came here from a set of looks (its answers ride along in the address): the way back leads to them. */
+  const fromLooks = Boolean(answers.occasion && answers.venue && answers.time && answers.vibe && answers.spend && !answers.done);
+  const backToLooks = href("moment/results", { hero: null });
   const looks = store.looks;
   const [removed, setRemoved] = useState<SavedLook | null>(() => readSession<SavedLook>(REMOVED_KEY));
 
@@ -50,7 +53,7 @@ export function Looks() {
 
   return (
     <div className="a-stage">
-      <TopBar back={href("")} wordmark />
+      <TopBar back={fromLooks ? backToLooks : href("")} wordmark />
       <div className="flex min-h-0 flex-col">
         {looks.length > 0 ? (
           <div className="flex items-baseline justify-between px-5 pt-6 lg:px-12 lg:pt-8">
@@ -68,9 +71,20 @@ export function Looks() {
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-5 pb-16 text-center lg:px-12">
             <h1 className="a-display">No saved looks yet.</h1>
             <p className="max-w-[36ch] leading-6 text-[var(--muted)]">Save a look you like and I’ll keep it here for you.</p>
-            <LinkButton to={href("", FRESH)} variant="primary">
-              Start a new look
-            </LinkButton>
+            {fromLooks ? (
+              <div className="flex flex-col items-center gap-2">
+                <LinkButton to={backToLooks} variant="primary">
+                  Back to your looks
+                </LinkButton>
+                <LinkButton to={href("", FRESH)} variant="tertiary">
+                  Start a new look
+                </LinkButton>
+              </div>
+            ) : (
+              <LinkButton to={href("", FRESH)} variant="primary">
+                Start a new look
+              </LinkButton>
+            )}
           </div>
         ) : (
           <ul className="a-rail flex min-h-0 flex-1 snap-x snap-mandatory items-start gap-4 overflow-x-auto px-5 py-6 lg:gap-8 lg:px-12 lg:py-8" aria-label="Saved looks">

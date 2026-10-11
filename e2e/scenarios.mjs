@@ -493,6 +493,83 @@ for (const device of ["desktop", "phone"]) {
   });
 }
 
+/* The consultant's mobile review (2026-10-11), checked on desktop and phone. */
+for (const device of ["desktop", "phone"]) {
+  await scenario("UX6", "Sign in has no bare count and says why it is asked", device, async (p, shot) => {
+    await p.goto(`${BASE}/?mode=light&gate=signin`);
+    await p.waitForTimeout(900);
+    const gate = p.locator(".a-gate");
+    const text = await gate.innerText();
+    check(!/\b\d+ of \d+\b/.test(text), "no 1 of 1");
+    check(/save looks without an account/i.test(text), "says saving needs no account and what signing in does");
+    await shot("signin");
+    await toResults(p, A);
+    await p.locator(".a-personal-card").filter({ visible: true }).first().click();
+    await p.waitForTimeout(600);
+    if ((await p.locator(".a-gate").getByText(/Sign in so I can remember you/).count()) === 0) await p.locator(".a-gate .a-primary").first().click();
+    await p.waitForTimeout(600);
+    const t2 = await p.locator(".a-gate").innerText();
+    check(/Sign in, then Premium/i.test(t2) && /See it on me is part of Premium/.test(t2), "a two step gate says what follows and why");
+  });
+
+  await scenario("UX7", "Copy link confirms on the button for two seconds", device, async (p, shot) => {
+    await p.context().grantPermissions(["clipboard-read", "clipboard-write"], { origin: BASE });
+    await toResults(p, A);
+    await button(p, /^Share/).click();
+    await p.waitForTimeout(600);
+    await button(p, /^Copy link$/).click();
+    await p.waitForTimeout(300);
+    check((await button(p, /^Copied/).count()) === 1, "the button reads Copied");
+    await shot("copied");
+    await p.waitForTimeout(2300);
+    check((await button(p, /^Copy link$/).count()) === 1, "and returns to Copy link");
+  });
+
+  await scenario("UX8", "Empty Saved looks leads back to the looks just seen", device, async (p, shot) => {
+    await toResults(p, A);
+    const results = new URL(p.url()).searchParams;
+    if (device === "phone") {
+      await p.getByRole("button", { name: "Menu" }).click();
+      await p.waitForTimeout(600);
+    }
+    await p.getByRole("link", { name: /Saved looks/ }).filter({ visible: true }).first().click();
+    await p.waitForURL(/\/looks/);
+    await p.waitForTimeout(600);
+    check(/No saved looks yet/.test(await body(p)), "empty state shown");
+    const back = p.getByRole("link", { name: "Back to your looks" }).filter({ visible: true });
+    check((await back.count()) === 1, "Back to your looks offered");
+    await shot("empty");
+    await back.click();
+    await p.waitForURL(/moment\/results/);
+    const q = new URL(p.url()).searchParams;
+    check(q.get("venue") === results.get("venue") && q.get("spend") === results.get("spend"), "back on the same looks");
+    await p.goto(`${BASE}/looks?mode=light`);
+    await p.waitForTimeout(600);
+    check((await p.getByRole("link", { name: "Back to your looks" }).count()) === 0, "a fresh visit offers Start a new look only");
+  });
+}
+
+await scenario("UX9", "Phone menu reads as one list", "phone", async (p, shot) => {
+  await p.goto(`${BASE}/?mode=light`);
+  await p.getByRole("button", { name: "Menu" }).click();
+  await p.waitForTimeout(700);
+  const size = await p.getByRole("link", { name: "Start a new look" }).first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize));
+  const sign = await p.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: "Sign in" }).evaluate((e) => ({ size: parseFloat(getComputedStyle(e).fontSize), color: getComputedStyle(e).color, text: getComputedStyle(document.querySelector("[data-concept]")).getPropertyValue("--text").trim() }));
+  check(size <= 26, `menu items at ${size}px`);
+  check(sign.size >= 16, `Sign in at ${sign.size}px`);
+  await shot("menu");
+});
+
+await scenario("UX10", "Phone results: the title shows on the first screen", "phone", async (p, shot) => {
+  await toResults(p, A);
+  const vh = await p.evaluate(() => innerHeight);
+  const canvas = await p.locator(".a-canvas").first().boundingBox();
+  const title = await p.locator("h1.a-display").filter({ visible: true }).first().boundingBox();
+  check(canvas.height <= vh * 0.45, `print band ${Math.round(canvas.height)}px of ${vh}`);
+  check(title.y + title.height < vh - 120, "title above the action row without scrolling");
+  await shot("results");
+});
+
 for (const device of ["desktop", "phone"]) {
   await scenario("NAV", "Every way back to the occasion lands on home", device, async (p) => {
     const onHome = async () => (await p.locator(".a-cards").count()) > 0;

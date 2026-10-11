@@ -17,8 +17,9 @@
   grid-template-rows: minmax(0, 45fr) minmax(0, 55fr);
 }
 
+/* The looks on a phone: the print keeps 42% so the title and Make it yours come up sooner. */
 .a-split[data-band="looks"] {
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 42fr) minmax(0, 58fr);
 }
 
 .a-split[data-band="home"] {
@@ -112,7 +113,7 @@
   }
 
   .a-stage > .a-split[data-band="looks"] {
-    --a-band: 0.5;
+    --a-band: 0.42;
   }
 
   .a-stage > .a-split[data-band="home"] {

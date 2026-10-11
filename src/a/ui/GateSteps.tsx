@@ -103,10 +103,12 @@ export function TryOnIntro({ image, title, onStart, onLater }: { image: string |
 /* ------------------------------------------------------------------ sign in */
 
 interface SignInProps {
+  /** Why an account is asked for here, in one line. */
+  reason: string;
   onSignedIn: (email: string | undefined, method: SignInMethod) => void;
 }
 
-export function SignInStep({ onSignedIn }: SignInProps) {
+export function SignInStep({ reason, onSignedIn }: SignInProps) {
   const [busy, setBusy] = useState<SignInMethod | null>(null);
   const [email, setEmail] = useState("");
 
@@ -120,7 +122,10 @@ export function SignInStep({ onSignedIn }: SignInProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h2 className="a-display">Sign in so I can remember you.</h2>
+      <div>
+        <h2 className="a-display">Sign in so I can remember you.</h2>
+        <p className="mt-3 max-w-[40ch] text-[15px] leading-6 text-[var(--muted)]">{reason}</p>
+      </div>
       <div className="flex flex-col gap-2">
         <button type="button" className="a-control a-ink w-full" onClick={() => start("apple")} disabled={busy !== null} aria-busy={busy === "apple"}>
           {busy === "apple" ? null : <Apple size={16} strokeWidth={1.5} aria-hidden="true" className="mr-2" />}

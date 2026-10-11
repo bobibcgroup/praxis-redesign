@@ -154,7 +154,8 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
       >
         <div className="flex h-14 shrink-0 items-center justify-between pl-5 pr-2 lg:pl-8 lg:pr-4">
           <span className="a-label text-[var(--muted)]" aria-live="polite">
-            {success || !step || step === "intro" ? "" : `${askedIndex + 1} of ${asked.length}, ${STEP_LABEL[step]}`}
+            {/* A count only when it tells him something: what comes after this step. */}
+            {success || !step || step === "intro" || asked.length < 2 ? "" : askedIndex < asked.length - 1 ? `${STEP_LABEL[step]}, then ${STEP_LABEL[asked[askedIndex + 1]]}` : `${STEP_LABEL[step]}, last step`}
           </span>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-11 w-11 items-center justify-center text-[var(--text)] transition-colors duration-200 hover:text-[var(--muted)]">
             <X size={20} strokeWidth={1.5} />
@@ -192,6 +193,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
         ) : step === "signin" ? (
           <div className="a-gate-scroll px-5 pb-6 pt-2 lg:px-8 lg:pb-8">
             <SignInStep
+              reason={kind === "signin" ? "You can save looks without an account. Signing in keeps them together under your name." : `${kind === "dna" ? "Style DNA" : "See it on me"} is part of ${PREMIUM.name}, so I’ll need you signed in first.`}
               onSignedIn={(email, method) => {
                 signIn(email, { method, surface: kind === "signin" ? gateSource.current : "gate" });
                 advance();

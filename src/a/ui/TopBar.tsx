@@ -181,7 +181,8 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
             </button>
           </div>
           <nav className="flex flex-1 flex-col justify-center px-5 pb-14 lg:px-12" aria-label="Sections">
-            <ul className="flex flex-col gap-2">
+            {/* Navigation, not a headline: the serif at 26 px, with Sign in in ink so the menu reads as one list. */}
+            <ul className="flex flex-col gap-1">
               {items.map((item, i) => (
                 <motion.li key={item.label} initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.5, delay: reduced ? 0 : 0.08 * i, ease: "easeOut" }}>
                   <Link
@@ -190,7 +191,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
                       if (item.label === "Style DNA" && !store.dna) track("style_dna_explored", { surface: "menu" });
                       onClose();
                     }}
-                    className="a-display inline-block py-2 text-[var(--text)] transition-colors duration-200 hover:text-[var(--accent)]"
+                    className="inline-flex min-h-[48px] items-center font-[family-name:var(--font-display)] text-[26px] leading-8 text-[var(--text)] transition-colors duration-200 hover:text-[var(--muted)]"
                   >
                     {item.label}
                   </Link>
@@ -221,6 +222,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
                     openGate("signin", "menu");
                   }}
                   className="-ml-2"
+                  style={{ color: "var(--text)", fontSize: 16 }}
                 >
                   Sign in
                 </TextButton>

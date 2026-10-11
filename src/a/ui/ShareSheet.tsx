@@ -3,7 +3,8 @@
  * the address, so every share brings someone back. Then: ask a friend to choose (a link to the same
  * three looks), save the image, copy the link.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Check } from "lucide-react";
 import { track } from "../../core/analytics";
 import type { Look } from "../../shared/catalog";
 import { renderLookCard } from "../lib/card";
@@ -29,6 +30,10 @@ export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, on
   const [card, setCard] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  /* Copy link confirms on the button itself, where the eye already is, for two seconds. */
+  const [copied, setCopied] = useState(false);
+  const copiedTimer = useRef<number>();
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), []);
   const address = typeof window !== "undefined" ? window.location.host.replace(/^www\./, "") : "";
 
   useEffect(() => {
@@ -74,8 +79,13 @@ export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, on
 
   const copy = async () => {
     const outcome = await copyLink(sharedUrl("link"));
-    if (outcome === "copied") shared("link");
-    setNote(outcome === "copied" ? "Link copied." : "I couldn’t copy the link.");
+    if (outcome === "copied") {
+      shared("link");
+      setCopied(true);
+      window.clearTimeout(copiedTimer.current);
+      copiedTimer.current = window.setTimeout(() => setCopied(false), 2000);
+    }
+    setNote(outcome === "copied" ? "Link copied. Paste it anywhere." : "I couldn’t copy the link.");
   };
 
   return (
@@ -101,7 +111,15 @@ export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, on
             <TextButton onClick={save} disabled={!card}>
               Save the image
             </TextButton>
-            <TextButton onClick={copy}>Copy link</TextButton>
+            <TextButton onClick={copy} aria-live="polite" className="a-transition">
+              {copied ? (
+                <>
+                  Copied <Check size={14} strokeWidth={2} aria-hidden="true" className="ml-1" />
+                </>
+              ) : (
+                "Copy link"
+              )}
+            </TextButton>
           </div>
           <p className="a-share-what -mt-1">No account needed. The image is the look only; the link shows the details.</p>
         </div>
