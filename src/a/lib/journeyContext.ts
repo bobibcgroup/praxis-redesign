@@ -92,7 +92,7 @@ export function parseAnswers(params: URLSearchParams): Answers {
   };
 }
 
-export type Patch = Partial<Record<keyof Answers | "fit" | "life" | "taste" | "gate" | "restyle", string | null>>;
+export type Patch = Partial<Record<keyof Answers | "fit" | "life" | "taste" | "gate" | "restyle" | "retake", string | null>>;
 
 export const GATES: readonly GateKind[] = ["tryon", "dna", "signin"];
 

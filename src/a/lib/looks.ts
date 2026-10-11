@@ -30,7 +30,21 @@ export function toLook(o: OutfitRecommendation, occasion: OccasionId): Look {
     pieces: o.garments.map((g) =>
       g.source === "wardrobe"
         ? { id: g.garmentId, slot: g.slot, name: g.name, vendor: "Your wardrobe", price: 0, owned: true }
-        : { id: g.garmentId, slot: g.slot, name: g.name, vendor: g.product.retailerName, price: g.product.price, priceStatus: g.product.priceStatus, availability: g.product.availability },
+        : {
+            id: g.garmentId,
+            slot: g.slot,
+            name: g.name,
+            vendor: g.product.retailerName,
+            price: g.product.price,
+            priceStatus: g.product.priceStatus,
+            availability: g.product.availability,
+            sizes: g.product.availableSizes,
+            sizeAvailability: g.product.sizeAvailability,
+            category: g.product.category,
+            retailerId: g.product.retailerId,
+            purchase: g.product.purchase,
+            deliveryEstimate: g.product.deliveryEstimate,
+          },
     ),
   };
 }

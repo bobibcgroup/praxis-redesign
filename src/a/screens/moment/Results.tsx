@@ -14,6 +14,7 @@ import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { track } from "../../../core/analytics";
+import { recordSelection } from "../../../core/data";
 import { anonymousId } from "../../../core/identity";
 import { FRESH, useGated, useJourney } from "../../lib/journeyContext";
 import { forOccasion, money, occasionLabel, resolveFromResponse, ROLE_LABEL } from "../../lib/looks";
@@ -94,7 +95,10 @@ export function Results() {
       const to = looksNow.findIndex((l) => l.id === id);
       if (to < 0 || to === index) return;
       setDir(d ?? Math.sign(to - index));
-      if (recommendationId) track("outfit_selected", { recommendationId, outfitId: id, rank: looksNow[to].rank ?? to + 1, method });
+      if (recommendationId) {
+        track("outfit_selected", { recommendationId, outfitId: id, rank: looksNow[to].rank ?? to + 1, method });
+        recordSelection(recommendationId, id);
+      }
       go("moment/results", { hero: id }, { replace: true });
     },
     [looksNow, index, go, recommendationId],
@@ -139,8 +143,17 @@ export function Results() {
           </div>
         }
       >
-        <h1 className="a-display">I couldn’t put your looks together this time.</h1>
-        <p className="mt-4 max-w-[40ch] leading-6 text-[var(--muted)]">Your answers are kept. Try again, or change one of them.</p>
+        {response?.status === "empty" ? (
+          <>
+            <h1 className="a-display">I couldn’t find looks for all of that.</h1>
+            <p className="mt-4 max-w-[40ch] leading-6 text-[var(--muted)]">Try another budget or feel, and I’ll look again.</p>
+          </>
+        ) : (
+          <>
+            <h1 className="a-display">I couldn’t put your looks together this time.</h1>
+            <p className="mt-4 max-w-[40ch] leading-6 text-[var(--muted)]">Your answers are kept. Try again, or change one of them.</p>
+          </>
+        )}
         <RestyleSheet open={restyling} onClose={() => setRestyling(false)} />
       </Stage>
     );
@@ -253,7 +266,7 @@ export function Results() {
             eyebrow={eyebrow}
             compact={done !== null}
             selection={selection}
-            caption={captionFor(response, label.toLowerCase())}
+            caption={response.status === "partial" ? `${captionFor(response, label.toLowerCase())} I found ${looks.length === 1 ? "one look" : `${looks.length} looks`} this time; Restyle to see others.` : captionFor(response, label.toLowerCase())}
             explain={!shared}
             after={shared ? null : <LookFeedback look={hero} response={response} />}
             personal={

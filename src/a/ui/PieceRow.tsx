@@ -14,14 +14,15 @@ interface Props {
 export function PieceRow({ piece, chosen, onToggle, over = "house" }: Props) {
   const label = over === "house" ? piece.vendor : SLOT_LABEL[piece.slot];
 
-  if (piece.owned || !onToggle) {
+  const sold = !piece.owned && piece.availability === "out_of_stock";
+  if (piece.owned || !onToggle || sold) {
     return (
       <div className="a-piece" role="listitem">
         <span>
           <span className="house a-label">{label}</span>
           <span className="name">{piece.name}</span>
         </span>
-        <span className="a-mono text-[var(--muted)]">{piece.owned ? "Yours" : money(piece.price)}</span>
+        <span className="a-mono text-[var(--muted)]">{piece.owned ? "Yours" : sold ? "Sold out" : money(piece.price)}</span>
       </div>
     );
   }

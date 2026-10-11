@@ -2,10 +2,15 @@
  * An internal page, not linked from the app: the analytics events, styling requests and feedback
  * recorded in this browser, with the measures the team will track once an approved analytics
  * service collects them from everyone. Every figure is counted from real events here; nothing is
- * estimated. Open it at /internal/analytics.
+ * estimated. Events recorded in test mode are listed but left out of the measures. Test mode is
+ * switched on here, for this tab only. Open it at /internal/analytics.
  */
 import { useMemo, useState } from "react";
 import { EVENTS, localSink, type EventName, type PraxisAnalyticsEvent } from "../../core/analytics";
+import { ALLOW_BILLABLE_IMAGES, RECOMMENDATION_ADAPTER } from "../../core/config";
+import { RETENTION, STORES } from "../../core/data";
+import { IMAGE_POLICIES } from "../../core/images";
+import { setSimScenario, simScenario, SIM_SCENARIOS, type SimScenario } from "../../core/sim";
 import { feedbackStore } from "../../core/feedback";
 import { requestHistory } from "../../core/service";
 import { download } from "../lib/share";
@@ -24,10 +29,13 @@ function rate(part: number, whole: number): string {
 export function InternalAnalytics() {
   const { href } = useJourney();
   const [events, setEvents] = useState(() => localSink.read());
+  const [sim, setSim] = useState<SimScenario | null>(() => simScenario());
+  const real = useMemo(() => events.filter((e) => !e.testMode), [events]);
   const requests = requestHistory.all();
   const feedback = feedbackStore.all();
 
   const measures = useMemo(() => {
+    const events = real;
     const results = new Set(events.filter((e) => e.eventName === "results_viewed").map((e) => e.recommendationId)).size;
     const withFeedback = new Set(events.filter((e) => e.eventName === "feedback_submitted" || e.eventName === "recommendation_rejected").map((e) => e.recommendationId)).size;
     const questions = ["venue", "time", "vibe", "spend"] as const;
@@ -40,9 +48,12 @@ export function InternalAnalytics() {
       { label: "Looks opened large", value: String(count(events, "outfit_enlarged")) },
       { label: "Style DNA completion", value: rate(count(events, "style_dna_completed"), count(events, "style_dna_started")) },
       { label: "Error rate (failed requests)", value: rate(count(events, "processing_failed"), count(events, "styling_submitted")) },
+      { label: "Slow requests (taking longer than usual)", value: rate(count(events, "processing_delayed"), count(events, "styling_submitted")) },
+      { label: "Requests cancelled", value: String(count(events, "processing_cancelled")) },
+      { label: "Style DNA corrections", value: String(count(events, "style_dna_corrected")) },
       { label: "Return visits", value: String(count(events, "user_returned")) },
     ];
-  }, [events]);
+  }, [real]);
 
   const byName = useMemo(() => {
     const names = Object.keys(EVENTS) as EventName[];
@@ -73,6 +84,79 @@ export function InternalAnalytics() {
             </TextButton>
           </div>
         </div>
+
+        <section aria-labelledby="test-mode">
+          <h2 id="test-mode" className="a-label text-[var(--muted)]">
+            Test mode, this tab only
+          </h2>
+          <p className="mt-3 max-w-[60ch] text-[15px] leading-6 text-[var(--muted)]">
+            Makes the services misbehave on purpose. Every screen shows a Test mode tag while it is on, and its events are marked and left out of the measures.
+          </p>
+          <div className="a-chips mt-3" role="group" aria-label="Test mode">
+            {([null, ...(Object.keys(SIM_SCENARIOS) as SimScenario[])] as (SimScenario | null)[]).map((id) => (
+              <button
+                key={id ?? "off"}
+                type="button"
+                className="a-chip"
+                aria-pressed={sim === id}
+                onClick={() => {
+                  setSimScenario(id);
+                  setSim(id);
+                  window.dispatchEvent(new Event("praxis-sim"));
+                }}
+              >
+                {id ? SIM_SCENARIOS[id] : "Off"}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section aria-labelledby="config">
+          <h2 id="config" className="a-label text-[var(--muted)]">
+            Services
+          </h2>
+          <dl className="mt-3">
+            <div className="a-piece">
+              <dt className="text-[15px] leading-6">Recommendation adapter</dt>
+              <dd className="a-mono text-[15px]">{RECOMMENDATION_ADAPTER}</dd>
+            </div>
+            <div className="a-piece">
+              <dt className="text-[15px] leading-6">Billable image calls</dt>
+              <dd className="a-mono text-[15px]">{ALLOW_BILLABLE_IMAGES ? "Allowed" : "Off"}</dd>
+            </div>
+            {Object.values(IMAGE_POLICIES).map((p) => (
+              <div key={p.category} className="a-piece">
+                <dt className="text-[15px] leading-6">
+                  Photos: {p.category}
+                  <span className="block text-[13px] leading-5 text-[var(--muted)]">
+                    {p.status === "collecting" ? "Asked for" : "Not asked for"}, processing {p.processing}, kept {p.retention.where.replace("_", " ")}, consent {p.consentVersion}
+                  </span>
+                </dt>
+                <dd className="a-mono text-[15px]">{p.leavesDevice ? "Leaves device" : "Stays"}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        <section aria-labelledby="stores">
+          <h2 id="stores" className="a-label text-[var(--muted)]">
+            Kept in this browser
+          </h2>
+          <dl className="mt-3">
+            {STORES.map((s) => (
+              <div key={s.key} className="a-piece">
+                <dt>
+                  <span className="a-mono block text-[13px]">{s.key}</span>
+                  <span className="block text-[13px] leading-5 text-[var(--muted)]">{s.holds}</span>
+                </dt>
+                <dd className="a-mono text-[13px]">{s.where === "tab" ? "This tab" : "Device"}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-3 text-[13px] leading-5 text-[var(--muted)]">
+            Kept for: styling requests {RETENTION.stylingHistory} days, feedback {RETENTION.feedback} days, events {RETENTION.events} days, look choices {RETENTION.selections} days. Saved looks, Style DNA and wardrobe until deleted.
+          </p>
+        </section>
 
         <section aria-labelledby="measures">
           <h2 id="measures" className="a-label text-[var(--muted)]">
@@ -116,7 +200,10 @@ export function InternalAnalytics() {
               .map((e) => (
                 <li key={e.eventId} className="a-piece">
                   <span className="min-w-0">
-                    <span className="a-mono block text-[13px]">{e.eventName}</span>
+                    <span className="a-mono block text-[13px]">
+                      {e.eventName}
+                      {e.testMode ? ` (test mode: ${e.testMode})` : ""}
+                    </span>
                     <span className="block break-all text-[12px] leading-4 text-[var(--muted)]">{JSON.stringify({ ...e.properties, recommendationId: e.recommendationId, outfitId: e.outfitId, userId: e.userId })}</span>
                   </span>
                   <span className="a-mono text-[12px] text-[var(--muted)]">{new Date(e.timestamp).toLocaleTimeString("en-GB")}</span>

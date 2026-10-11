@@ -4,9 +4,10 @@
  * duplicates (src/core/account.ts). A signed-in person sees their account's looks plus any guest
  * looks on this device; looks of another account stay hidden.
  */
-import { useCallback, useMemo, useState } from "react";
-import type { Look, ToneResult, FitId, LifestyleId } from "./catalog";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Look } from "./catalog";
 import { migrateLooks, visibleTo, type Owner } from "../core/account";
+import { fromLegacy, isProfile, type LegacyDna, type StyleProfile } from "../core/styleProfile";
 
 export interface SavedLook {
   id: string;
@@ -23,18 +24,10 @@ export interface SavedLook {
   dedupeKey: string;
 }
 
-export interface SavedDna {
-  createdAt: string;
-  tones: ToneResult;
-  fit: FitId | null;
-  lifestyle: LifestyleId | null;
-  presetIds: string[];
-  portrait?: string;
-}
-
 interface LabState {
   looks: SavedLook[];
-  dna: SavedDna | null;
+  /** The Style DNA profile (src/core/styleProfile.ts). Never holds a photo. */
+  dna: StyleProfile | null;
 }
 
 const EMPTY: LabState = { looks: [], dna: null };
@@ -59,12 +52,24 @@ function normalise(s: SavedLook): SavedLook {
   return { ...rest, look: { ...s.look, role }, dedupeKey: s.dedupeKey ?? legacyKey(s.look, s.occasionLabel) };
 }
 
+/**
+ * A Style DNA saved by an earlier build had a fixed sample result and kept the portrait in this
+ * browser's storage. It comes back as a profile whose colours are an estimate, and the portrait is
+ * dropped (rewritten on the next save).
+ */
+function readDna(raw: unknown): StyleProfile | null {
+  if (!raw || typeof raw !== "object") return null;
+  if (isProfile(raw)) return raw;
+  if ("createdAt" in raw) return fromLegacy(raw as LegacyDna);
+  return null;
+}
+
 function read(concept: string): LabState {
   try {
     const raw = localStorage.getItem(keyFor(concept));
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as Partial<LabState>;
-    return { looks: (parsed.looks ?? []).map(normalise), dna: parsed.dna ?? null };
+    return { looks: (parsed.looks ?? []).map(normalise), dna: readDna(parsed.dna) };
   } catch {
     return EMPTY;
   }
@@ -91,6 +96,16 @@ export function useLabStore(concept: string, userId?: string) {
   // Read on the first render, so nothing (a styling request, the gate's steps) ever sees an empty store
   // before the saved Style DNA arrives.
   const [state, setState] = useState<LabState>(() => read(concept));
+
+  /* An older save still holding a portrait or the old shape is rewritten once, without the photo. */
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(keyFor(concept));
+      if (raw && /"portrait"|"tones"/.test(raw)) write(concept, read(concept));
+    } catch {
+      // Storage unavailable; nothing to rewrite.
+    }
+  }, [concept]);
 
   const update = useCallback(
     (fn: (prev: LabState) => LabState) => {
@@ -153,7 +168,7 @@ export function useLabStore(concept: string, userId?: string) {
     [concept],
   );
 
-  const saveDna = useCallback((dna: SavedDna) => update((prev) => ({ ...prev, dna })), [update]);
+  const saveDna = useCallback((dna: StyleProfile) => update((prev) => ({ ...prev, dna })), [update]);
 
   const clearDna = useCallback(() => update((prev) => ({ ...prev, dna: null })), [update]);
 

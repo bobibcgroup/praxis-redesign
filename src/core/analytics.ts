@@ -10,6 +10,7 @@
 import { APP_VERSION } from "./config";
 import { anonymousId, currentUserId } from "./identity";
 import { local, newId, readJson, session, writeJson } from "./ids";
+import { simScenario } from "./sim";
 
 type Prop =
   | { type: "string"; required?: boolean }
@@ -30,6 +31,7 @@ const REC = { type: "string", required: true } as const;
 const OUTFIT = { type: "string", required: true } as const;
 const QUESTION = { type: "enum", values: ["occasion", "venue", "time", "vibe", "spend"], required: true } as const;
 const FEATURE = { type: "enum", values: ["style_dna", "tryon"], required: true } as const;
+const PHOTO = { type: "enum", values: ["face_colour", "body_fit", "wardrobe_garment", "try_on"], required: true } as const;
 
 export const EVENTS = {
   landing_viewed: { category: "acquisition", trigger: "The home page is shown, once per visit.", props: { via: { type: "enum", values: ["story", "friend", "link", "none"], required: true } } },
@@ -42,6 +44,9 @@ export const EVENTS = {
   processing_started: { category: "journey", journey: "style_a_moment", trigger: "The service starts working on a request.", props: { requestId: { type: "string", required: true } } },
   processing_completed: { category: "journey", journey: "style_a_moment", trigger: "The service answers with looks (complete or partial) or none.", props: { requestId: { type: "string", required: true }, recommendationId: REC, status: { type: "enum", values: ["completed", "partial", "empty"], required: true }, outfits: { type: "number", required: true }, durationMs: { type: "number", required: true } } },
   processing_failed: { category: "journey", journey: "style_a_moment", trigger: "The service fails, or its answer is rejected by validation.", props: { requestId: { type: "string", required: true }, code: { type: "string", required: true } } },
+  processing_delayed: { category: "journey", journey: "style_a_moment", trigger: "A request runs long enough for the screen to say it is taking longer than usual.", props: { requestId: { type: "string", required: true } } },
+  processing_cancelled: { category: "journey", journey: "style_a_moment", trigger: "The customer cancels a request while it runs.", props: { requestId: { type: "string", required: true } } },
+  retry_requested: { category: "journey", journey: "style_a_moment", trigger: "Try again is tapped after a failed request.", props: { attempt: { type: "number", required: true }, code: { type: "string", required: true } } },
   results_viewed: { category: "journey", journey: "style_a_moment", trigger: "The looks for a recommendation are first shown in a visit.", props: { recommendationId: REC, outfits: { type: "number", required: true }, mode: { type: "enum", values: ["demonstration", "personalized"], required: true }, shared: { type: "boolean", required: true } } },
 
   outfit_selected: { category: "engagement", journey: "style_a_moment", trigger: "Another look is brought to the front.", props: { recommendationId: REC, outfitId: OUTFIT, rank: { type: "number", required: true }, method: { type: "enum", values: ["thumbnail", "swipe", "arrow", "key", "viewer"], required: true } } },
@@ -53,6 +58,8 @@ export const EVENTS = {
   look_shared: { category: "engagement", journey: "style_a_moment", trigger: "A share action completes or hands off to the system share sheet.", props: { recommendationId: { type: "string" }, outfitId: OUTFIT, channel: { type: "enum", values: ["story", "friend", "image", "link"], required: true } } },
   restyle_changed: { category: "engagement", journey: "style_a_moment", trigger: "An answer is changed from Restyle.", props: { field: { type: "enum", values: ["occasion", "venue", "time", "vibe", "spend"], required: true } } },
 
+  size_selected: { category: "commercial", journey: "style_a_moment", trigger: "A size is chosen for a piece in Check out.", props: { outfitId: OUTFIT, garmentId: { type: "string", required: true }, size: { type: "string", required: true } } },
+  retailer_redirected: { category: "commercial", journey: "style_a_moment", trigger: "The customer leaves for a retailer's site to buy a piece. Only when a real link exists.", props: { outfitId: OUTFIT, garmentId: { type: "string", required: true }, retailerId: { type: "string", required: true }, route: { type: "enum", values: ["retailer_site", "affiliate"], required: true } } },
   checkout_initiated: { category: "commercial", journey: "style_a_moment", trigger: "Check out is opened with at least one piece chosen.", props: { recommendationId: { type: "string" }, outfitId: OUTFIT, pieces: { type: "number", required: true }, total: { type: "number", required: true }, priceStatus: { type: "enum", values: ["example", "estimated", "live"], required: true } } },
 
   look_saved: { category: "retention", journey: "style_a_moment", trigger: "A look is saved, signed in or not.", props: { recommendationId: { type: "string" }, outfitId: OUTFIT, signedIn: { type: "boolean", required: true } } },
@@ -61,8 +68,15 @@ export const EVENTS = {
   wardrobe_item_added: { category: "retention", journey: "style_a_moment", trigger: "A piece the customer owns is added to the looks. Never carries the photo.", props: { slot: { type: "enum", values: ["top", "bottom", "shoes", "extras"], required: true }, source: { type: "enum", values: ["sample", "upload"], required: true } } },
   style_dna_started: { category: "retention", journey: "style_dna", trigger: "The first Style DNA question is shown.", props: {} },
   style_dna_step: { category: "retention", journey: "style_dna", trigger: "A Style DNA question is answered. The photo answer says only own or sample.", props: { step: { type: "enum", values: ["photo", "fit", "week", "taste"], required: true }, answer: { type: "string", required: true } } },
+  style_dna_analysis_finished: { category: "retention", journey: "style_dna", trigger: "The colour estimate for a Style DNA photo comes back. Says only the outcome, never a result.", props: { status: { type: "enum", values: ["completed", "unreadable", "failed", "disabled"], required: true } } },
+  style_dna_estimate_confirmed: { category: "retention", journey: "style_dna", trigger: "Looks right is tapped on the colour estimate.", props: {} },
+  style_dna_corrected: { category: "retention", journey: "style_dna", trigger: "The customer changes part of their Style DNA. Says which part, never the value.", props: { field: { type: "enum", values: ["undertone", "contrast", "fit", "week", "tastes"], required: true } } },
   style_dna_completed: { category: "retention", journey: "style_dna", trigger: "A Style DNA is saved.", props: { photo: { type: "enum", values: ["own", "sample"], required: true }, tasteCount: { type: "number", required: true } } },
 
+  photo_consent_given: { category: "account", trigger: "The customer agrees to a use of their photo, before giving one.", props: { category: PHOTO } },
+  photo_rejected: { category: "account", trigger: "A photo fails the checks before use. Says why, never the photo.", props: { category: PHOTO, problem: { type: "enum", values: ["not_an_image", "unsupported_type", "too_large", "too_small", "too_dark", "too_bright", "unreadable"], required: true } } },
+  photo_deleted: { category: "account", trigger: "The customer deletes a photo they gave.", props: { category: PHOTO } },
+  local_data_deleted: { category: "account", trigger: "The customer deletes everything Praxis keeps in this browser. Recorded after, as the first event of a clean slate.", props: {} },
   premium_intro_viewed: { category: "account", trigger: "The introduction to a Premium feature is shown.", props: { feature: FEATURE } },
   premium_intro_continued: { category: "account", trigger: "Continue is tapped on a Premium introduction.", props: { feature: FEATURE } },
   paywall_viewed: { category: "account", trigger: "The Premium payment step is shown.", props: { feature: FEATURE } },
@@ -70,7 +84,7 @@ export const EVENTS = {
   sync_offer_viewed: { category: "account", trigger: "A guest sees the offer to sign in after saving.", props: {} },
   sync_offer_dismissed: { category: "account", trigger: "A guest declines the offer to sign in after saving.", props: {} },
   signin_completed: { category: "account", trigger: "The sign-in preview completes.", props: { method: { type: "enum", values: ["apple", "google", "email"], required: true }, surface: { type: "enum", values: ["sync_offer", "gate", "menu"], required: true } } },
-  account_migrated: { category: "account", trigger: "What a guest saved is moved to the account at sign-in.", props: { looks: { type: "number", required: true }, duplicates: { type: "number", required: true }, feedback: { type: "number", required: true } } },
+  account_migrated: { category: "account", trigger: "What a guest saved is moved to the account at sign-in.", props: { looks: { type: "number", required: true }, duplicates: { type: "number", required: true }, feedback: { type: "number", required: true }, wardrobe: { type: "number" } } },
   account_migration_failed: { category: "account", trigger: "Moving a guest's looks or feedback to the account could not be written; what was not moved stays as it was.", props: { part: { type: "enum", values: ["looks", "feedback"], required: true } } },
 } as const satisfies Record<string, EventSpec>;
 
@@ -95,6 +109,8 @@ export interface PraxisAnalyticsEvent {
   outfitId?: string;
   properties: Record<string, string | number | boolean>;
   applicationVersion: string;
+  /** Set while test mode is on, so simulated sessions never count as real ones. */
+  testMode?: string;
 }
 
 export interface AnalyticsSink {
@@ -201,6 +217,8 @@ export function track<N extends EventName>(name: N, props: EventProps<N>, option
   if (spec.journey) event.journey = spec.journey;
   if (typeof recommendationId === "string") event.recommendationId = recommendationId;
   if (typeof outfitId === "string") event.outfitId = outfitId;
+  const sim = simScenario();
+  if (sim) event.testMode = sim;
   for (const sink of sinks) {
     try {
       sink.send(event);

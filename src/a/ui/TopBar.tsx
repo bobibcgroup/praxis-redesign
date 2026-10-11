@@ -173,7 +173,10 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
                 </motion.li>
               ))}
             </ul>
-            <div className="mt-10 flex items-center gap-3 border-t border-[var(--rule)] pt-6">
+            <Link to={href("data")} onClick={onClose} className="mt-6 inline-flex min-h-11 items-center self-start text-[15px] text-[var(--muted)] transition-colors duration-200 hover:text-[var(--text)]">
+              Your data on this device
+            </Link>
+            <div className="mt-4 flex items-center gap-3 border-t border-[var(--rule)] pt-6">
               {user ? (
                 <>
                   <span className="a-avatar" aria-hidden="true">

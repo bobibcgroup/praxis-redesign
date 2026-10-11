@@ -18,8 +18,11 @@ import { Stage } from "../../ui/Stage";
 const ADVANCE_MS = 260;
 
 export function DnaFace() {
-  const { href, go, setFaceImage, reduced } = useJourney();
+  const { href, go, setFaceImage, reduced, params } = useJourney();
   const portrait = useDnaPortrait();
+  const dna = useDnaAnswers();
+  /* Retaking the photo of an existing Style DNA goes straight back to the build, keeping every answer and correction. */
+  const retake = params.get("retake") === "1";
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   useAttachStream(videoRef, stream);
@@ -27,8 +30,8 @@ export function DnaFace() {
 
   /* Opening the first question starts a Style DNA; counted once per visit. */
   useEffect(() => {
-    track("style_dna_started", {}, { once: "dna" });
-  }, []);
+    if (!retake) track("style_dna_started", {}, { once: "dna" });
+  }, [retake]);
 
   return (
     <Stage
@@ -38,15 +41,25 @@ export function DnaFace() {
       actions={
         portrait ? (
           <div className="flex items-center gap-2">
-            <PrimaryButton onClick={() => go("dna/fit")}>Looks right</PrimaryButton>
-            <TextButton onClick={() => go("dna/face", { face: null })}>Change the photo</TextButton>
+            <PrimaryButton onClick={() => go(retake ? "dna/build" : "dna/fit")}>Looks right</PrimaryButton>
+            <TextButton
+              onClick={() => {
+                if (dna.face === "own") {
+                  setFaceImage(null);
+                  track("photo_deleted", { category: "face_colour" });
+                }
+                go("dna/face", { face: null });
+              }}
+            >
+              {dna.face === "own" ? "Delete and change the photo" : "Change the photo"}
+            </TextButton>
           </div>
         ) : undefined
       }
     >
-      <Count step={1} total={4} />
-      <h1 className="a-display">Let’s find your colours.</h1>
-      <Caption className="mt-4 max-w-[36ch]">A daylight photo with no filter shows me which colours suit you.</Caption>
+      {retake ? null : <Count step={1} total={4} />}
+      <h1 className="a-display">{retake ? "A new photo for your colours." : "Let’s find your colours."}</h1>
+      <Caption className="mt-4 max-w-[36ch]">A daylight photo with no filter works best. You can correct anything I suggest.</Caption>
       {!portrait ? (
         <div className="mt-6">
           <Capture

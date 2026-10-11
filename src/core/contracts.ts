@@ -39,6 +39,18 @@ export interface PreferenceSnapshot {
   dislikedGarmentIds: string[];
 }
 
+/** The Style DNA as an engine may use it. Each value says whether the customer confirmed it. */
+export interface StyleProfileSummary {
+  undertone?: { value: "cool" | "warm" | "neutral"; basis: AttributeBasis };
+  contrast?: { value: "high" | "medium" | "low"; basis: AttributeBasis };
+  fit?: { value: "SLIM" | "REGULAR" | "RELAXED"; basis: AttributeBasis };
+  week?: { value: "OFFICE" | "SOCIAL" | "CASUAL" | "MIXED"; basis: AttributeBasis };
+  tastes: string[];
+}
+
+/** Estimated by an analysis, confirmed by the customer, or corrected by them. */
+export type AttributeBasis = "inferred" | "confirmed" | "corrected";
+
 export interface StylingRequest {
   requestId: string;
   /** The same answers always give the same key, so a response can be tied to the exact inputs it answered. */
@@ -63,8 +75,10 @@ export interface StylingRequest {
     maximum?: number;
     currency: Currency;
   };
-  /** The saved Style DNA, when there is one. */
+  /** The saved Style DNA, when there is one: its id and version, such as dna_ab12_v3. */
   styleProfileId?: string;
+  /** What the Style DNA currently says, corrections winning over estimates. Never a photo or a measurement. */
+  styleProfile?: StyleProfileSummary;
   wardrobeItems: WardrobeItemRef[];
   preferences?: PreferenceSnapshot;
   location?: { country?: string; city?: string };
@@ -76,20 +90,43 @@ export interface StylingRequest {
 export type PriceStatus = "example" | "estimated" | "live";
 export type Availability = "in_stock" | "out_of_stock" | "unknown";
 
-/** A reference to something a retailer sells. */
+/**
+ * How a piece can be bought. Praxis does not assume it takes every payment: a piece may be bought on
+ * the retailer's own site, through an affiliate link, through a retailer integration, or one day in a
+ * Praxis checkout. "none" means it cannot be bought from here yet, and the screens say so.
+ */
+export type PurchaseRoute =
+  | { kind: "retailer_site" | "affiliate"; url: string }
+  | { kind: "retailer_integration" | "native"; integrationId: string }
+  | { kind: "none"; reason: "example_product" | "not_supported" };
+
+/** A reference to something a retailer sells (the RetailProduct of the integration brief). */
 export interface ProductRef {
   productId: string;
   retailerId: string;
   retailerName: string;
+  /** Such as "Knitwear" or "Shoes", as the retailer files it. */
+  category?: string;
   price: number;
   currency: Currency;
   /** Example prices are illustrations; only live prices come from a retailer feed. */
   priceStatus: PriceStatus;
+  /** Stock as the retailer reported it. "unknown" unless a feed says otherwise. */
   availability: Availability;
+  /** Sizes the retailer lists, when it lists them. */
+  availableSizes?: string[];
+  /** Per size, when the feed reports it; a size missing here has unknown stock. */
+  sizeAvailability?: Record<string, Availability>;
   productUrl?: string;
   imageUrl?: string;
+  /** When the price and stock were last read from the retailer. */
   lastUpdatedAt?: string;
+  purchase?: PurchaseRoute;
+  /** Only when the retailer supplies it, such as "2 to 4 days". */
+  deliveryEstimate?: string;
 }
+
+export type RetailProduct = ProductRef;
 
 interface GarmentBase {
   garmentId: string;

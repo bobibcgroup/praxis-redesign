@@ -7,6 +7,9 @@ import { createMockAdapter } from "./adapters/mock";
 import { RECOMMENDATION_ADAPTER } from "./config";
 import type { StylingRequest, StylingResponse } from "./contracts";
 import { local, readJson, writeJson } from "./ids";
+import { TIMEOUT_MS } from "./processing";
+import { createMockRetailer, matchProducts, type RetailerAdapter } from "./retail";
+import { never, simScenario, SIM_SLOW_MS, wait, type SimScenario } from "./sim";
 import { failedResponse, validateStylingResponse } from "./validate";
 
 export interface RecommendationAdapter {
@@ -21,23 +24,80 @@ export interface StylingService {
   recommend(request: StylingRequest, options?: { signal?: AbortSignal }): Promise<StylingResponse>;
 }
 
-export function createStylingService(adapter: RecommendationAdapter, history: RequestHistory | null = requestHistory): StylingService {
+export interface ServiceOptions {
+  /** Looks up sizes, stock and how to buy, after validation. None: pieces stay as the engine sent them. */
+  retailer?: RetailerAdapter;
+  /** Gives up after this long. A function so test mode can shorten it. */
+  timeoutMs?: number | (() => number);
+}
+
+/**
+ * Validation, then product matching, then the history. A request the caller cancels is answered
+ * as failed and not retryable, and is not kept in the history.
+ */
+export function createStylingService(adapter: RecommendationAdapter, history: RequestHistory | null = requestHistory, opts: ServiceOptions = {}): StylingService {
   const meta = { id: adapter.id, version: adapter.version };
   return {
     adapter: meta,
     async recommend(request, options = {}) {
+      const limit = typeof opts.timeoutMs === "function" ? opts.timeoutMs() : (opts.timeoutMs ?? TIMEOUT_MS);
+      const controller = new AbortController();
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, limit);
+      const onCancel = () => controller.abort();
+      if (options.signal?.aborted) controller.abort();
+      options.signal?.addEventListener("abort", onCancel, { once: true });
+
       let response: StylingResponse;
       try {
-        const raw = await adapter.recommend(request, options);
+        const raw = await adapter.recommend(request, { signal: controller.signal });
+        if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
         response = validateStylingResponse(raw, request, meta).response;
+        if (opts.retailer && (response.status === "completed" || response.status === "partial")) {
+          response = await matchProducts(response, opts.retailer, { signal: controller.signal });
+        }
       } catch {
-        response = failedResponse(request, meta, "adapter_error", "The service did not answer.");
+        if (timedOut) response = failedResponse(request, meta, "timeout", "The service took too long to answer.");
+        else if (options.signal?.aborted) response = failedResponse(request, meta, "cancelled", "The request was cancelled.", false);
+        else response = failedResponse(request, meta, "adapter_error", "The service did not answer.");
+      } finally {
+        clearTimeout(timer);
+        options.signal?.removeEventListener("abort", onCancel);
       }
-      history?.record(request, response);
+      if (response.error?.code !== "cancelled") history?.record(request, response);
       return response;
     },
   };
 }
+
+/**
+ * Wraps an adapter so test mode can make it slow, silent, broken, short or empty. With test mode
+ * off it passes everything straight through.
+ */
+export function withSimulation(adapter: RecommendationAdapter, scenario: () => SimScenario | null = simScenario): RecommendationAdapter {
+  return {
+    id: adapter.id,
+    version: adapter.version,
+    async recommend(request, options) {
+      const s = scenario();
+      if (s === "slow") await wait(SIM_SLOW_MS, options.signal);
+      if (s === "timeout") await never(options.signal);
+      if (s === "failure") throw new Error("Simulated service error");
+      const raw = await adapter.recommend(request, options);
+      if ((s === "partial" || s === "empty") && raw && typeof raw === "object" && Array.isArray((raw as { outfits?: unknown }).outfits)) {
+        const outfits = (raw as { outfits: unknown[] }).outfits;
+        return { ...raw, outfits: s === "partial" ? outfits.slice(0, 2) : [] };
+      }
+      return raw;
+    },
+  };
+}
+
+/** In test mode the time limit is shorter, so a timeout can be seen without a long wait. */
+const SIM_TIMEOUT_MS = 9000;
 
 /* ------------------------------------------------------ request history */
 
@@ -90,7 +150,10 @@ let service: StylingService | null = null;
 export function stylingService(): StylingService {
   if (!service) {
     if (RECOMMENDATION_ADAPTER !== "mock" && typeof console !== "undefined") console.warn(`Unknown recommendation adapter "${RECOMMENDATION_ADAPTER}"; using the mock.`);
-    service = createStylingService(createMockAdapter());
+    service = createStylingService(withSimulation(createMockAdapter()), requestHistory, {
+      retailer: createMockRetailer((productId) => simScenario() === "unavailable_products" && productId.endsWith("_shoes")),
+      timeoutMs: () => (simScenario() === "timeout" ? SIM_TIMEOUT_MS : TIMEOUT_MS),
+    });
   }
   return service;
 }

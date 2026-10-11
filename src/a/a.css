@@ -1083,3 +1083,76 @@
   height: 100%;
   object-fit: cover;
 }
+
+/* A chosen chip: a size, or a corrected Style DNA value. */
+[data-concept="a"] .a-chip[aria-pressed="true"] {
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--text);
+}
+
+/* Short facts in label and value pairs: what happens to a photo. */
+[data-concept="a"] .a-facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0;
+}
+
+[data-concept="a"] .a-facts dd {
+  margin: 0 0 8px;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-facts {
+    grid-template-columns: 128px 1fr;
+    column-gap: 16px;
+    row-gap: 8px;
+  }
+
+  [data-concept="a"] .a-facts dt {
+    padding-top: 3px;
+  }
+
+  [data-concept="a"] .a-facts dd {
+    margin: 0;
+  }
+}
+
+/* The Style DNA, one attribute per row, with whether it is an estimate or the customer's word. */
+[data-concept="a"] .a-profile {
+  border-top: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-profile > div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-basis {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--muted);
+}
+
+/* Test mode: a thin strip over the top edge, never mistaken for the product. */
+[data-concept="a"] .a-testmode {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  height: 18px;
+  padding: 0 8px;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--bg);
+  background: color-mix(in srgb, var(--error) 85%, transparent);
+  pointer-events: none;
+}

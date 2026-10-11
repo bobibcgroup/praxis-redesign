@@ -20,6 +20,12 @@ function env(name: string): string | undefined {
 /** Which recommendation adapter answers styling requests. Only "mock" exists today; service.ts falls back to it. */
 export const RECOMMENDATION_ADAPTER: string = env("VITE_RECOMMENDATION_ADAPTER") ?? "mock";
 
+/**
+ * The one switch for image services that cost money (analysis, generation, try-on). Off unless the
+ * deployment sets VITE_ALLOW_BILLABLE_IMAGES=true; vision.ts refuses billable calls while it is off.
+ */
+export const ALLOW_BILLABLE_IMAGES: boolean = env("VITE_ALLOW_BILLABLE_IMAGES") === "true";
+
 /** The one subscription. Style DNA is the experience; Premium is the subscription it belongs to. */
 export const PREMIUM = {
   name: "Premium",

@@ -11,6 +11,7 @@ import { stepsFor, useUser, type GateKind } from "./user";
 import { FACE_KEY, GATES, ITEM_KEY, JourneyContext, parseAnswers, readSession, withPatch, writeSession, type JourneyContextValue, type OwnedItem, type Patch, type SignInMethod, type SignInSurface } from "./journeyContext";
 import { migrateFeedback } from "../../core/account";
 import { track } from "../../core/analytics";
+import { migrateWardrobe, pruneExpired, wardrobeEntries, writeWardrobe } from "../../core/data";
 import { feedbackStore } from "../../core/feedback";
 import { anonymousId, noteVisit } from "../../core/identity";
 
@@ -24,8 +25,10 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   const store = useLabStore("a", user?.id);
   const { migrateToAccount } = store;
 
-  /* A visit is counted once per tab; a browser that has been here before counts as returning. */
+  /* A visit is counted once per tab; a browser that has been here before counts as returning.
+     Records past their retention period are dropped first. */
   useEffect(() => {
+    pruneExpired();
     const visit = noteVisit();
     if (visit?.returning) track("user_returned", { daysSinceLastVisit: visit.daysSinceLastVisit, visits: visit.visits });
   }, []);
@@ -43,7 +46,9 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       }
       const feedback = migrateFeedback(feedbackStore.all(), account.id, anon);
       const feedbackMoved = feedbackStore.replaceAll(feedback.records);
-      track("account_migrated", { looks: looks.moved, duplicates: looks.duplicates, feedback: feedbackMoved ? feedback.moved : 0 });
+      const wardrobe = migrateWardrobe(wardrobeEntries(), account.id, anon);
+      if (wardrobe.moved) writeWardrobe(wardrobe.entries);
+      track("account_migrated", { looks: looks.moved, duplicates: looks.duplicates, feedback: feedbackMoved ? feedback.moved : 0, wardrobe: wardrobe.moved });
       if (!feedbackMoved) track("account_migration_failed", { part: "feedback" });
     },
     [userSignIn, migrateToAccount],

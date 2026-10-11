@@ -5,7 +5,7 @@
  */
 import { OUTFITS, type TierType } from "@/lib/outfitLibrary";
 import type { OccasionType } from "@/types/praxis";
-import type { Availability, OutfitRole, PriceStatus, RecommendationFactor } from "@/core/contracts";
+import type { Availability, OutfitRole, PriceStatus, PurchaseRoute, RecommendationFactor } from "@/core/contracts";
 
 export type OccasionId = OccasionType;
 
@@ -115,6 +115,14 @@ export interface Piece {
   owned?: boolean;
   priceStatus?: PriceStatus;
   availability?: Availability;
+  /** From the retailer, when it lists them. */
+  sizes?: string[];
+  sizeAvailability?: Record<string, Availability>;
+  category?: string;
+  retailerId?: string;
+  /** How it can be bought; absent or "none" means not from here. */
+  purchase?: PurchaseRoute;
+  deliveryEstimate?: string;
 }
 
 /** The view model for one look, with the reasons the service gave for it. */

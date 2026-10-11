@@ -66,9 +66,8 @@ function StyleDna() {
 }
 
 export function Home() {
-  const { answers, params, href, go, store, reduced, setFaceImage } = useJourney();
+  const { answers, params, href, go, store, reduced, faceImage } = useJourney();
   const [pending, setPending] = useState<OccasionId | null>(null);
-  const dna = store.dna;
   const via = params.get("via");
 
   useEffect(() => {
@@ -83,17 +82,13 @@ export function Home() {
 
   useEffect(() => {
     if (!pending) return;
-    const own = dna?.portrait?.startsWith("data:") ? dna.portrait : null;
-    const t = setTimeout(() => {
-      if (own) setFaceImage(own);
-      go("moment/venue", { ...FRESH, occasion: pending, face: dna ? (own ? "own" : "sample") : null });
-    }, reduced ? 0 : 260);
+    const t = setTimeout(() => go("moment/venue", { ...FRESH, occasion: pending }), reduced ? 0 : 260);
     return () => clearTimeout(t);
-  }, [pending, go, reduced, dna, setFaceImage]);
+  }, [pending, go, reduced]);
 
   if (answers.done === "dna") {
     return (
-      <Stage wordmark canvas={<Frame image={dna?.portrait ?? STAND_IN_PORTRAIT} alt="Your portrait" reduced={reduced} />} actions={<CompletionActions />}>
+      <Stage wordmark canvas={<Frame image={faceImage ?? STAND_IN_PORTRAIT} alt={faceImage ? "Your portrait" : "A sample portrait"} reduced={reduced} />} actions={<CompletionActions />}>
         <Completion kind="dna" />
       </Stage>
     );

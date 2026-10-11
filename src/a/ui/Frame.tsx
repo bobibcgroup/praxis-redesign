@@ -155,6 +155,22 @@ export function ProgressLine({ progress, label, reduced }: { progress: number; l
   );
 }
 
+/**
+ * A request in progress, without pretending to know how far along it is: a short segment travels the
+ * line while the service works, and the line fills once it has answered. Still when motion is reduced.
+ */
+export function WorkingLine({ working, label, reduced }: { working: boolean; label: string; reduced: boolean }) {
+  return (
+    <div className="a-line overflow-hidden" role="img" aria-label={label}>
+      {working && !reduced ? (
+        <motion.div style={{ width: "30%" }} initial={{ x: "-100%" }} animate={{ x: "340%" }} transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }} />
+      ) : (
+        <motion.div initial={false} animate={{ scaleX: working ? 0.3 : 1, opacity: working ? 0.5 : 1 }} transition={{ duration: reduced ? 0 : 0.3 }} />
+      )}
+    </div>
+  );
+}
+
 export function FrameCaption({ children }: { children: ReactNode }) {
   return <p className="-mx-10 mt-2 whitespace-nowrap text-center text-[13px] leading-5 text-[var(--muted)] lg:mx-0">{children}</p>;
 }

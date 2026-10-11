@@ -20,10 +20,11 @@ One full-viewport stage. The left column asks one question at a time; the right 
 
 Journeys:
 
-- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, a guided build, then the looks first: three looks with the hero in the print and three labelled thumbnails beside it. Move between the looks with the thumbnails, a sideways swipe on the print, the arrows and counter under the print on desktop, or the left and right keys once the print or the thumbnails have focus; it stops at the first and last look. Everything on the page follows the one look in the URL (`hero`): photo, name, note, pieces, prices, total, Check out, Share, Save and Restyle. A tap or click on the print (a small glass marks it; on desktop it reads View details on hover) opens the look large to study: zoom with the + and − controls, the wheel or trackpad, a pinch or a double tap, drag to move around, Reset to go back; only the photo zooms, never the page. At normal size a sideways swipe or the arrows move between the looks and a swipe down closes it, back on the same look. The results offer "Make it yours": see it on me (the try-on preview, on a model for now) or use something I own (one item by slot, then the looks rebuild around it). Then try-on, save, share, check out (every piece ticked by default with a live total, then a sheet by retailer with one Purchase action; open to everyone, no sign in). Each look has "Why this look" (the factors it was picked on) and More like this or Not for me (with a reason or a piece).
-- **Style DNA**: face, fit, lifestyle, up to two inspiration presets, a guided build, and a plain-language result (undertone, contrast, palette, one line of advice). Saving it changes the home so a returning user starts on the occasion chips.
+- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, the build (it follows the real request, see Processing states), then the looks first: three looks with the hero in the print and three labelled thumbnails beside it. Move between the looks with the thumbnails, a sideways swipe on the print, the arrows and counter under the print on desktop, or the left and right keys once the print or the thumbnails have focus; it stops at the first and last look. Everything on the page follows the one look in the URL (`hero`): photo, name, note, pieces, prices, total, Check out, Share, Save and Restyle. A tap or click on the print (a small glass marks it; on desktop it reads View details on hover) opens the look large to study: zoom with the + and − controls, the wheel or trackpad, a pinch or a double tap, drag to move around, Reset to go back; only the photo zooms, never the page. At normal size a sideways swipe or the arrows move between the looks and a swipe down closes it, back on the same look. The results offer "Make it yours": see it on me (the try-on preview, on a model for now) or use something I own (one item by slot, then the looks rebuild around it). Then try-on, save, share, check out (every piece ticked by default with a live total, then a sheet by retailer with a size for each piece and what is known about stock and delivery; open to everyone, no sign in). Each look has "Why this look" (the factors it was picked on) and More like this or Not for me (with a reason or a piece).
+- **Style DNA**: face (with the photo notice first), fit, lifestyle, up to two inspiration presets, the colour analysis, and a result that marks each part as an estimate, a confirmed answer or the customer's correction, with "Not quite right?" to change any of it or retake the photo (see Style DNA profile). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
-- **Style DNA**: the saved Style DNA, start again, sign out, light or dark.
+- **Style DNA**: the saved Style DNA, change it, retake the photo, start again, your data on this device, sign out, light or dark.
+- **Your data on this device** (`/data`): what is kept in this browser, deleting a photo, and deleting everything.
 
 Full concept spec: `docs/CONCEPT-A.md`.
 
@@ -56,7 +57,12 @@ Browser storage (prototype only, replace with real persistence):
 | `praxis_events` | the last 1000 analytics events (`src/core/analytics.ts`) |
 | `praxis_sync_offer_dismissed` | set when a guest closes the offer to sign in and sync |
 | `praxis_lab_a_mode` | `light` or `dark`; light is the default |
-| `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the session (sessionStorage) |
+| `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the tab only (sessionStorage); never in localStorage, analytics or saved looks |
+| `praxis_image_consent` | which photo notices were agreed to, with the wording version and time (`src/core/images.ts`) |
+| `praxis_wardrobe` | pieces the customer owns, by name and type only, no photo (`src/core/data.ts`) |
+| `praxis_selections` | which look was chosen for each recommendation, 90 days (`src/core/data.ts`) |
+| `praxis_dna_draft` | the Style DNA being built, before it is saved (sessionStorage, `src/a/lib/dnaDraft.ts`) |
+| `praxis_sim` | the test mode scenario for this tab (sessionStorage, `src/core/sim.ts`) |
 | `praxis_lab_a_viewer_hint` | set once a look has been opened large, so the zoom and swipe hint shows only the first time |
 
 ## What is a stand-in
@@ -64,11 +70,10 @@ Browser storage (prototype only, replace with real persistence):
 - **Recommendations** (`src/core/adapters/mock.ts`): a rules adapter, not a stylist. It scores the fifteen library outfits on the feel, the place, the time and the budget, explains each look with the factors it used, and says the looks are examples. Replace it by adding an adapter (see Recommendation architecture) and setting `VITE_RECOMMENDATION_ADAPTER`.
 - **Sign-in and payment** (`src/a/ui/Gate.tsx`, `GateSteps.tsx`): visual previews of Apple, Google and email sign-in, and of a "Premium" purchase with Apple Pay or card. No Clerk or Stripe calls. Replace with Clerk for identity and a Stripe Payment Element (Apple Pay enabled) for the purchase, then check the entitlement server-side before try-on and DNA endpoints run. The plan shape (one membership, $9 a month) and the price are placeholders.
 - **Share** (`src/a/ui/ShareSheet.tsx`, `src/a/lib/card.ts`, `src/a/lib/share.ts`): from the results. Draws a 1080 x 1920 story card on a canvas (print, PRAXIS, eyebrow, title, the stylist's note, the address) and hands it to the phone's share sheet (Instagram stories, WhatsApp, Messages); on a computer it saves the image. "Ask a friend to choose" shares the results link with a question (WhatsApp on a computer). Every shared link is tagged with `via` (story, friend or link) and `utm_source=praxis`, `utm_medium`, `utm_campaign=shared_look`, so any analytics tool added later can count visits per channel. A visitor arriving on a tagged link sees the shared view of the results: a "Shared with you" note and "Get your own looks" as the main button, with Check out and Share kept. Starting a journey drops the tags. Shares are counted as `look_shared` (see Analytics).
-- **Check out** (`src/a/ui/PiecesSheet.tsx`, `src/a/lib/selection.ts`): every piece carries a box, all chosen at first; the client unticks what they do not want, the total follows, and "Purchase" shows the order placed state. No payment or retailer order happens. Replace with the retailer checkout, sending only the chosen pieces.
+- **Check out** (`src/a/ui/PiecesSheet.tsx`, `src/a/lib/selection.ts`, `src/core/retail.ts`): every piece carries a box, all chosen at first except sold-out ones; the customer unticks what they do not want, the total follows, and the sheet asks a size per piece. Stock reads "Stock not confirmed" unless the retailer confirms it; delivery shows only when the retailer gives it. A "Buy at" button appears only for a piece with a real purchase route (retailer site or affiliate link); the example pieces have none, so the button says "Buying isn't open yet". Nothing is ordered. Replace `createMockRetailer` with a `RetailerAdapter` that returns sizes, stock and a `PurchaseRoute`.
 - **Looks and pieces** (`src/core/adapters/mock.ts`): the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented houses and example prices inside the chosen budget; every price is marked `example` and every stock level `unknown`, and the screens say so. Replace with the vendor catalog behind an adapter.
-- **Guided build** (`src/shared/guided.ts`): fixed, named stages with fixed durations. Keep the stage names and drive the progress from real backend events instead of timers.
 - **Try-on**: in preview. It shows the look on a model, says so ("On a model, not you. Try-on is in preview."), and asks for no photo. Replace with the rendering pipeline, then ask for the photo again.
-- **DNA result**: `SAMPLE_TONES` for every capture. Replace with the face pipeline.
+- **Colour analysis** (`src/core/vision.ts`, `mockColourAnalysis`): returns the same sample estimate for every photo, marked `source: "sample"`, and the screens call it an example while analysis is in preview. Replace with a `ColourAnalysisAdapter`.
 - **Images**: `public/images/*.jpg` (catalog looks) and `src/assets/styles/*.jpg` (inspiration presets).
 
 ## Recommendation architecture
@@ -81,6 +86,28 @@ Browser storage (prototype only, replace with real persistence):
 4. `src/a/lib/looks.ts` (`toLook`) maps an `OutfitRecommendation` to what the screens draw. Rank 1 is "My pick".
 
 Garments are either `retail` (a `ProductRef` with price, price status and stock) or `wardrobe` (a piece the customer owns, never in the total). Visualizations say what they are: a product photo, a styled image, or a try-on, and whether they are exact or representative. Only an adapter other than the mock can answer in `personalized` mode.
+
+## Processing states
+
+`src/core/processing.ts` is the one state machine for a styling request: idle, validating, submitted, processing, delayed (after 5 s: "This is taking a little longer than usual."), partial, completed, empty, failed ("I couldn't put your looks together this time." with Try again), retry requested, retry exhausted (after 3 tries, or at once when the failure cannot be retried) and cancelled. A request times out after 20 s. The build (`src/a/screens/moment/Build.tsx`, `useStylingRun` in `src/a/lib/styling.ts`) shows only the state it is in: a moving line while working, never a percentage or a timed stage. Cancel stops it and keeps the answers; an answer arriving after a cancel is ignored.
+
+## Test mode
+
+`/internal/analytics` has a Test mode row: fast, slow, timeout, API failure, partial, empty, invalid image and unavailable products (`src/core/sim.ts`). It lasts for the tab only, shows a "Test mode" strip on every screen, and marks every event `testMode` so the measures leave them out. Invalid image applies to the Style DNA colour analysis; unavailable products marks the shoes sold out.
+
+## Photos and privacy
+
+`src/core/images.ts` holds one policy per kind of photo: face for colour, body for fit, a piece the customer owns, and try-on. Each says why it is needed, how it is used, where it is processed, whether it leaves the device, how long it is kept and how to delete it, the formats and size it accepts, and its consent version. The notice before a photo (`src/a/ui/PhotoConsent.tsx`) is drawn from that policy, so it always matches what the app does. Today the face and owned piece photos stay in the tab and are not analysed by a model; body and try-on photos are not collected. Each photo is checked for type, size, dimensions and light before it is used. Withdrawing consent or "Delete everything" removes the photos. The notice wording must be approved by legal counsel before real photo processing goes live.
+
+`src/core/vision.ts` has the adapters for colour analysis, garment recognition, outfit visualization and try-on, each with mocks. Every generated image carries its id, outfit, source pieces, provider and version, status, size, storage reference, creation time and retention. Adapters that cost money declare `billable`, and `guardBillable` refuses them unless `VITE_ALLOW_BILLABLE_IMAGES=true`; it is off by default, and no billable adapter exists yet.
+
+## Style DNA profile
+
+`src/core/styleProfile.ts`: undertone, contrast, fit and week each keep the estimate, the customer's confirmation and their correction separately. The value used is the correction, then the confirmation, then the estimate. A new photo replaces only the estimate, never a correction. The profile has an id and a version; requests send `profileId_vVersion` and a summary of the values with their basis. Old saved Style DNA is migrated and its portrait dropped.
+
+## Retention
+
+`src/core/data.ts` lists every key Praxis keeps (`STORES`) and how long: request history, events and chosen looks 90 days, feedback 365 days, the rest until deleted. Old entries are pruned when the app starts. `/data` shows them in plain words; `/internal/analytics` lists them with their retention.
 
 ## Analytics
 
@@ -124,10 +151,10 @@ src/a/ConceptA.tsx      root: theme, fonts, routes
 src/a/screens/          home, moment/*, dna/*, looks, you
 src/a/ui/               Stage, Frame, Thumbs, controls, TopBar, Gate, sheets
 src/a/lib/              journey context, spine, looks, styling, dna, user, mode, image, stream
-src/core/               contracts, request, validation, service, mock adapter, identity, feedback, analytics, accounts (no React)
+src/core/               contracts, request, validation, service, processing, retail, images, vision, style profile, data, test mode, mock adapter, identity, feedback, analytics, accounts (no React)
 src/core/__tests__/     unit tests
 src/a/a.css, a-layout.css   tokens and layout
-src/shared/             catalog, guided build, fonts, store
+src/shared/             catalog, fonts, store
 src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 ```
 
@@ -143,7 +170,7 @@ The demo film (8.5 s, 30 fps) is rendered from `video/hero-demo`: `scene.html` a
 
 "Restyle" (in the pinned action row) on the results opens a sheet with the answers that change the looks: the feel, the budget, the occasion (each shows the current answer), and "Start a new look". Picking one opens that question with `restyle=1`; the answer goes straight back to the looks (a new occasion asks the place first). The PRAXIS wordmark always starts a fresh journey. On desktop the bar is 80 px with a 22 px wordmark; Saved looks, Style DNA and Sign in sit top right straight on the photo, in ink with a soft ivory halo so they read over dark photos too, and the menu button is phone only. Starting over is always called "Start a new look"; the saved page is "Saved looks".
 
-Time of day offers sunrise and sunset only where they fit the occasion (`timesFor` in `src/shared/catalog.ts`); they warm the photo (`golden` on Frame), night darkens it. Check out is a short confirmation of the pieces ticked on the page, with one line on delivery and returns (stand-in copy; confirm with the houses before launch).
+Time of day offers sunrise and sunset only where they fit the occasion (`timesFor` in `src/shared/catalog.ts`); they warm the photo (`golden` on Frame), night darkens it. Check out lists the pieces ticked on the page with a size for each; it confirms no stock, delivery or order the retailer has not given.
 
 ## Phones and iOS Safari
 

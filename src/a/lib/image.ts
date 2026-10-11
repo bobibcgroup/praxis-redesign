@@ -55,3 +55,30 @@ export function captureFrame(video: HTMLVideoElement): string | null {
   ctx.drawImage(video, sx, sy, cw, ch, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/jpeg", 0.85);
 }
+
+/** Size and mean brightness (0 to 255), for the quality checks in src/core/images.ts. */
+export function imageStats(dataUrl: string): Promise<{ width: number; height: number; meanLuma: number | null }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const width = img.naturalWidth;
+      const height = img.naturalHeight;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 48;
+        canvas.height = 48;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve({ width, height, meanLuma: null });
+        ctx.drawImage(img, 0, 0, 48, 48);
+        const data = ctx.getImageData(0, 0, 48, 48).data;
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 4) sum += 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        resolve({ width, height, meanLuma: sum / (data.length / 4) });
+      } catch {
+        resolve({ width, height, meanLuma: null });
+      }
+    };
+    img.onerror = () => resolve({ width: 0, height: 0, meanLuma: null });
+    img.src = dataUrl;
+  });
+}

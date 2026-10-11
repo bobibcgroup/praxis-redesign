@@ -4,7 +4,7 @@
  * plus the piece they own and their Style DNA when there is one.
  */
 import { SPEND, VENUES } from "../shared/catalog";
-import { CONTRACT_VERSION, type BudgetBand, type Occasion, type PreferenceSnapshot, type Slot, type StylingRequest, type TimeOfDay, type Vibe, type WardrobeItemRef } from "./contracts";
+import { CONTRACT_VERSION, type BudgetBand, type Occasion, type PreferenceSnapshot, type Slot, type StyleProfileSummary, type StylingRequest, type TimeOfDay, type Vibe, type WardrobeItemRef } from "./contracts";
 import { newId, shortHash } from "./ids";
 
 export interface MomentInputs {
@@ -44,6 +44,7 @@ export interface RequestContext {
   userId?: string;
   wardrobe?: readonly WardrobeItemRef[];
   styleProfileId?: string;
+  styleProfile?: StyleProfileSummary;
   preferences?: PreferenceSnapshot;
   now?: Date;
   requestId?: string;
@@ -68,6 +69,7 @@ export function buildStylingRequest(inputs: MomentInputs, ctx: RequestContext): 
   };
   if (ctx.userId) request.userId = ctx.userId;
   if (ctx.styleProfileId) request.styleProfileId = ctx.styleProfileId;
+  if (ctx.styleProfile) request.styleProfile = ctx.styleProfile;
   if (ctx.preferences) request.preferences = ctx.preferences;
   return request;
 }

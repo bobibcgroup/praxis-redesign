@@ -11,6 +11,7 @@ import { JourneyProvider } from "./lib/journey";
 import { useJourney } from "./lib/journeyContext";
 import { Home } from "./screens/Home";
 import { InternalAnalytics } from "./screens/Internal";
+import { YourData } from "./screens/YourData";
 import { LookDetail, Looks } from "./screens/Looks";
 import { Build } from "./screens/moment/Build";
 import { Question } from "./screens/moment/Question";
@@ -20,6 +21,7 @@ import { You, YouFace, YouItem } from "./screens/moment/You";
 import { DnaBuild, DnaHome, DnaResult } from "./screens/dna/DnaResult";
 import { DnaFace, DnaFit, DnaInspiration, DnaLifestyle } from "./screens/dna/DnaSteps";
 import { Gate } from "./ui/Gate";
+import { TestModeTag } from "./ui/TestModeTag";
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap";
 
@@ -55,10 +57,12 @@ function Shell() {
         <Route path="dna/inspiration" element={<DnaInspiration />} />
         <Route path="dna/build" element={<DnaBuild />} />
         <Route path="dna/result" element={<DnaResult />} />
+        <Route path="data" element={<YourData />} />
         <Route path="internal/analytics" element={<InternalAnalytics />} />
         <Route path="*" element={<Fallback />} />
       </Routes>
       <Gate />
+      <TestModeTag />
     </div>
   );
 }

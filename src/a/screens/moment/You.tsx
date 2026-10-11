@@ -5,11 +5,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { track } from "../../../core/analytics";
+import { rememberWardrobeItem } from "../../../core/data";
+import { anonymousId } from "../../../core/identity";
+import { shortHash } from "../../../core/ids";
+import { consentFor } from "../../../core/images";
+import { wardrobeRef } from "../../../core/request";
 import { useJourney, type Slot } from "../../lib/journeyContext";
 import { canvasImage, occasionLabel, SAMPLE_ITEMS, SLOT_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { fileToDataUrl, shrinkImage } from "../../lib/image";
 import { ChoiceList, TextButton } from "../../ui/controls";
+import { PhotoConsent, problemText, rejectFile, rejectImage } from "../../ui/PhotoConsent";
 import { Frame } from "../../ui/Frame";
 import { Stage } from "../../ui/Stage";
 
@@ -41,31 +47,44 @@ function sampleHint(slot: Slot): string {
 }
 
 export function YouItem() {
-  const { answers, href, go, setOwnedItem, reduced } = useJourney();
+  const { answers, href, go, setOwnedItem, reduced, user } = useJourney();
+  const [asking, setAsking] = useState(false);
   const canvas = useYouCanvas();
   const [slot, setSlot] = useState<Slot | null>(answers.item);
   const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setError(null), [slot]);
+  useEffect(() => {
+    setError(null);
+    setAsking(false);
+  }, [slot]);
 
   if (!answers.spend) return <Navigate to={href("moment/occasion")} replace />;
 
   const finish = (name: string, image: string | null) => {
     if (!slot) return;
     setOwnedItem({ slot, name, image });
+    // Remembered by name and type for next time; the photo stays in this tab only.
+    rememberWardrobeItem(wardrobeRef(slot, name, image ? "upload" : "sample", image ? shortHash(image) : ""), { anonymousSessionId: anonymousId(), userId: user?.id });
     track("wardrobe_item_added", { slot, source: image ? "upload" : "sample" });
     go("moment/build", { item: slot, hero: null });
   };
 
   const onFile = async (file: File | undefined) => {
     if (!file || !slot) return;
-    if (!file.type.startsWith("image/")) {
-      setError("That file is not an image. Choose a photo of the piece.");
+    const refused = rejectFile(file, "wardrobe_garment");
+    if (refused) {
+      setError(problemText(refused));
       return;
     }
     try {
-      finish(`Your own ${SLOT_LABEL[slot].toLowerCase()}`, await shrinkImage(await fileToDataUrl(file)));
+      const original = await fileToDataUrl(file);
+      const problem = await rejectImage(original, "wardrobe_garment");
+      if (problem) {
+        setError(problemText(problem));
+        return;
+      }
+      finish(`Your own ${SLOT_LABEL[slot].toLowerCase()}`, await shrinkImage(original));
     } catch {
       setError("I couldn’t read that photo. Try another one.");
     }
@@ -92,14 +111,27 @@ export function YouItem() {
               ]}
               value={null}
               onChange={(id) => {
-                if (id === "upload") fileRef.current?.click();
-                else finish(SAMPLE_ITEMS[slot], null);
+                setError(null);
+                if (id === "sample") finish(SAMPLE_ITEMS[slot], null);
+                else if (consentFor("wardrobe_garment")) fileRef.current?.click();
+                else setAsking(true);
               }}
             />
+            {asking ? (
+              <PhotoConsent
+                category="wardrobe_garment"
+                declineLabel="Use a sample instead"
+                onAgree={() => {
+                  setAsking(false);
+                  fileRef.current?.click();
+                }}
+                onDecline={() => finish(SAMPLE_ITEMS[slot], null)}
+              />
+            ) : null}
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
               className="sr-only"
               aria-label="Upload a photo of the piece"
               onChange={(e) => {
