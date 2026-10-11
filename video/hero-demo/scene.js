@@ -9,7 +9,7 @@
  *   1.0  the Dinner photograph opens to fill the frame
  *   1.6  the build: "I'm putting your looks together." over a filling hairline, as in the app
  *   2.9  the three dinner looks develop out of the build's ghost prints
- *   5.3  the Sharper look is tapped and opens as the results page does: the print, the
+ *   5.3  the Sharper look (my pick) is tapped and opens as the results page does: the print, the
  *        stylist's note, the pieces, the three looks as thumbnails
  *   7.0  back to the three looks, held
  *   8.0  the occasions return over it, which is frame one again
@@ -30,11 +30,13 @@
     { name: "Party", photo: "/images/home/party-960.webp" },
   ];
   const LOOKS = [
-    { label: "Classic", title: "Polished Casual", image: "/images/dinner_safest_01.jpg" },
     { label: "Sharper", title: "Elevated Dinner", image: "/images/dinner_sharper_01.jpg" },
+    { label: "Classic", title: "Polished Casual", image: "/images/dinner_safest_01.jpg" },
     { label: "Relaxed", title: "Relaxed Clean", image: "/images/dinner_relaxed_01.jpg" },
   ];
-  const PICK = 1;
+  // The pick leads, as in the app when the feel asked for is Sharp.
+  const PICK = 0;
+  const SUMMARY = "Sharp, as you asked, for dinner at a restaurant at night.";
   const NOTE = "A blazer over a fitted knit looks intentional, and the boots finish it.";
   const PIECES = ["Blazer over a fitted knit", "Tailored trousers", "Chelsea boots"];
 
@@ -64,7 +66,7 @@
       progress: { y: 118, w: inner },
       printLabel: { gap: 14, size: 11, title: 17 },
       hero, index, counter: true, chip: 28,
-      col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 26, note: 120, noteSize: 13.5, noteLh: 20, rows: 186, rowH: 42, rowSize: 14, box: 15 },
+      col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 26, summary: 114, summarySize: 12, summaryLh: 17, note: 154, noteSize: 13.5, noteLh: 20, rows: 222, rowH: 42, rowSize: 14, box: 15 },
       thumbLabel: { size: 9 },
       touch: 44,
     };
@@ -97,7 +99,7 @@
       progress: { y: 86, w: inner },
       printLabel: { gap: 10, size: 10, title: 14 },
       hero, index, counter: false, chip: 26,
-      col: { x: P, w: inner, eyebrow: 318, title: 336, titleSize: 22, note: 370, noteSize: 13, noteLh: 19, rows: null },
+      col: { x: P, w: inner, eyebrow: 318, title: 334, titleSize: 22, summary: 366, summarySize: 11.5, summaryLh: 16, note: 388, noteSize: 13, noteLh: 19, rows: null },
       thumbLabel: { size: 8 },
       touch: 38,
     };
@@ -193,7 +195,8 @@
   });
 
   const col = {
-    eyebrow: el("div", "abs label", stage, `${LOOKS[PICK].label} for dinner`),
+    eyebrow: el("div", "abs label", stage, "My pick for dinner"),
+    summary: el("div", "abs", stage, SUMMARY),
     title: el("div", "abs serif", stage, LOOKS[PICK].title),
     note: el("div", "abs serif", stage, NOTE),
     rows: (L.col.rows == null ? [] : PIECES).map((p) => {
@@ -209,6 +212,7 @@
   };
   text(col.eyebrow, { x: L.col.x, y: L.col.eyebrow, size: L.eyebrow.size, lh: 16, color: "#6b665c" });
   text(col.title, { x: L.col.x, y: L.col.title, size: L.col.titleSize, lh: Math.round(L.col.titleSize * 1.22), w: L.col.w });
+  text(col.summary, { x: L.col.x, y: L.col.summary, size: L.col.summarySize, lh: L.col.summaryLh, w: L.col.w, color: "#6b665c" });
   text(col.note, { x: L.col.x, y: L.col.note, size: L.col.noteSize, lh: L.col.noteLh, w: L.col.w, italic: true });
   col.rows.forEach((r, i) => place(r, { x: L.col.x, y: L.col.rows + i * L.col.rowH, w: L.col.w, h: L.col.rowH }));
 
@@ -247,7 +251,7 @@
     e.style.borderRadius = "2px";
     e.style.color = "#1e1d1a";
   };
-  const counter = L.counter ? el("div", "abs", stage, `${CHEVRON("m15 18-6-6 6-6")}<span class="label" style="font-size:9px;margin:0 12px 0 14px">2 of 3</span>${CHEVRON("m9 18 6-6-6-6")}`) : null;
+  const counter = L.counter ? el("div", "abs", stage, `<span style="opacity:0.35;display:flex">${CHEVRON("m15 18-6-6 6-6")}</span><span class="label" style="font-size:9px;margin:0 12px 0 14px">${PICK + 1} of 3</span>${CHEVRON("m9 18 6-6-6-6")}`) : null;
   const glass = el("div", "abs", stage, GLASS);
   if (counter) chipStyle(counter);
   chipStyle(glass);
@@ -368,7 +372,7 @@
     // The results page for the chosen look: the note, the pieces, the three as thumbnails.
     const colIn = (delay) => Math.min(out(span(t, 5.85 + delay, 6.3 + delay)), 1 - out(span(t, 6.9, 7.1)));
     const colY = (delay) => 8 * (1 - out(span(t, 5.85 + delay, 6.3 + delay)));
-    [col.eyebrow, col.title, col.note].forEach((e, i) => {
+    [col.eyebrow, col.title, col.summary, col.note].forEach((e, i) => {
       e.style.opacity = colIn(i * 0.08);
       e.style.transform = `translateY(${colY(i * 0.08)}px)`;
     });
