@@ -467,7 +467,8 @@
   }
 }
 
-/* ---------- Home: a page that scrolls. Hero (copy and photo cards, then the demo), how it works, Style DNA. ---------- */
+/* ---------- Home: a page that scrolls. Hero (copy and the five occasion prints, beside them the film on
+   a phone), how it works as one strip, then Style DNA as one photograph across the page. ---------- */
 [data-concept="a"] .a-home {
   min-height: 100vh;
   min-height: 100svh;
@@ -481,16 +482,16 @@
   border-bottom: 1px solid var(--rule);
 }
 
-[data-concept="a"] .a-home main {
+[data-concept="a"] .a-home-inner {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 0 16px 48px;
+  padding: 0 16px;
 }
 
 [data-concept="a"] .a-hero {
   display: grid;
   gap: 40px;
-  padding-top: 32px;
+  padding-top: 28px;
 }
 
 [data-concept="a"] .a-hero-copy {
@@ -508,34 +509,57 @@
   font-style: italic;
 }
 
-/* The occasion cards: a photograph each, the name in the serif over a soft shade at the foot,
-   an arrow at the right. Two to a row on a phone with Party across the width; three then two on desktop. */
+[data-concept="a"] .a-hero-line {
+  margin-top: 16px;
+  max-width: 44ch;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+[data-concept="a"] .a-hero-ask {
+  margin-top: 28px;
+}
+
+/* The occasion cards: a photograph each, and under it the name and a small round arrow on the raised
+   surface, like a print with its caption. Two to a row on a phone with Party across the width. */
 [data-concept="a"] .a-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
 }
 
 [data-concept="a"] .a-card {
   position: relative;
-  display: block;
-  height: 128px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   overflow: hidden;
   padding: 0;
-  border: 0;
-  border-radius: var(--r-control);
-  background: #2b2722;
-  color: #f6f2e8;
+  border: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+  border-radius: var(--r-card);
+  background: var(--raised);
+  color: var(--text);
   text-align: left;
   cursor: pointer;
-  isolation: isolate;
-  transition: box-shadow 0.3s ease;
+  box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
 [data-concept="a"] .a-card:nth-child(5) {
   grid-column: span 2;
-  height: 112px;
+}
+
+[data-concept="a"] .a-card-frame {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  background: var(--champagne);
+}
+
+[data-concept="a"] .a-card:nth-child(5) .a-card-frame {
+  aspect-ratio: 3 / 1;
 }
 
 [data-concept="a"] .a-card-photo {
@@ -545,50 +569,49 @@
   height: 100%;
   object-fit: cover;
   transform: scale(1.001);
+  filter: saturate(0.92) sepia(0.06);
   transition: transform 0.35s ease, filter 0.35s ease;
 }
 
-[data-concept="a"] .a-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(20, 17, 13, 0.72) 0%, rgba(20, 17, 13, 0.24) 46%, rgba(20, 17, 13, 0.04) 72%);
-  transition: background-color 0.3s ease;
-}
-
-[data-concept="a"] .a-card-name,
-[data-concept="a"] .a-card-arrow {
-  position: absolute;
-  z-index: 1;
-  bottom: 12px;
+[data-concept="a"] .a-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 10px 0 14px;
 }
 
 [data-concept="a"] .a-card-name {
-  left: 14px;
-  font-family: var(--font-display);
-  font-size: 20px;
-  line-height: 24px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
   letter-spacing: 0.01em;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
 
 [data-concept="a"] .a-card-arrow {
-  right: 14px;
-  bottom: 16px;
-  transition: transform 0.3s ease;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--text);
+  border-radius: 50%;
+  transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
 @media (hover: hover) {
-  [data-concept="a"] .a-card:hover .a-card-photo {
-    transform: scale(1.035);
+  [data-concept="a"] .a-card:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
   }
 
-  [data-concept="a"] .a-card:hover::after {
-    background-color: rgba(20, 17, 13, 0.1);
+  [data-concept="a"] .a-card:hover .a-card-photo {
+    transform: scale(1.04);
   }
 
   [data-concept="a"] .a-card:hover .a-card-arrow {
-    transform: translateX(4px);
+    transform: translateX(3px);
   }
 }
 
@@ -596,17 +619,16 @@
   transform: scale(1.02);
 }
 
-[data-concept="a"] .a-card:active::after,
-[data-concept="a"] .a-card[aria-checked="true"]::after {
-  background-color: rgba(20, 17, 13, 0.24);
-}
-
 [data-concept="a"] .a-card[aria-checked="true"] {
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text);
+  border-color: var(--text);
+  box-shadow: var(--shadow-lift);
 }
 
 [data-concept="a"] .a-card[aria-checked="true"] .a-card-arrow {
-  transform: translateX(4px);
+  background: var(--ink);
+  color: var(--ink-fg);
+  border-color: var(--ink);
+  transform: translateX(3px);
 }
 
 [data-concept="a"] .a-card:focus-visible {
@@ -614,24 +636,132 @@
   outline-offset: 3px;
 }
 
-/* The demo: a film of the journey on the surface tone, sized by its own ratio so nothing shifts
-   while it loads. No controls; the pause button shows only when reached with the keyboard. */
+/* The demo: the film plays on a phone, standing in front of two photographs (cloth behind, the dinner
+   table beside), all on soft warm shadows. Sized by width, so nothing shifts while it loads. */
 [data-concept="a"] .a-demo {
   position: relative;
   width: 100%;
   margin: 0;
-  overflow: hidden;
-  border-radius: var(--r-control);
-  background: var(--surface);
+  aspect-ratio: 6 / 5;
 }
 
-[data-concept="a"] .a-demo video,
-[data-concept="a"] .a-demo img {
+[data-concept="a"] .a-demo-print {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  background: var(--champagne);
+  box-shadow: var(--shadow-lift);
+}
+
+[data-concept="a"] .a-demo-print img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: saturate(0.85) sepia(0.12);
+}
+
+[data-concept="a"] .a-demo-print-back {
+  left: 0;
+  top: 6%;
+  width: 70%;
+  height: 72%;
+  transform: rotate(-2deg);
+}
+
+[data-concept="a"] .a-demo-print-side {
+  right: 0;
+  top: 22%;
+  width: 34%;
+  height: 58%;
+  transform: rotate(1.5deg);
+}
+
+[data-concept="a"] .a-phone-device {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  display: block;
+  aspect-ratio: 9 / 18.2;
+  padding: 2.4%;
+  border-radius: 13% / 6.4%;
+  background: #1f1c18;
+  box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  transform: translateX(-38%) rotate(3deg);
+}
+
+/* The screen is a picture of the light app in either mode, so its colours are fixed. */
+[data-concept="a"] .a-phone-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 11% / 5.4%;
+  /* The film's own background, so the screen reads as one surface. */
+  background: #e8e3d5;
+  color: #25221e;
+}
+
+[data-concept="a"] .a-phone-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex: none;
+  height: 13%;
+  padding-top: 5%;
+  border-bottom: 1px solid #d9ccba;
+}
+
+[data-concept="a"] .a-phone-mark {
+  font-family: var(--font-display);
+  font-size: clamp(11px, 1.1vw, 15px);
+  letter-spacing: 0.32em;
+}
+
+[data-concept="a"] .a-phone-menu {
+  position: absolute;
+  right: 9%;
+  top: 58%;
+  width: 7%;
+  height: 7px;
+  border-top: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+
+[data-concept="a"] .a-phone-film {
+  display: block;
+  flex: none;
+  aspect-ratio: 4 / 5;
+  margin: auto 0;
+  overflow: hidden;
+}
+
+[data-concept="a"] .a-phone-film video,
+[data-concept="a"] .a-phone-film img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
   pointer-events: none;
+}
+
+[data-concept="a"] .a-phone-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: none;
+  height: 7.5%;
+  margin: 0 7% 8%;
+  border-radius: 2px;
+  background: #292620;
+  color: #fff9f0;
+  font-size: clamp(9px, 0.85vw, 12px);
+  letter-spacing: 0.02em;
 }
 
 [data-concept="a"] .a-demo-toggle {
@@ -655,73 +785,132 @@
   pointer-events: auto;
 }
 
-/* How it works: three numbered steps under one hairline. */
+/* How it works: one strip between hairlines, the label centred on the top one. */
 [data-concept="a"] .a-steps {
+  position: relative;
   margin-top: 48px;
-  padding-top: 24px;
+  padding: 28px 0 24px;
   border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-steps-title {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  padding: 0 16px;
+  background: var(--bg);
+  color: var(--text);
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
 }
 
 [data-concept="a"] .a-steps ol {
   display: grid;
-  gap: 24px;
-  margin-top: 24px;
+  gap: 20px;
 }
 
 [data-concept="a"] .a-steps li {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 16px;
 }
 
 [data-concept="a"] .a-step-n {
   flex: none;
-  width: 40px;
+  width: 52px;
+  padding-right: 14px;
+  border-right: 1px solid var(--rule);
   font-family: var(--font-display);
-  font-style: italic;
-  font-size: 28px;
-  line-height: 32px;
+  font-size: 30px;
+  line-height: 40px;
 }
 
 [data-concept="a"] .a-step-title {
   display: block;
-  font-family: var(--font-display);
-  font-size: 19px;
-  line-height: 24px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
 }
 
 [data-concept="a"] .a-step-line {
   display: block;
-  margin-top: 4px;
-  font-size: 14px;
-  line-height: 20px;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 18px;
   color: var(--muted);
 }
 
-/* Style DNA: its own section on a deeper stone, a photograph of cloth and leather beside the copy. */
+/* Style DNA: one photograph across the page, the man on the left, the copy on the open wall to the
+   right. On a phone the photograph sits above and the copy continues on the wall's own colour. The
+   copy's colours are fixed, because the photograph is light in either mode. */
 [data-concept="a"] .a-dna {
-  display: grid;
-  margin-top: 48px;
-  background: var(--stone);
-  border-radius: var(--r-control);
+  --dna-wall: #efdcc2;
+  position: relative;
+  margin-top: 56px;
   overflow: hidden;
+  background: var(--dna-wall);
+  color: #25221e;
 }
 
 [data-concept="a"] .a-dna-image {
-  height: 240px;
+  display: block;
 }
 
 [data-concept="a"] .a-dna-image img {
+  display: block;
   width: 100%;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
+  object-position: 30% top;
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
 }
 
 [data-concept="a"] .a-dna-copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 32px 20px 40px;
+  padding: 8px 20px 44px;
+}
+
+[data-concept="a"] .a-dna .a-label {
+  color: #3a342d;
+}
+
+[data-concept="a"] .a-dna-title {
+  font-size: clamp(30px, 8vw, 36px);
+  line-height: 1.1;
+}
+
+[data-concept="a"] .a-dna-line {
+  max-width: 40ch;
+  font-size: 15px;
+  line-height: 22px;
+  color: #4a433b;
+}
+
+[data-concept="a"] .a-dna .a-tag {
+  border-color: transparent;
+  background: #3a342d;
+  color: #fff9f0;
+  letter-spacing: 0.08em;
+}
+
+[data-concept="a"] .a-dna .a-dna-cta {
+  border-color: #25221e;
+  color: #25221e;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+[data-concept="a"] .a-dna .a-dna-cta:hover {
+  background: #25221e;
+  color: #fff9f0;
+}
+
+[data-concept="a"] .a-dna .a-dna-cta:focus-visible {
+  box-shadow: 0 0 0 2px var(--dna-wall), 0 0 0 4px #25221e;
 }
 
 [data-concept="a"] .a-tag {
@@ -730,110 +919,170 @@
   height: 20px;
   padding: 0 8px;
   border: 1px solid color-mix(in srgb, var(--text) 22%, transparent);
-  border-radius: var(--r-control);
+  border-radius: 999px;
   letter-spacing: 0.08em;
   color: var(--text);
 }
 
 @media (min-width: 640px) and (max-width: 1023px) {
-  [data-concept="a"] .a-home main {
-    padding: 0 32px 56px;
-  }
-
-  [data-concept="a"] .a-card {
-    height: 160px;
-  }
-
-  [data-concept="a"] .a-card:nth-child(5) {
-    height: 140px;
-  }
-
-  [data-concept="a"] .a-demo {
-    max-width: 560px;
-  }
-
-  [data-concept="a"] .a-dna-image {
-    height: 320px;
-  }
-}
-
-@media (min-width: 1024px) {
-  [data-concept="a"] .a-home main {
-    padding: 0 56px 64px;
-  }
-
-  [data-concept="a"] .a-hero {
-    grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
-    align-items: center;
-    gap: clamp(40px, 4vw, 72px);
-    padding-top: clamp(32px, 4.5vh, 56px);
-  }
-
-  [data-concept="a"] .a-hero-title {
-    font-size: clamp(48px, min(4.4vw, 7.4vh), 68px);
-    line-height: 1.04;
+  [data-concept="a"] .a-home-inner {
+    padding: 0 32px;
   }
 
   [data-concept="a"] .a-cards {
     grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 10px;
   }
 
-  [data-concept="a"] .a-card,
-  [data-concept="a"] .a-card:nth-child(5) {
+  [data-concept="a"] .a-card {
     grid-column: span 2;
-    height: clamp(112px, 15.5vh, 156px);
   }
 
   [data-concept="a"] .a-card:nth-child(n + 4) {
     grid-column: span 3;
   }
 
-  [data-concept="a"] .a-card-name {
-    left: 16px;
-    bottom: 14px;
-    font-size: 21px;
+  [data-concept="a"] .a-card:nth-child(5) .a-card-frame {
+    aspect-ratio: 4 / 3;
   }
 
-  [data-concept="a"] .a-card-arrow {
-    right: 16px;
-    bottom: 18px;
+  [data-concept="a"] .a-demo {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+
+  [data-concept="a"] .a-steps ol {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  /* From tablets up the photograph runs across the page and the copy sits on the wall at the right. */
+  [data-concept="a"] .a-dna {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-height: clamp(320px, 33vw, 480px);
+    margin-top: 64px;
+  }
+
+  [data-concept="a"] .a-dna-image {
+    position: absolute;
+    inset: 0;
+  }
+
+  [data-concept="a"] .a-dna-image img {
+    height: 100%;
+    aspect-ratio: auto;
+    object-position: left center;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  /* A breath of the wall's own colour behind the copy, barely there. */
+  [data-concept="a"] .a-dna::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to left, color-mix(in srgb, var(--dna-wall) 45%, transparent) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  [data-concept="a"] .a-dna-copy {
+    position: relative;
+    z-index: 1;
+    width: 50%;
+    padding: 48px clamp(32px, 6vw, 112px) 48px 0;
+  }
+
+  [data-concept="a"] .a-dna-title {
+    font-size: clamp(34px, 3.2vw, 46px);
+  }
+
+  [data-concept="a"] .a-dna-line {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-home-inner {
+    padding: 0 48px;
+  }
+
+  /* Copy and the five prints on the left, the phone on the right, all in one view at 1366 x 768. */
+  [data-concept="a"] .a-hero {
+    grid-template-columns: minmax(0, 52fr) minmax(0, 48fr);
+    align-items: center;
+    gap: clamp(32px, 3.5vw, 64px);
+    padding-top: clamp(24px, 4vh, 48px);
+  }
+
+  [data-concept="a"] .a-hero-title {
+    font-size: clamp(46px, min(4.3vw, 7.6vh), 72px);
+    line-height: 1.04;
+  }
+
+  [data-concept="a"] .a-hero-line {
+    margin-top: clamp(14px, 2vh, 22px);
+    font-size: 17px;
+    line-height: 26px;
+  }
+
+  [data-concept="a"] .a-hero-ask {
+    margin-top: clamp(20px, 3.6vh, 36px);
+  }
+
+  [data-concept="a"] .a-cards {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: clamp(8px, 0.8vw, 14px);
+  }
+
+  [data-concept="a"] .a-card,
+  [data-concept="a"] .a-card:nth-child(5) {
+    grid-column: auto;
+  }
+
+  [data-concept="a"] .a-card-frame,
+  [data-concept="a"] .a-card:nth-child(5) .a-card-frame {
+    aspect-ratio: auto;
+    height: clamp(128px, 22vh, 220px);
+  }
+
+  [data-concept="a"] .a-card-foot {
+    min-height: 46px;
+    padding: 0 8px 0 12px;
+  }
+
+  [data-concept="a"] .a-card-name {
+    font-size: 14px;
   }
 
   /* Never taller than the window under the bar, so the hero stays in one view. */
   [data-concept="a"] .a-demo {
     justify-self: end;
-    width: min(100%, calc((100vh - 80px - 64px) * 1080 / 1170));
+    width: min(100%, calc((100vh - 80px - 56px) * 6 / 5));
   }
 
   [data-concept="a"] .a-steps {
-    margin-top: 56px;
+    margin-top: clamp(32px, 6vh, 64px);
+    padding: 30px 0 26px;
   }
 
   [data-concept="a"] .a-steps ol {
     grid-template-columns: repeat(3, 1fr);
-    gap: 32px;
+    gap: 0;
   }
 
-  [data-concept="a"] .a-steps li + li {
-    padding-left: 32px;
-    border-left: 1px solid var(--rule);
-  }
-
-  [data-concept="a"] .a-dna {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    height: clamp(320px, 26vw, 380px);
-    margin-top: 56px;
-  }
-
-  [data-concept="a"] .a-dna-image {
-    height: 100%;
-    min-height: 0;
-  }
-
-  [data-concept="a"] .a-dna-copy {
+  [data-concept="a"] .a-steps li {
     justify-content: center;
-    padding: 48px clamp(40px, 5vw, 80px);
+    gap: 20px;
+  }
+
+  [data-concept="a"] .a-step-n {
+    width: 64px;
+    padding-right: 20px;
+    font-size: 36px;
+    line-height: 44px;
   }
 }
 

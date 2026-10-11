@@ -12,6 +12,8 @@
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --r-control: 2px;
   --r-frame: 0px;
+  /* Photographs and prints: a touch softer than controls. */
+  --r-card: 6px;
   --control-border: 1px solid var(--rule);
   --control-hover-bg: var(--surface);
   --selected-bg: var(--ink);
@@ -32,37 +34,62 @@
   }
 }
 
+/*
+ * The palette: warm ivory, champagne and sand, as if lit by daylight. Every colour in the product
+ * reads through these tokens; change a value here and every page follows.
+ *   --bg            page                         --bg-2        alternate sections
+ *   --surface       hover, quiet fills            --raised      sheets, dialogs, menus
+ *   --champagne     selected and featured fills   --stone       deeper featured sections
+ *   --rule          dividers and borders          --text        main text
+ *   --muted         supporting text and labels    --faint       decoration only (fails text contrast)
+ *   --ink, --ink-fg the dark action and its text  --shadow-*    soft warm shadows
+ */
 [data-concept="a"][data-mode="light"] {
-  --bg: #f1ede1;
-  --surface: #e8e3d6;
-  --text: #1e1d1a;
-  --muted: #6b665c;
-  --rule: #dcd5c6;
-  --accent: #1e1d1a;
-  --accent-fg: #f1ede1;
-  --accent-tint: #e4ded0;
-  --ink: #1e1d1a;
-  --ink-fg: #f1ede1;
-  --scrim: rgba(30, 29, 26, 0.42);
+  --bg: #f4ede1;
+  --bg-2: #efe3d3;
+  --surface: #ebdfcd;
+  --raised: #faf5ed;
+  --champagne: #e8d9c5;
+  --stone: #e6d6c0;
+  --text: #25221e;
+  --muted: #6e665d;
+  --faint: #85796c;
+  --rule: #d9ccba;
+  --accent: #292620;
+  --accent-fg: #fff9f0;
+  --accent-tint: #e8d9c5;
+  --ink: #292620;
+  --ink-fg: #fff9f0;
+  --scrim: rgba(41, 34, 26, 0.42);
+  --shadow-soft: 0 1px 2px rgba(64, 48, 30, 0.06), 0 6px 18px rgba(64, 48, 30, 0.08);
+  --shadow-lift: 0 2px 4px rgba(64, 48, 30, 0.08), 0 14px 32px rgba(64, 48, 30, 0.14);
+  --shadow-deep: 0 10px 24px rgba(52, 38, 22, 0.16), 0 34px 70px rgba(52, 38, 22, 0.22);
   --error: #8a2f2f;
-  --stone: #e2dac9;
   color-scheme: light;
 }
 
+/* Dark: the same warmth at night, espresso and candlelight rather than grey. */
 [data-concept="a"][data-mode="dark"] {
-  --bg: #12110f;
-  --surface: #1b1a17;
-  --text: #eee9dd;
-  --muted: #9c978c;
-  --rule: #2a2824;
-  --accent: #eee9dd;
-  --accent-fg: #12110f;
-  --accent-tint: #24221e;
-  --ink: #eee9dd;
-  --ink-fg: #12110f;
+  --bg: #15120f;
+  --bg-2: #1a1713;
+  --surface: #211d18;
+  --raised: #1d1915;
+  --champagne: #2c261f;
+  --stone: #1f1b16;
+  --text: #f1e9dc;
+  --muted: #ab9f90;
+  --faint: #7d7266;
+  --rule: #322c25;
+  --accent: #f1e9dc;
+  --accent-fg: #15120f;
+  --accent-tint: #2c261f;
+  --ink: #f1e9dc;
+  --ink-fg: #15120f;
   --scrim: rgba(0, 0, 0, 0.6);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.3);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.35), 0 14px 32px rgba(0, 0, 0, 0.4);
+  --shadow-deep: 0 10px 24px rgba(0, 0, 0, 0.4), 0 34px 70px rgba(0, 0, 0, 0.5);
   --error: #e08a8a;
-  --stone: #1d1b17;
   color-scheme: dark;
 }
 

@@ -1,7 +1,8 @@
 /**
- * Home: the headline, one line on what happens, and the occasions as photographs; the first tap
- * starts the looks. Beside it, a short recording of the real journey, staged with photographs. Under the fold, how it works in three
- * steps, then Style DNA in its own section so the premium feature never competes with the first tap.
+ * Home: the headline, one line on what happens, and the five occasions as photographs in a row; the
+ * first tap starts the looks. Beside it, the film of the real journey on a phone, layered over
+ * photographs. Then how it works as one quiet strip, and Style DNA as one panoramic photograph across
+ * the page with its copy on the open wall, so the premium feature never competes with the first tap.
  * After saving a Style DNA, the completion state.
  */
 import { useEffect, useState } from "react";
@@ -13,17 +14,22 @@ import { LinkButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
 import { Frame } from "../ui/Frame";
 import { HomeDemo } from "../ui/HomeDemo";
-import { OccasionCards, photoSet } from "../ui/OccasionCards";
+import { OccasionCards } from "../ui/OccasionCards";
 import { Stage } from "../ui/Stage";
 import { TopBar } from "../ui/TopBar";
 
-const LINE = "Choose your occasion, answer four quick questions, and I’ll show you three looks for it.";
+const LINE = "Choose your occasion. Discover three looks designed for it.";
 const STEPS = [
-  { n: "01", title: "Choose your occasion", line: "Tell me where you’re going." },
-  { n: "02", title: "Discover three looks", line: "Picked from your answers. The pieces and prices are examples for now." },
-  { n: "03", title: "Save or share", line: "Keep your favorites without an account, or send them to a friend." },
+  { n: "01", title: "Choose an occasion", line: "Tell me where you’re going." },
+  { n: "02", title: "Discover three looks", line: "Get curated outfit ideas." },
+  { n: "03", title: "Save or share", line: "Keep your favorites." },
 ];
-const DNA_IMAGE = "/images/home/dna";
+/** One photograph across the section: the man on the left, open wall on the right for the copy. */
+const DNA_BANNER = {
+  wide: "/images/home/style-dna-wide-1600.webp 1600w, /images/home/style-dna-wide-2400.webp 2400w",
+  phone: "/images/home/style-dna-phone-800.webp 800w, /images/home/style-dna-phone-1200.webp 1200w",
+  alt: "A man in a light jacket and open white shirt against a sunlit wall with the shadow of palm leaves",
+};
 
 function StyleDna() {
   const { store, go, href } = useJourney();
@@ -35,27 +41,28 @@ function StyleDna() {
 
   return (
     <section className="a-dna" aria-labelledby="dna-title">
-      <div className="a-dna-image">
-        <img {...photoSet(DNA_IMAGE)} sizes="(min-width: 1024px) 40vw, 100vw" alt="Folds of tailoring cloth in camel, houndstooth and brown" loading="lazy" decoding="async" />
-      </div>
+      <picture className="a-dna-image">
+        <source media="(min-width: 768px)" srcSet={DNA_BANNER.wide} sizes="100vw" />
+        <img srcSet={DNA_BANNER.phone} sizes="100vw" src="/images/home/style-dna-phone-800.webp" alt={DNA_BANNER.alt} width={1200} height={900} loading="lazy" decoding="async" />
+      </picture>
       <div className="a-dna-copy">
-        <p className="a-label flex items-center gap-3 text-[var(--text)]">
+        <p className="a-label flex items-center gap-3">
           Introducing Style DNA
           <span className="a-tag">Premium</span>
         </p>
-        <h2 id="dna-title" className="a-display a-display-md mt-4">
+        <h2 id="dna-title" className="a-display a-dna-title mt-4">
           Your style. More personal.
         </h2>
-        <p className="mt-4 max-w-[44ch] text-[16px] leading-6 text-[var(--text)]">
-          {store.dna ? "Your Style DNA is saved. You can look it over or start again at any time." : "Tell me your colours, your fit and your taste once, and I’ll keep them together in your Style DNA. You can change them at any time."}
+        <p className="a-dna-line mt-3">
+          {store.dna ? "Your Style DNA is saved. You can look it over or start again at any time." : "Discover a styling experience shaped around your preferences with Style DNA."}
         </p>
         {store.dna ? (
-          <LinkButton to={href("dna", { hero: null })} variant="secondary" className="mt-6 gap-2">
+          <LinkButton to={href("dna", { hero: null })} variant="secondary" className="a-dna-cta mt-6 gap-3">
             See my Style DNA
             <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
           </LinkButton>
         ) : (
-          <button type="button" onClick={explore} className="a-control a-secondary mt-6 gap-2">
+          <button type="button" onClick={explore} className="a-control a-secondary a-dna-cta a-transition mt-6 gap-3">
             Explore Style DNA
             <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
           </button>
@@ -98,14 +105,14 @@ export function Home() {
     <div className="a-home">
       <TopBar />
       <main>
+        <div className="a-home-inner">
         <section className="a-hero">
           <div className="a-hero-copy">
-            <p className="a-label text-[var(--muted)]">Your personal stylist</p>
-            <h1 className="a-display a-hero-title mt-4">
+            <h1 className="a-display a-hero-title">
               Know what to wear. <em>Every time.</em>
             </h1>
-            <p className="mt-5 max-w-[44ch] text-[16px] leading-6 lg:text-[17px] lg:leading-7">{LINE}</p>
-            <p className="a-label mt-8 text-[var(--muted)] lg:mt-10">Where are you going?</p>
+            <p className="a-hero-line">{LINE}</p>
+            <p className="a-label a-hero-ask text-[var(--muted)]">Where are you going?</p>
             <div className="mt-4">
               <OccasionCards options={OCCASIONS} value={pending} onChange={choose} />
             </div>
@@ -120,7 +127,7 @@ export function Home() {
         </section>
 
         <section className="a-steps" aria-labelledby="steps-title">
-          <h2 id="steps-title" className="a-label text-[var(--muted)]">
+          <h2 id="steps-title" className="a-label a-steps-title">
             How it works
           </h2>
           <ol>
@@ -135,6 +142,7 @@ export function Home() {
             ))}
           </ol>
         </section>
+        </div>
 
         <StyleDna />
       </main>
