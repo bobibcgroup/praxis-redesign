@@ -126,7 +126,7 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
               />
             )}
 
-            <motion.div aria-hidden initial={false} animate={{ opacity: night ? 0.38 : 0 }} transition={fade} className="pointer-events-none absolute inset-0 bg-[#0b0d10]" />
+            <motion.div aria-hidden initial={false} animate={{ opacity: night ? 0.38 : 0 }} transition={fade} className="pointer-events-none absolute inset-0 bg-[#140d07]" />
             <motion.div
               aria-hidden
               initial={false}

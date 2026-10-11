@@ -1,6 +1,6 @@
 /**
  * A look opened large, on every screen, to study the fit, the proportions, the colours and the shoes.
- * The photo fills the room on the page's ivory. Zoom with the small controls, the wheel or trackpad, a
+ * The photo fills the room on the page’s champagne. Zoom with the small controls, the wheel or trackpad, a
  * pinch, or a double tap; drag to look around. Only the photo zooms, never the page. At its normal
  * size a sideways swipe (or the arrows, or the arrow keys) moves between the three looks, stopping at
  * the first and the last, and a swipe down closes it. The page follows the look you land on, so

@@ -1,16 +1,16 @@
 /**
  * The look as a 1080 x 1920 story card: the print on top, then the house mark, the eyebrow, the title,
- * the stylist's note and the address, on the ivory page. Drawn on a canvas so it can be shared as a file
+ * the stylist's note and the address, on the champagne page. Drawn on a canvas so it can be shared as a file
  * (Instagram stories, WhatsApp, Messages) or saved.
  */
 import type { Look } from "../../shared/catalog";
 
 const W = 1080;
 const H = 1920;
-const INK = "#1e1d1a";
-const MUTED = "#6b665c";
-const IVORY = "#f1ede1";
-const RULE = "#dcd5c6";
+const INK = "#2a241d";
+const MUTED = "#665a4c";
+const PAPER = "#efe2cc";
+const RULE = "#d4bf9f";
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -64,7 +64,7 @@ export async function renderLookCard(look: Look, eyebrow: string, address: strin
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No canvas");
 
-  ctx.fillStyle = IVORY;
+  ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
 
   // The print: 3:4 across the top, cropped from the top so the face always shows.
@@ -77,8 +77,8 @@ export async function renderLookCard(look: Look, eyebrow: string, address: strin
 
   // Melt the bottom of the print into the page.
   const fade = ctx.createLinearGradient(0, boxH - 220, 0, boxH);
-  fade.addColorStop(0, "rgba(241,237,225,0)");
-  fade.addColorStop(1, IVORY);
+  fade.addColorStop(0, "rgba(239,226,204,0)");
+  fade.addColorStop(1, PAPER);
   ctx.fillStyle = fade;
   ctx.fillRect(0, boxH - 220, W, 220);
 

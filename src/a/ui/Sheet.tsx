@@ -61,7 +61,7 @@ export function Sheet({ open, onClose, label, children, footer }: SheetProps) {
             animate={shown}
             exit={hidden}
             transition={{ duration: reduced ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-            className="relative flex max-h-[85dvh] w-full flex-col bg-[var(--bg)] lg:h-full lg:max-h-none lg:w-[440px]"
+            className="relative flex max-h-[85dvh] w-full flex-col rounded-t-[var(--r-card)] bg-[var(--raised)] shadow-[var(--shadow-deep)] lg:rounded-none lg:h-full lg:max-h-none lg:w-[440px]"
           >
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-[var(--rule)] pl-5 pr-2 lg:pl-8">
               <h2 className="a-sheet-title">{label}</h2>

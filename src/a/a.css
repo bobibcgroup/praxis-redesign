@@ -1,7 +1,6 @@
 /*
- * Concept A: Stage. Brand "Forest and Bone", element system "Hairline".
- * Palettes from the Forest and Bone brand definition (docs/BRAND.md) (muted darkened for clarity);
- * construction rules from system.css. Everything visual reads through a variable.
+ * Concept A: Stage. Champagne atelier palette (light) and warm mocha (dark), Hairline element system.
+ * Every colour, shadow and corner reads through a variable set once below; screens never hardcode a hue.
  */
 
 [data-concept="a"] {
@@ -250,7 +249,7 @@
   padding: 0 12px;
   border-radius: var(--r-control);
   border: 1px solid var(--rule);
-  background: transparent;
+  background: var(--raised);
   color: var(--text);
   font: inherit;
   /* 16 px or more, or iOS Safari zooms the page when the field is focused. */
@@ -349,6 +348,17 @@
   width: 100%;
   justify-content: flex-start;
   text-align: left;
+  background: var(--raised);
+}
+
+[data-concept="a"] .a-answers .a-control:hover {
+  background: var(--raised);
+  border-color: color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+[data-concept="a"] .a-answers .a-control[aria-checked="true"],
+[data-concept="a"] .a-answers .a-control[aria-pressed="true"] {
+  background: var(--selected-bg);
 }
 
 /* ---------- Detail rows: tabular prices on one right edge. ---------- */
@@ -709,6 +719,7 @@
   padding: 0 16px;
   border: 1px solid var(--rule);
   border-radius: var(--r-control);
+  background: var(--raised);
   font-size: 15px;
   line-height: 20px;
   color: var(--text);

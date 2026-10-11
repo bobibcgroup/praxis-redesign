@@ -119,17 +119,23 @@ Saving needs no account. A guest's looks belong to the anonymous id; after savin
 
 ## Brand and element rules
 
-Atelier (ivory and charcoal, after the stylist reference) with the Hairline element system. Tokens live in `src/a/a.css` under `[data-mode="light"]` and `[data-mode="dark"]`. One ink, no other hues.
+Atelier, in a champagne palette by day and warm mocha by night, with the Hairline element system. Every colour, shadow and corner is a token in `src/a/a.css` under `[data-mode="light"]` and `[data-mode="dark"]`; screens never hardcode a hue. One ink, no other hues. The exceptions are deliberate: the Apple Pay button (Apple's rule), the phone bezel in the home demo, the Style DNA banner's fixed text colours (it sits on a photograph), and the canvas share card in `src/a/lib/card.ts`, which mirrors the light palette.
 
-| Role | Light | Dark |
-|---|---|---|
-| Background (ivory) | `#F1EDE1` | `#12110F` |
-| Surface | `#E8E3D6` | `#1B1A17` |
-| Text | `#1E1D1A` | `#EEE9DD` |
-| Muted | `#6B665C` | `#9C978C` |
-| Rule | `#DCD5C6` | `#2A2824` |
-| Accent (charcoal ink) | `#1E1D1A` | `#EEE9DD` |
-| Accent tint | `#E4DED0` | `#24221E` |
+| Token | Role | Light | Dark |
+|---|---|---|---|
+| `--bg` | Page | `#EFE2CC` | `#2B241D` |
+| `--bg-2` | Second band | `#E9D8BD` | `#30281F` |
+| `--surface` | Hover and image wells | `#E5D1B4` | `#3B3127` |
+| `--raised` | Cards, answer rows, fields, sheets | `#F8EFE1` | `#352C23` |
+| `--champagne` | Accent tint, selected fills | `#E1CAA8` | `#4A3D2F` |
+| `--stone` | Quiet panel | `#DCC4A2` | `#3A2F25` |
+| `--text` | Text | `#2A241D` | `#F4E9D6` |
+| `--muted` | Secondary text (AA on every surface) | `#665A4C` | `#C9B79D` |
+| `--faint` | Decoration only, never text | `#8C7B66` | `#94826B` |
+| `--rule` | 1 px rules and borders | `#D4BF9F` | `#4D4134` |
+| `--accent` / `--ink` | Primary button, selected | `#2C251D` | `#ECD9B8` |
+| `--shadow-soft`, `--shadow-lift`, `--shadow-deep` | Cards at rest, on hover, sheets and the phone | warm brown | near black |
+| `--r-control` / `--r-card` | Controls / photographs, cards, sheets | 2 px / 6 px | same |
 
 Type: Playfair Display 400 for the question, the home headline, the look title, answer choices and piece names (38 px on mobile, 52 px on desktop for display); Geist 400 and 500 for everything else; small labels (step count, eyebrows, piece houses) in 11 px tracked capitals (`.a-label`); Geist Mono for prices. Body text 16 px on mobile, 15 px on desktop. Fonts load from Google Fonts in `src/shared/fonts.ts`; self-host them for production.
 
@@ -137,7 +143,7 @@ Layout: on desktop the split is half and half, the bar floats over it so the pri
 
 Imagery: with nothing under it, the print runs full bleed across the canvas like a lookbook page; results keep the framed print with thumbnails. Motion: fades 0.7 s, page entry 0.6 s, moving between looks 0.3 s (the photo glides 32 px from the side it came from while the column fades), reduced motion respected. The desktop column keeps 16 px of room under its last line (padding with a matching negative margin) so serif descenders are never clipped by its scroll box.
 
-Control rules (`src/a/ui/controls.tsx`, `a.css`): every control is 44 px tall with text centred by the box; label 15 px medium and hint 13 px muted on one baseline, 8 px apart; 2 px corners on controls, 0 on the print and sheets; 1 px rule borders; selected is ink fill; hover is surface fill; pressed scales to 0.98; focus is a 2 px accent ring with a 2 px gap. Prices are tabular figures on one right edge. The active thumbnail carries a 2 px accent underline flush to its width, 6 px below. Everything sits on an 8 px grid with 48 px desktop and 20 px mobile gutters.
+Control rules (`src/a/ui/controls.tsx`, `a.css`): every control is 44 px tall with text centred by the box; label 15 px medium and hint 13 px muted on one baseline, 8 px apart; 2 px corners on controls, 6 px on cards, sheets and the sign in panel, 0 on the full-bleed print; 1 px rule borders; selected is ink fill; hover is surface fill; pressed scales to 0.98; focus is a 2 px accent ring with a 2 px gap. Prices are tabular figures on one right edge. The active thumbnail carries a 2 px accent underline flush to its width, 6 px below. Everything sits on an 8 px grid with 48 px desktop and 20 px mobile gutters.
 
 Layout rules: on phones the primary action is pinned at the bottom of the column under one rule and is never below the fold; on desktop the action row follows the content under the same rule, so it sits where the eye already is; the print is sized from the available height; the stage is capped at 1600 px wide. On phones the print band is 40% of the viewport while answering and 50% on results and try-on. Verified at 1440x900, 1920x1080, 2000x1120, 1280x720, 390x844 and 375x667.
 

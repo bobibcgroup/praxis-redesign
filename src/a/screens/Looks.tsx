@@ -76,12 +76,12 @@ export function Looks() {
           <ul className="a-rail flex min-h-0 flex-1 snap-x snap-mandatory items-start gap-4 overflow-x-auto px-5 py-6 lg:gap-8 lg:px-12 lg:py-8" aria-label="Saved looks">
             {looks.map((s, i) => (
               <motion.li key={s.id} initial={reduced ? false : { opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: reduced ? 0 : Math.min(i, 6) * 0.05, duration: 0.3, ease: "easeOut" }} className="shrink-0 snap-start">
-                <Link to={href(`looks/${s.id}`)} className="group flex flex-col">
+                <Link to={href(`looks/${s.id}`)} className="a-rail-card group flex flex-col">
                   <span className="a-rail-print block">
-                    <img src={s.look.image} alt={`${s.look.title} for ${s.occasionLabel.toLowerCase()}`} className="h-full w-full object-cover object-top transition-opacity duration-200 group-hover:opacity-85" draggable={false} />
+                    <img src={s.look.image} alt={`${s.look.title} for ${s.occasionLabel.toLowerCase()}`} className="h-full w-full object-cover object-top" draggable={false} />
                   </span>
-                  <span className="mt-4 block font-[family-name:var(--font-display)] text-[19px] leading-6">{s.look.title}</span>
-                  <span className="a-label mt-1 block text-[var(--muted)]">
+                  <span className="block px-4 pt-3 font-[family-name:var(--font-display)] text-[19px] leading-6">{s.look.title}</span>
+                  <span className="a-label mt-1 block px-4 pb-4 text-[var(--muted)]">
                     {s.occasionLabel}, {savedOn(s.savedAt)}
                   </span>
                 </Link>

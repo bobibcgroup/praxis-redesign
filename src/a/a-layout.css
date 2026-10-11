@@ -379,6 +379,25 @@
   display: none;
 }
 
+/* A saved look is a print on raised paper, like the occasion cards on home. */
+.a-rail-card {
+  background: var(--raised);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  transition: box-shadow 240ms ease, transform 240ms ease;
+}
+
+.a-rail-card:hover {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+
+.a-rail-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
 .a-rail-print {
   width: 62vw;
   aspect-ratio: 3 / 4;
@@ -402,9 +421,11 @@
   flex-direction: column;
   width: 100%;
   max-height: 92dvh;
-  background: var(--bg);
+  background: var(--raised);
   border: 1px solid var(--rule);
   border-bottom: 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  box-shadow: var(--shadow-deep);
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
@@ -420,6 +441,7 @@
     max-width: 440px;
     max-height: calc(100dvh - 64px);
     border-bottom: 1px solid var(--rule);
+    border-radius: var(--r-card);
     padding-bottom: 0;
   }
 }
