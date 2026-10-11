@@ -63,7 +63,8 @@
       cardName: 22, cardPad: 16,
       eyebrow: { y: 50, size: 11 },
       headline: { y: 70, size: 28, lh: 36 },
-      progress: { y: 118, w: inner },
+      status: { y: 112, size: 13 },
+      progress: { y: 140, w: inner },
       printLabel: { gap: 14, size: 11, title: 17 },
       hero, index, counter: true, chip: 28,
       col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 26, summary: 114, summarySize: 12, summaryLh: 17, note: 154, noteSize: 13.5, noteLh: 20, rows: 222, rowH: 42, rowSize: 14, box: 15 },
@@ -96,7 +97,8 @@
       cardName: 18, cardPad: 12,
       eyebrow: { y: 30, size: 10 },
       headline: { y: 46, size: 21, lh: 28 },
-      progress: { y: 86, w: inner },
+      status: { y: 78, size: 11.5 },
+      progress: { y: 100, w: inner },
       printLabel: { gap: 10, size: 10, title: 14 },
       hero, index, counter: false, chip: 26,
       col: { x: P, w: inner, eyebrow: 318, title: 334, titleSize: 22, summary: 366, summarySize: 11.5, summaryLh: 16, note: 388, noteSize: 13, noteLh: 19, rows: null },
@@ -171,6 +173,8 @@
   const header = {
     buildEyebrow: el("div", "abs label"),
     buildLine: el("div", "abs serif", stage, "I’m putting your looks together."),
+    working: el("div", "abs", stage, "Choosing pieces for your answers."),
+    ready: el("div", "abs", stage, "Your looks are ready."),
     track: el("div", "abs"),
     fill: el("div", "abs"),
     resultEyebrow: el("div", "abs label", stage, "My picks for dinner"),
@@ -179,9 +183,13 @@
   header.buildEyebrow.textContent = "Dinner";
   for (const e of [header.buildEyebrow, header.resultEyebrow]) text(e, { x: L.P, y: L.eyebrow.y, size: L.eyebrow.size, lh: 16, color: "#6b665c" });
   for (const e of [header.buildLine, header.resultLine]) text(e, { x: L.P, y: L.headline.y, size: L.headline.size, lh: L.headline.lh });
+  for (const e of [header.working, header.ready]) text(e, { x: L.P, y: L.status.y, size: L.status.size, color: "#6b665c" });
   place(header.track, { x: L.P, y: L.progress.y, w: L.progress.w, h: 1 });
   header.track.style.background = "#dcd5c6";
-  place(header.fill, { x: L.P, y: L.progress.y, w: L.progress.w, h: 1 });
+  // The working segment lives inside the hairline, which clips it at both ends.
+  header.track.appendChild(header.fill);
+  header.track.style.overflow = "hidden";
+  place(header.fill, { x: 0, y: 0, w: L.progress.w, h: 1 });
   header.fill.style.background = "#1e1d1a";
   header.fill.style.transformOrigin = "left center";
 
@@ -323,14 +331,20 @@
 
     touchAt(touch1, center(pushed), t, 0.5);
 
-    // The build: the stylist's line, the progress hairline, the real stage names.
+    // The build: the stylist's line, the status under it and the working line, as the app has them.
     const buildOn = window_(t, 1.75, 0.4, 2.95, 0.2);
     header.buildEyebrow.style.opacity = buildOn;
     header.buildLine.style.opacity = buildOn;
     header.buildLine.style.transform = `translateY(${8 * (1 - out(span(t, 1.75, 2.25)))}px)`;
     header.track.style.opacity = buildOn;
     header.fill.style.opacity = buildOn;
-    header.fill.style.transform = `scaleX(${inOut(span(t, 1.85, 2.85))})`;
+    // The working line: a short segment sweeping the hairline, as in the app, then the whole line once the looks are in.
+    const sweep = inOut(span(t, 1.85, 2.55));
+    const done = out(span(t, 2.55, 2.8));
+    const segX = lerp(-0.3, 1.0, sweep) * L.progress.w * (1 - done);
+    header.fill.style.transform = `translateX(${segX}px) scaleX(${lerp(0.3, 1, done)})`;
+    header.working.style.opacity = window_(t, 1.85, 0.3, 2.6, 0.12);
+    header.ready.style.opacity = window_(t, 2.6, 0.15, 2.95, 0.2);
 
     // The results header, while the three looks are on screen.
     const resultOn = Math.min(out(span(t, 3.0, 3.35)), 1 - out(span(t, 5.35, 5.55))) || out(span(t, 7.3, 7.7));
