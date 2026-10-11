@@ -2,7 +2,7 @@
  * Looks: a quiet library. The stage becomes a horizontal rail of saved
  * prints; tapping one opens it in the print with its pieces.
  */
-import { usePieceSelection } from "../lib/selection";
+import { soldOut, usePieceSelection } from "../lib/selection";
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link, Navigate, useParams } from "react-router-dom";
@@ -111,6 +111,7 @@ export function LookDetail() {
   }, [outfitId, id]);
 
   if (!saved) return <Navigate to={href("looks")} replace />;
+  const left = saved.look.pieces.filter((p) => !p.owned && !soldOut(p) && !selection.isChosen(p.id)).length;
 
   return (
     <Stage
@@ -123,6 +124,13 @@ export function LookDetail() {
           alt={`${saved.look.title} for ${saved.occasionLabel.toLowerCase()}`}
           reduced={reduced}
           belowHeight={BELOW.none}
+          overlay={
+            left > 0 ? (
+              <p className="a-print-note a-print-note-inset" aria-live="polite">
+                Original look, {left} {left === 1 ? "piece" : "pieces"} not included
+              </p>
+            ) : null
+          }
         />
       }
       actions={

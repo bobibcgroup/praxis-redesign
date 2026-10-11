@@ -91,11 +91,11 @@ export function Home() {
 
   useEffect(() => {
     if (!pending) return;
-    /* Back here mid-journey: the place and time belong to the old occasion, the feel and budget still hold. */
-    /* From Restyle, a time that still fits the new occasion is kept and the looks follow the place; otherwise every step is asked. */
-    const keepTime = restyle && timesFor(pending).some((t) => t.id === answers.time);
+    /* Back here mid-journey or from Restyle: the place belongs to the old occasion and is asked again; a time
+       that still fits, the feel and the budget are kept, so the looks follow straight after the place. */
+    const keepTime = timesFor(pending).some((t) => t.id === answers.time);
     const midway = restyle || (answers.occasion && !answers.done);
-    const patch = midway ? { occasion: pending, venue: null, time: keepTime ? answers.time : null, hero: null, restyle: keepTime ? "1" : null } : { ...FRESH, occasion: pending };
+    const patch = midway ? { occasion: pending, venue: null, time: keepTime ? answers.time : null, hero: null } : { ...FRESH, occasion: pending };
     const t = setTimeout(() => go("moment/venue", patch), reduced ? 0 : 260);
     return () => clearTimeout(t);
   }, [pending, go, reduced, restyle, answers.occasion, answers.done, answers.time]);

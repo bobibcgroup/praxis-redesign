@@ -96,7 +96,7 @@ async function toResults(p, picks) {
 }
 
 const A = { occasion: "Dinner", venue: /Restaurant/, time: /Night/, feel: /Sharp/, spend: /\$300 to/ };
-const B = { occasion: "Dinner", venue: /home/i, time: /Sunset/, feel: /Relaxed/, spend: /Under/ };
+const B = { occasion: "Dinner", venue: /home/i, time: /Early evening/, feel: /Relaxed/, spend: /Under/ };
 
 /* ------------------------------------------------------------ scenarios */
 
@@ -380,6 +380,119 @@ const PAGES = [
   ["your-data", "/data?mode=light"],
   ["saved-looks", "/looks?mode=light"],
 ];
+/* The consultant review (2026-10-11): each fix, on desktop and phone. */
+const progress = (p) => p.getByRole("navigation", { name: "Progress" }).filter({ visible: true }).first();
+for (const device of ["desktop", "phone"]) {
+  await scenario("UX1", "Every step shows in the progress and opens both ways, keeping the answers", device, async (p, shot) => {
+    await toResults(p, A);
+    await p.goto(`${BASE}/moment/time?${new URL(p.url()).searchParams}`);
+    await p.waitForTimeout(700);
+    const labels = (await progress(p).innerText()).replace(/\s+/g, " ").trim();
+    check(/Occasion.*Place.*Time.*Feel.*Budget.*Looks/i.test(labels), `all six steps listed (${labels})`);
+    await shot("progress");
+    await progress(p).getByRole("link", { name: "Budget" }).click();
+    await p.waitForURL(/moment\/spend/);
+    check(true, "forward to Budget from Time");
+    check(await p.getByRole("radio", { name: /\$300 to/ }).first().getAttribute("aria-checked") === "true", "the budget answer is still selected");
+    await progress(p).getByRole("link", { name: "Place" }).click();
+    await p.waitForURL(/moment\/venue/);
+    check(true, "back to Place from Budget");
+    await p.waitForTimeout(500);
+    await p.getByRole("radio", { name: /Bar/ }).first().click();
+    await p.waitForURL(/moment\/(build|results)/, { timeout: 8000 });
+    const q = new URL(p.url()).searchParams;
+    check(q.get("venue") === "BAR" && q.get("time") === "NIGHT" && q.get("vibe") === "SHARP" && q.get("spend"), "a new place goes straight to the looks with the rest kept");
+    await p.waitForURL(/moment\/results/, { timeout: 15000 });
+    if (device === "phone") {
+      await button(p, /Restyle/).click();
+      await p.waitForTimeout(400);
+      await p.getByRole("radio", { name: /The time of day/ }).first().click();
+    } else await progress(p).getByRole("link", { name: "Time" }).click();
+    await p.waitForURL(/moment\/time/);
+    check(await p.getByRole("radio", { name: /Early evening/ }).count() === 1, "Sunset now reads Early evening");
+    await p.getByRole("radio", { name: /Early evening/ }).first().click();
+    await p.waitForURL(/moment\/(build|results)/, { timeout: 8000 });
+    check(new URL(p.url()).searchParams.get("time") === "SUNSET", "a new time goes straight to the looks");
+  });
+
+  await scenario("UX2", "Unticking a piece marks it and says the photo is the original look", device, async (p, shot) => {
+    await toResults(p, A);
+    check((await p.locator(".a-print-note").count()) === 0, "no note while every piece is in");
+    await p.locator(".a-pick").filter({ visible: true }).first().click();
+    await p.waitForTimeout(400);
+    const note = p.locator(".a-print-note").filter({ visible: true });
+    check((await note.count()) === 1 && /Original look, 1 piece not included/.test(await note.innerText()), "the print says it shows the original look, 1 piece out");
+    check(/Not included/.test(await p.locator(".a-pick").filter({ visible: true }).first().innerText()), "the piece reads Not included");
+    await shot("unticked");
+    await p.locator(".a-pick").filter({ visible: true }).first().click();
+    await p.waitForTimeout(300);
+    check((await p.locator(".a-print-note").count()) === 0, "ticking it again clears the note");
+  });
+
+  await scenario("UX3", "Make it yours sits above the pieces as two described cards", device, async (p, shot) => {
+    await toResults(p, A);
+    const cards = p.locator(".a-personal-card").filter({ visible: true });
+    check((await cards.count()) === 2, "two cards");
+    const texts = (await cards.allInnerTexts()).join(" | ");
+    check(/See it on me/.test(texts) && /Preview this look on you/.test(texts) && /Use something I own/.test(texts) && /piece you have/.test(texts), "each says what it does");
+    const cardTop = (await cards.first().boundingBox()).y;
+    const pieceTop = (await p.locator(".a-pick").filter({ visible: true }).first().boundingBox()).y;
+    check(cardTop < pieceTop, "above the pieces");
+    await cards.first().scrollIntoViewIfNeeded();
+    await shot("make-it-yours");
+    await cards.nth(1).click();
+    await p.waitForURL(/moment\/you\/item/);
+    await p.getByRole("radio", { name: "Top" }).first().click();
+    await p.waitForTimeout(500);
+    check((await p.getByRole("radio", { name: /Try it with an example/ }).count()) === 1, "the sample reads Try it with an example");
+    check(/An example shows how I build the look/.test(await body(p)), "and says what the example is for");
+    await shot("example");
+  });
+
+  await scenario("UX4", "Wording: budget, Restyle hint, smaller Feel hints and stylist note", device, async (p, shot) => {
+    await p.goto(`${BASE}/moment/feel?mode=light&occasion=DINNER&venue=RESTAURANT&time=NIGHT`);
+    await p.waitForTimeout(700);
+    const sizes = await p.locator(".a-answers .a-control").filter({ visible: true }).first().evaluate((b) => {
+      const h = b.querySelector(".hint");
+      const r = b.getBoundingClientRect(), hr = h.getBoundingClientRect();
+      return { label: parseFloat(getComputedStyle(b).fontSize), hint: parseFloat(getComputedStyle(h).fontSize), rightGap: r.right - hr.right };
+    });
+    check(sizes.hint <= 12 && sizes.label >= 18, `hint ${sizes.hint}px under name ${sizes.label}px`);
+    const edges = await p.locator(".a-answers .a-control .hint").filter({ visible: true }).evaluateAll((hs) => hs.map((h) => Math.round(h.getBoundingClientRect().right)));
+    check(new Set(edges).size === 1, `hints share one right edge (${edges.join(", ")})`);
+    await shot("feel");
+    await p.getByRole("radio", { name: /Sharp/ }).first().click();
+    await p.waitForURL(/moment\/spend/);
+    check(/budget for the whole look/i.test(await body(p)), "the budget question names the whole look");
+    await toResults(p, A);
+    check(parseFloat(await p.locator(".a-note").filter({ visible: true }).first().evaluate((n) => getComputedStyle(n).fontSize)) <= 16, "stylist note at 16px");
+    const restyle = button(p, /Restyle/);
+    check(/Change an answer/.test(await restyle.innerText()), "Restyle carries the hint Change an answer");
+    const box = await restyle.boundingBox();
+    check(box && box.x + box.width <= (await p.evaluate(() => innerWidth)) && box.height >= 44, "Restyle and its hint fit the row");
+    await shot("results");
+  });
+
+  await scenario("UX5", "Sharing says what the friend sees; a friend's page has no Check out", device, async (p, shot) => {
+    await toResults(p, A);
+    await button(p, /^Share/).click();
+    await p.waitForTimeout(500);
+    const t = await body(p);
+    check(/Anyone who taps it sees all three looks/.test(t) && /Sends a link to all three looks/.test(t) && /No account needed/.test(t), "each option says what is shared");
+    await shot("share");
+    await p.keyboard.press("Escape");
+    const url = new URL(p.url());
+    url.searchParams.set("via", "friend");
+    await p.goto(url.toString());
+    await p.waitForTimeout(1200);
+    check((await p.getByRole("button", { name: /^Check out/ }).filter({ visible: true }).count()) === 0, "no Check out for the friend");
+    check((await p.getByRole("button", { name: /^Share$/ }).filter({ visible: true }).count()) === 0, "no Share button for the friend");
+    check((await button(p, /^Forward$/).count()) === 1, "a quiet Forward instead");
+    check((await p.getByRole("link", { name: /Get your own looks/ }).filter({ visible: true }).count()) === 1, "Get your own looks leads");
+    await shot("friend");
+  });
+}
+
 for (const device of ["desktop", "phone"]) {
   await scenario("NAV", "Every way back to the occasion lands on home", device, async (p) => {
     const onHome = async () => (await p.locator(".a-cards").count()) > 0;

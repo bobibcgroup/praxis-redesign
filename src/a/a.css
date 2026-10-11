@@ -489,12 +489,17 @@
 /* Atelier: answers read as the stylist's words, set in the display serif. */
 [data-concept="a"] .a-answers .a-control {
   font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 400;
 }
 
+/* The hint is a quiet aside: smaller than the name and set on one right edge, so every row lines up. */
 [data-concept="a"] .a-answers .a-control .hint {
+  margin-left: auto;
+  padding-left: 12px;
   font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0.01em;
 }
 
 /* Atelier: small labels are tracked capitals, like a fitting card. */
@@ -619,11 +624,12 @@
 }
 
 /* The stylist's note: why this look, in the serif's italic. */
+/* The stylist's note: present but quieter than the title, so the pieces stay easy to scan. */
 [data-concept="a"] .a-note {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 19px;
-  line-height: 28px;
+  font-size: 16px;
+  line-height: 24px;
 }
 
 /* The line that ties a look to the brief, from the recommendation service. */
@@ -1101,9 +1107,114 @@
   gap: 8px;
 }
 
-[data-concept="a"] .a-personal .a-control {
+@media (min-width: 640px) {
+  [data-concept="a"] .a-personal {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Make it yours: two cards on the raised paper, each saying what it does in one line. */
+[data-concept="a"] .a-personal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 44px;
+  padding: 12px 16px;
+  text-align: left;
+  background: var(--raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
+  transition: box-shadow 240ms ease, border-color 240ms ease;
+  outline: none;
+}
+
+[data-concept="a"] .a-personal-card:hover {
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+[data-concept="a"] .a-personal-card:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] .a-personal-card .title {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 0 16px;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 24px;
+}
+
+[data-concept="a"] .a-personal-card .hint {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Each share option says what the friend will see. */
+[data-concept="a"] .a-share-what {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-personal-card .line {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--muted);
+}
+
+/* A piece the client unticked: kept in the list, marked, and the print says it shows the original look. */
+[data-concept="a"] .a-piece .left-out {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-pick:not([data-chosen]) .name {
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-print-note {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(8px);
+  border-radius: var(--r-control);
+  pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-print-note {
+    left: 32px;
+    top: 104px;
+    font-size: 13px;
+  }
+
+  [data-concept="a"] .a-print-note-inset {
+    left: 16px;
+    top: 16px;
+  }
 }
 
 /* The story card preview in the share sheet: 9:16, hairline frame. */

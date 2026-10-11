@@ -1,6 +1,6 @@
 /**
  * The look in the left column: eyebrow, title, the line tying it to the brief, the stylist's note on
- * why the pieces work, the reasons folded under "Why this look", then the pieces, each with a box the
+ * why the pieces work, the reasons folded under "Why this look", Make it yours, then the pieces, each with a box the
  * client can untick, and the total of what is chosen. With nothing ticked, it says why Check out is
  * unavailable. On a phone the list scrolls inside the column.
  */
@@ -26,7 +26,7 @@ interface Props {
   explain?: boolean;
   /** After the pieces: feedback on the look. */
   after?: ReactNode;
-  /** Follows the pieces and total: the offer to make the look personal. */
+  /** Before the pieces, so it is seen without scrolling: the offer to make the look personal. */
   personal?: ReactNode;
   /** Closes the column, after the total. */
   end?: ReactNode;
@@ -42,6 +42,7 @@ export function LookDetails({ look, eyebrow, compact = false, selection, caption
       {explain && look.summary && !compact ? <p className="a-summary mt-3 max-w-[40ch]">{look.summary}</p> : null}
       <p className={`a-note mt-4 max-w-[34ch] ${compact ? "hidden lg:block" : ""}`}>{look.why}</p>
       {explain && !compact && look.factors ? <LookWhy factors={look.factors} lookId={look.id} /> : null}
+      {personal}
 
       {!compact ? (
         <div className="mt-6" role="list" aria-label="Pieces">
@@ -63,7 +64,6 @@ export function LookDetails({ look, eyebrow, compact = false, selection, caption
         </div>
       ) : null}
       {!compact ? after : null}
-      {personal}
       {end}
     </div>
   );

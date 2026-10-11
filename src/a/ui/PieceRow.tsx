@@ -36,6 +36,7 @@ export function PieceRow({ piece, chosen, onToggle, over = "house" }: Props) {
       <span>
         <span className="house a-label">{label}</span>
         <span className="name">{piece.name}</span>
+        {chosen ? null : <span className="left-out">Not included</span>}
       </span>
       <span className="a-mono price">{money(piece.price)}</span>
     </label>

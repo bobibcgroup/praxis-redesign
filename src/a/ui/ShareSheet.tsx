@@ -85,25 +85,32 @@ export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, on
       label="Share this look"
       footer={
         <div className="flex flex-col gap-2">
-          <PrimaryButton onClick={story} disabled={!card} className="w-full justify-center">
-            {card ? "Share to your story" : "Preparing the image"}
-          </PrimaryButton>
-          <QuietButton onClick={ask} className="w-full justify-center">
-            Ask a friend to choose
-          </QuietButton>
-          <div className="flex items-center justify-center gap-2">
+          <div>
+            <PrimaryButton onClick={story} disabled={!card} className="w-full justify-center">
+              {card ? "Share to your story" : "Preparing the image"}
+            </PrimaryButton>
+            <p className="a-share-what">Posts this image. Anyone who taps it sees all three looks.</p>
+          </div>
+          <div className="mt-2">
+            <QuietButton onClick={ask} className="w-full justify-center">
+              Ask a friend to choose
+            </QuietButton>
+            <p className="a-share-what">Sends a link to all three looks, with the pieces and example prices.</p>
+          </div>
+          <div className="mt-1 flex items-center justify-center gap-2">
             <TextButton onClick={save} disabled={!card}>
               Save the image
             </TextButton>
             <TextButton onClick={copy}>Copy link</TextButton>
           </div>
+          <p className="a-share-what -mt-1">No account needed. The image is the look only; the link shows the details.</p>
         </div>
       }
     >
       <div className="flex flex-col items-center gap-4">
         <div className="a-card-preview">{preview ? <img src={preview} alt={`${look.title}, the image you will share`} /> : null}</div>
         <p className="max-w-[34ch] text-center text-[13px] leading-5 text-[var(--muted)]" aria-live="polite">
-          {note ?? "Made for Instagram stories. Your friends see all the looks and can get their own."}
+          {note ?? "Made for Instagram stories. Friends who open it can get their own looks too."}
         </p>
       </div>
     </Sheet>

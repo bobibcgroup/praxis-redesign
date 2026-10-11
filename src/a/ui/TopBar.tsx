@@ -119,6 +119,30 @@ function Spine({ steps }: { steps: SpineStep[] }) {
   );
 }
 
+/**
+ * The same steps on a phone, where the bar has no room: a quiet row above the question that
+ * scrolls sideways if it must. Answered steps open from here too, in either direction.
+ */
+export function PhoneSpine({ steps }: { steps: SpineStep[] }) {
+  return (
+    <nav aria-label="Progress" className="a-phone-spine a-spine -mx-5 -mt-4 mb-2 lg:hidden">
+      <ol className="flex items-center gap-4 overflow-x-auto px-5">
+        {steps.map((s) => (
+          <li key={s.label} className="shrink-0" aria-current={s.state === "current" ? "step" : undefined}>
+            {s.to && s.state === "done" ? (
+              <Link to={s.to} className="inline-flex min-h-[44px] items-center text-[var(--muted)] underline decoration-[var(--rule)] underline-offset-4">
+                {s.label}
+              </Link>
+            ) : (
+              <span className={`inline-flex min-h-[44px] items-center ${s.state === "current" ? "a-spine-current text-[var(--text)]" : "text-[var(--muted)]"}`}>{s.label}</span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
 function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { href, store, reduced, user, signOut, openGate } = useJourney();
   useScrollLock(open);

@@ -68,7 +68,7 @@ export type TimeId = "SUNRISE" | "DAY" | "SUNSET" | "NIGHT";
 export const TIMES: readonly ChoiceOption<TimeId>[] = [
   { id: "SUNRISE", label: "Sunrise" },
   { id: "DAY", label: "Day" },
-  { id: "SUNSET", label: "Sunset" },
+  { id: "SUNSET", label: "Early evening" },
   { id: "NIGHT", label: "Night" },
 ];
 

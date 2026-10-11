@@ -8,7 +8,7 @@
  * the same look. A tap or click on the print opens it large to zoom in (LookViewer). Saving needs no
  * account; the completion state offers sign-in afterwards.
  */
-import { usePieceSelection, type PieceSelection } from "../../lib/selection";
+import { soldOut, usePieceSelection, type PieceSelection } from "../../lib/selection";
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
@@ -22,7 +22,7 @@ import { momentSpine } from "../../lib/spine";
 import { useStylingResponse, useStylingSpec } from "../../lib/styling";
 import { useSwipe } from "../../lib/swipe";
 import { Completion, CompletionActions } from "../../ui/Completion";
-import { LinkButton, PremiumMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { LinkButton, PremiumMark, PrimaryButton, TextButton } from "../../ui/controls";
 import { LookViewer } from "../../ui/LookViewer";
 import { RestyleSheet } from "../../ui/RestyleSheet";
 import { ShareSheet } from "../../ui/ShareSheet";
@@ -164,6 +164,8 @@ export function Results() {
   const saved = store.looks.some((s) => s.dedupeKey === savedKey);
   const done = answers.done;
   const premium = user?.premium ?? false;
+  /* Pieces the client unticked. The print stays the stylist's reference, and says so. */
+  const left = hero ? hero.pieces.filter((p) => !p.owned && !soldOut(p) && !selection.isChosen(p.id)).length : 0;
   const isPick = index === 0;
   const eyebrow = isPick ? `My pick ${forOccasion(answers.occasion)}` : `${ROLE_LABEL[hero.role]} ${forOccasion(answers.occasion)}`;
   /* Opened from someone's shared link: show their looks and invite this visitor to get their own. */
@@ -190,6 +192,11 @@ export function Results() {
             onKeyDown={onGalleryKey}
             overlay={
               <>
+                {left > 0 ? (
+                  <p className="a-print-note" aria-live="polite">
+                    Original look, {left} {left === 1 ? "piece" : "pieces"} not included
+                  </p>
+                ) : null}
                 <button
                   type="button"
                   className="a-enlarge"
@@ -229,10 +236,10 @@ export function Results() {
               <LinkButton to={fresh} variant="primary">
                 Get your own looks
               </LinkButton>
-              <TextButton onClick={openBuy} disabled={none} aria-describedby={none ? CHECKOUT_REASON_ID : undefined}>
-                Check out
+              {/* A friend's looks are here for an opinion, not a sale: no Check out, and passing them on is a quiet link. */}
+              <TextButton onClick={() => setSharing(true)} className="text-[13px]">
+                Forward
               </TextButton>
-              <TextButton onClick={() => setSharing(true)}>Share</TextButton>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-1 lg:gap-2">
@@ -244,8 +251,9 @@ export function Results() {
               <TextButton onClick={save} disabled={saved}>
                 {saved ? "Saved" : "Save"}
               </TextButton>
-              <TextButton onClick={() => setRestyling(true)} className="lg:ml-auto lg:-mr-2">
+              <TextButton onClick={() => setRestyling(true)} aria-label="Restyle, change an answer">
                 Restyle
+                <span className="hint">Change an answer</span>
               </TextButton>
             </div>
           )
@@ -276,16 +284,20 @@ export function Results() {
                   <p className="a-note mt-3">A friend asked me to style them {forOccasion(answers.occasion)}. Tell me about your moment and I’ll style three looks for you.</p>
                 </div>
               ) : (
-                <div className="mt-6">
-                  <p className="a-label text-[var(--muted)]">Make it yours</p>
+                <section className="mt-6" aria-label="Make it yours">
+                  <p className="a-label text-[var(--muted)]" aria-hidden="true">Make it yours</p>
                   <div className="a-personal mt-3">
-                    <QuietButton onClick={seeOnMe}>
-                      See it on me
+                    <button type="button" onClick={seeOnMe} className="a-personal-card">
+                      <span className="title">See it on me</span>
+                      <span className="line">Preview this look on you.</span>
                       <PremiumMark show={!premium} price />
-                    </QuietButton>
-                    <QuietButton onClick={() => go("moment/you/item")}>{answers.item ? "Change my piece" : "Use something I own"}</QuietButton>
+                    </button>
+                    <button type="button" onClick={() => go("moment/you/item")} className="a-personal-card">
+                      <span className="title">{answers.item ? "Change my piece" : "Use something I own"}</span>
+                      <span className="line">{answers.item ? "Build the looks around another piece." : "Build the looks around a piece you have."}</span>
+                    </button>
                   </div>
-                </div>
+                </section>
               )
             }
           />

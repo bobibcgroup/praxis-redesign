@@ -2,30 +2,34 @@
 import type { Answers } from "./journeyContext";
 import type { SpineStep } from "../ui/TopBar";
 
-export type MomentGroup = "occasion" | "room" | "feel" | "you" | "looks";
+export type MomentGroup = "occasion" | "venue" | "time" | "feel" | "spend" | "looks";
 
-const MOMENT_ORDER: readonly { id: MomentGroup; label: string; path: string }[] = [
-  { id: "occasion", label: "Occasion", path: "" },
-  { id: "room", label: "Place", path: "moment/venue" },
-  { id: "feel", label: "Feel", path: "moment/feel" },
-  { id: "looks", label: "Looks", path: "moment/results" },
+/** Every answer the looks depend on, in the order they are asked, then the looks. */
+const MOMENT_ORDER: readonly { id: MomentGroup; label: string; path: string; answer: keyof Answers | null }[] = [
+  { id: "occasion", label: "Occasion", path: "", answer: "occasion" },
+  { id: "venue", label: "Place", path: "moment/venue", answer: "venue" },
+  { id: "time", label: "Time", path: "moment/time", answer: "time" },
+  { id: "feel", label: "Feel", path: "moment/feel", answer: "vibe" },
+  { id: "spend", label: "Budget", path: "moment/spend", answer: "spend" },
+  { id: "looks", label: "Looks", path: "moment/results", answer: null },
 ];
 
-export function momentSpine(current: MomentGroup, answers: Answers, href: (p: string) => string): SpineStep[] {
-  const idx = MOMENT_ORDER.findIndex((g) => g.id === current);
+/** The first unanswered question after the occasion, or null once every answer is in. */
+export function firstMissing(answers: Answers): string | null {
+  const step = MOMENT_ORDER.find((g) => g.answer && !answers[g.answer]);
+  return step ? step.path : null;
+}
+
+/**
+ * Any answered step can be opened from any other, backwards or forwards, with every answer kept.
+ * A step is reachable once everything before it is answered; the looks once every answer is in.
+ */
+export function momentSpine(current: MomentGroup, answers: Answers, href: (p: string, patch?: Record<string, string | null>) => string): SpineStep[] {
   return MOMENT_ORDER.map((g, i) => {
-    const answered =
-      g.id === "occasion"
-        ? Boolean(answers.occasion)
-        : g.id === "room"
-          ? Boolean(answers.venue && answers.time)
-          : g.id === "feel"
-            ? Boolean(answers.vibe && answers.spend)
-            : g.id === "you"
-              ? i < idx
-              : false;
-    const state: SpineStep["state"] = i === idx ? "current" : i < idx && answered ? "done" : "todo";
-    return { label: g.label, to: state === "done" ? href(g.path) : null, state };
+    const before = MOMENT_ORDER.slice(0, i).every((p) => !p.answer || Boolean(answers[p.answer]));
+    const answered = g.answer ? Boolean(answers[g.answer]) : before;
+    const state: SpineStep["state"] = g.id === current ? "current" : answered && before ? "done" : "todo";
+    return { label: g.label, to: state === "done" ? href(g.path, { restyle: null }) : null, state };
   });
 }
 

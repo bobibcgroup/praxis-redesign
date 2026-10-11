@@ -107,7 +107,7 @@ export function YouItem() {
               label="How to add the piece"
               options={[
                 { id: "upload" as const, label: "Upload a photo" },
-                { id: "sample" as const, label: "Use a sample", hint: sampleHint(slot) },
+                { id: "sample" as const, label: "Try it with an example", hint: sampleHint(slot) },
               ]}
               value={null}
               onChange={(id) => {
@@ -117,10 +117,11 @@ export function YouItem() {
                 else setAsking(true);
               }}
             />
+            <p className="text-[13px] leading-5 text-[var(--muted)]">An example shows how I build the look around a piece you own, without a photo. Upload a photo to use your own piece.</p>
             {asking ? (
               <PhotoConsent
                 category="wardrobe_garment"
-                declineLabel="Use a sample instead"
+                declineLabel="Try it with an example instead"
                 onAgree={() => {
                   setAsking(false);
                   fileRef.current?.click();
