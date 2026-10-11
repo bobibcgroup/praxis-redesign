@@ -41,7 +41,7 @@ export function TryOn() {
     setSheet(true);
   }, [hero, selection, response]);
 
-  if (!spec) return <Navigate to={href("moment/occasion")} replace />;
+  if (!spec) return <Navigate to={href("")} replace />;
   if (loading) return null;
   if (!response || !resolved || !hero) return <Navigate to={href("moment/results")} replace />;
 

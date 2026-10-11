@@ -59,7 +59,7 @@ export function YouItem() {
     setAsking(false);
   }, [slot]);
 
-  if (!answers.spend) return <Navigate to={href("moment/occasion")} replace />;
+  if (!answers.spend) return <Navigate to={href("")} replace />;
 
   const finish = (name: string, image: string | null) => {
     if (!slot) return;

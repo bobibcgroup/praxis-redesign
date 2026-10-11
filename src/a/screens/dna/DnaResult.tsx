@@ -195,7 +195,7 @@ export function DnaHome() {
       canvas={<Frame image={faceImage ?? STAND_IN_PORTRAIT} alt={faceImage ? "Your portrait" : "A sample portrait"} reduced={reduced} />}
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
+          <LinkButton to={href("", FRESH)} variant="primary">
             Start a new look
           </LinkButton>
           <TextButton onClick={() => setEditing(true)}>Change my Style DNA</TextButton>

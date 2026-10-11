@@ -68,7 +68,7 @@ export function Looks() {
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-5 pb-16 text-center lg:px-12">
             <h1 className="a-display">No saved looks yet.</h1>
             <p className="max-w-[36ch] leading-6 text-[var(--muted)]">Save a look you like and I’ll keep it here for you.</p>
-            <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
+            <LinkButton to={href("", FRESH)} variant="primary">
               Start a new look
             </LinkButton>
           </div>

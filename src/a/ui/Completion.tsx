@@ -71,7 +71,7 @@ export function CompletionActions() {
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <LinkButton to={href("moment/occasion", FRESH)} variant="primary">
+      <LinkButton to={href("", FRESH)} variant="primary">
         Start a new look
       </LinkButton>
       {store.dna ? (

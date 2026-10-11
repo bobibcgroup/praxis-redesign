@@ -1,7 +1,7 @@
 /**
  * Concept A: Stage. One full-viewport stage split in two: one question at a
  * time on the left, a living print on the right. Every step is a route.
- * Brand Forest and Bone, element system Hairline, light and dark.
+ * Champagne and mocha palettes, element system Hairline, light and dark.
  */
 import { Navigate, Route, Routes } from "react-router-dom";
 import "./a.css";
@@ -37,7 +37,8 @@ function Shell() {
       <Routes>
         <Route index element={<Home />} />
         <Route path="moment" element={<Fallback />} />
-        <Route path="moment/occasion" element={<Question key="occasion" step="occasion" />} />
+        {/* The occasion is chosen on home; old links to the occasion question land there with their answers. */}
+        <Route path="moment/occasion" element={<Fallback />} />
         <Route path="moment/venue" element={<Question key="venue" step="venue" />} />
         <Route path="moment/time" element={<Question key="time" step="time" />} />
         <Route path="moment/feel" element={<Question key="feel" step="feel" />} />

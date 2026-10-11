@@ -70,7 +70,7 @@ export function Build() {
     return () => clearTimeout(t);
   }, [response, revealed, looks.length, go, reduced]);
 
-  if (!spec) return <Navigate to={href("moment/occasion")} replace />;
+  if (!spec) return <Navigate to={href("")} replace />;
 
   const working = state.status === "idle" || state.status === "validating" || state.status === "submitted" || state.status === "processing" || state.status === "delayed" || state.status === "retry_requested";
   const { title, line } = wording(state);
@@ -93,7 +93,7 @@ export function Build() {
   ) : stuck ? (
     <div className="flex flex-wrap items-center gap-2">
       <PrimaryButton onClick={() => setRestyling(true)}>Change my answers</PrimaryButton>
-      <LinkButton to={href("moment/occasion", FRESH)} variant="tertiary">
+      <LinkButton to={href("", FRESH)} variant="tertiary">
         Start a new look
       </LinkButton>
     </div>

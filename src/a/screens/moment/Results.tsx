@@ -131,7 +131,7 @@ export function Results() {
     track("results_viewed", { recommendationId: response.recommendationId, outfits: resolved.looks.length, mode: response.mode, shared }, { once: response.recommendationId });
   }, [response, resolved, shared]);
 
-  if (!answers.spend || !spec) return <Navigate to={href("moment/occasion")} replace />;
+  if (!answers.spend || !spec) return <Navigate to={href("")} replace />;
   if (loading) return null;
   if (!response || !resolved || !hero) {
     return (

@@ -38,7 +38,7 @@ const STEPS: Record<string, StepDef> = {
     question: () => "Where is it?",
     options: (a) => (a.occasion ? VENUES[a.occasion] : []),
     next: "moment/time",
-    prev: "moment/occasion",
+    prev: "",
     requires: ["occasion"],
   },
   time: { key: "time", group: "room", step: 2, question: (a) => (a.occasion === "WORK" ? "Day or night?" : "What time of day?"), options: (a) => timesFor(a.occasion), next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },

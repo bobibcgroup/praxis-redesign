@@ -34,7 +34,7 @@ Mounted at `/`. Step routes:
 
 ```
 /                                   home (first visit, or returning with DNA)
-/moment/occasion  /moment/venue  /moment/time  /moment/feel  /moment/spend
+/moment/venue  /moment/time  /moment/feel  /moment/spend
 /moment/you/face  /moment/you/item   (reached from the results; /moment/you redirects there)
 /moment/build  /moment/results  /moment/tryon
 /looks  /looks/:id

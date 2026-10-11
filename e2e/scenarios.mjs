@@ -381,6 +381,37 @@ const PAGES = [
   ["saved-looks", "/looks?mode=light"],
 ];
 for (const device of ["desktop", "phone"]) {
+  await scenario("NAV", "Every way back to the occasion lands on home", device, async (p) => {
+    const onHome = async () => (await p.locator(".a-cards").count()) > 0;
+    await p.goto(`${BASE}/?mode=light`);
+    await p.getByRole("radio", { name: "Dinner" }).first().click();
+    await p.waitForURL(/moment\/venue/);
+    await p.waitForTimeout(600);
+    await button(p, /back/i).click();
+    await p.waitForTimeout(800);
+    check(await onHome(), "back from the first question opens home");
+    check((await p.locator('.a-card[aria-checked="true"]').innerText().catch(() => "")).includes("Dinner"), "home shows the occasion already chosen");
+    for (const path of ["/moment/occasion", "/moment", "/moment/results", "/moment/build", "/moment/tryon", "/nowhere"]) {
+      await p.goto(`${BASE}${path}?mode=light`);
+      await p.waitForTimeout(500);
+      check(new URL(p.url()).pathname === "/" && (await onHome()), `${path} opens home`);
+    }
+    await toResults(p, A);
+    await button(p, /^Restyle/).click();
+    await p.waitForTimeout(400);
+    await p.getByRole("radio", { name: /The occasion/ }).first().click();
+    await p.waitForTimeout(800);
+    check(await onHome(), "Restyle, the occasion, opens home");
+    await p.getByRole("radio", { name: "Party" }).first().click();
+    await p.waitForURL(/moment\/venue/);
+    await p.waitForTimeout(600);
+    await p.getByRole("radio").first().click();
+    await p.waitForURL(/moment\/(build|results)/, { timeout: 8000 });
+    const q = new URL(p.url()).searchParams;
+    check(q.get("occasion") === "PARTY" && q.get("vibe") === "SHARP", "a new occasion keeps the feel and goes back to the looks");
+  });
+}
+for (const device of ["desktop", "phone"]) {
   await scenario("A11Y", "No serious or critical accessibility problems (axe)", device, async (p) => {
     const run = async (name) => {
       await p.addScriptTag({ content: AXE });

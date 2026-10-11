@@ -5,7 +5,7 @@ import type { SpineStep } from "../ui/TopBar";
 export type MomentGroup = "occasion" | "room" | "feel" | "you" | "looks";
 
 const MOMENT_ORDER: readonly { id: MomentGroup; label: string; path: string }[] = [
-  { id: "occasion", label: "Occasion", path: "moment/occasion" },
+  { id: "occasion", label: "Occasion", path: "" },
   { id: "room", label: "Place", path: "moment/venue" },
   { id: "feel", label: "Feel", path: "moment/feel" },
   { id: "looks", label: "Looks", path: "moment/results" },
