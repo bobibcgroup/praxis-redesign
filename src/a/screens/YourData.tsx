@@ -6,6 +6,7 @@ import { useState } from "react";
 import { track } from "../../core/analytics";
 import { deleteLocalData, wardrobeEntries } from "../../core/data";
 import { feedbackStore } from "../../core/feedback";
+import { resetIdentityCache } from "../../core/identity";
 import { deleteImages, withdrawConsent } from "../../core/images";
 import { requestHistory } from "../../core/service";
 import { useJourney } from "../lib/journeyContext";
@@ -47,6 +48,7 @@ export function YourData() {
     withdrawConsent("face_colour");
     withdrawConsent("wardrobe_garment");
     deleteLocalData();
+    resetIdentityCache();
     // The first event of a clean slate, under a new anonymous id.
     track("local_data_deleted", {});
     window.location.assign(base || "/");

@@ -89,7 +89,7 @@ export function correct<F extends EditableField>(p: StyleProfile, field: F, valu
   const at = now.toISOString();
   const attr = p[field] as Attribute<Values[F]>;
   // Choosing the estimate itself is agreeing with it, not correcting it.
-  const next: Attribute<Values[F]> = attr.inferred?.value === value && !attr.corrected ? { inferred: attr.inferred, confirmed: { value, at } } : { inferred: attr.inferred, corrected: { value, at } };
+  const next: Attribute<Values[F]> = attr.inferred?.value === value && !attr.corrected ? { inferred: attr.inferred, confirmed: { value, at } } : { inferred: attr.inferred, confirmed: attr.confirmed, corrected: { value, at } };
   return bump({ ...p, [field]: next }, now);
 }
 
@@ -111,6 +111,15 @@ export function confirmEstimates(p: StyleProfile, now = new Date()): StyleProfil
   };
   const next = { ...p, undertone: confirm(p.undertone), contrast: confirm(p.contrast) };
   return changed ? bump(next, now) : p;
+}
+
+/**
+ * The customer answers the Style DNA questions again: fit and week take the new answers as confirmed
+ * (a correction stays on top), tastes are replaced, and the colours are left as they are.
+ */
+export function updateAnswers(p: StyleProfile, input: { fit: Fit; week: Week; tastes: string[] }, now = new Date()): StyleProfile {
+  const at = now.toISOString();
+  return bump({ ...p, fit: { ...p.fit, confirmed: { value: input.fit, at } }, week: { ...p.week, confirmed: { value: input.week, at } }, tastes: [...input.tastes] }, now);
 }
 
 export function setTastes(p: StyleProfile, tastes: string[], now = new Date()): StyleProfile {

@@ -4,7 +4,7 @@
  * duplicates (src/core/account.ts). A signed-in person sees their account's looks plus any guest
  * looks on this device; looks of another account stay hidden.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Look } from "./catalog";
 import { migrateLooks, visibleTo, type Owner } from "../core/account";
 import { fromLegacy, isProfile, type LegacyDna, type StyleProfile } from "../core/styleProfile";
@@ -96,12 +96,14 @@ export function useLabStore(concept: string, userId?: string) {
   // Read on the first render, so nothing (a styling request, the gate's steps) ever sees an empty store
   // before the saved Style DNA arrives.
   const [state, setState] = useState<LabState>(() => read(concept));
+  const first = useRef(state);
 
-  /* An older save still holding a portrait or the old shape is rewritten once, without the photo. */
+  /* An older save still holding a portrait or the old shape is rewritten once, without the photo, with
+     the profile already migrated on the first render (so its id is the one in use). */
   useEffect(() => {
     try {
       const raw = localStorage.getItem(keyFor(concept));
-      if (raw && /"portrait"|"tones"/.test(raw)) write(concept, read(concept));
+      if (raw && /"portrait"|"tones"/.test(raw)) write(concept, first.current);
     } catch {
       // Storage unavailable; nothing to rewrite.
     }

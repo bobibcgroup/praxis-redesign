@@ -111,9 +111,10 @@ function mergeProduct(p: ProductRef, i: RetailerProductInfo): ProductRef {
   return merged;
 }
 
-/** Stock for one size: the size's own figure, else the product's. */
+/** Stock for one size: the size's own figure; a size the feed left out is unknown. Without sizes, the product's. */
 export function stockFor(p: Pick<ProductRef, "availability" | "sizeAvailability">, size?: string): Availability {
-  return (size && p.sizeAvailability?.[size]) || p.availability;
+  if (size && p.sizeAvailability) return p.sizeAvailability[size] ?? "unknown";
+  return p.availability;
 }
 
 /** Whether a piece can be bought from here at all. */

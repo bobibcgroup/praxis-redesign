@@ -29,13 +29,14 @@ const WEEK_LABEL = Object.fromEntries(LIFESTYLES.map((l) => [l.id, l.label])) as
 function Row<T extends string>({ name, attr, labels }: { name: string; attr: Attribute<T>; labels: Record<string, string> }) {
   const value = valueOf(attr);
   const basis = basisOf(attr);
+  const label = basis === "inferred" && attr.inferred?.source === "sample" ? "Example" : basis ? BASIS_LABEL[basis] : null;
   return (
     <div>
       <span>
         <span className="a-label block text-[var(--muted)]">{name}</span>
         <span className="mt-1 block text-[17px] leading-6">{value ? labels[value] : "Not set"}</span>
       </span>
-      {basis ? <span className="a-basis">{BASIS_LABEL[basis]}</span> : null}
+      {label ? <span className="a-basis">{label}</span> : null}
     </div>
   );
 }
@@ -111,7 +112,7 @@ function Choice<T extends string>({ name, field, profile, options, onChange }: {
       </div>
       {attr.corrected && attr.inferred ? (
         <TextButton className="self-start" onClick={() => onChange(clearCorrection(profile, field))}>
-          Go back to my estimate ({(UNDERTONE_LABEL as Record<string, string>)[attr.inferred.value] ?? (CONTRAST_LABEL as Record<string, string>)[attr.inferred.value]})
+          Go back to {attr.inferred.source === "sample" ? "the example" : "my estimate"} ({(UNDERTONE_LABEL as Record<string, string>)[attr.inferred.value] ?? (CONTRAST_LABEL as Record<string, string>)[attr.inferred.value]})
         </TextButton>
       ) : null}
     </fieldset>

@@ -27,7 +27,11 @@ function wording(state: ProcessingState): { title: string; line: string } {
       return { title: "I’m putting your looks together.", line: "This is taking a little longer than usual." };
     case "completed":
     case "partial":
-      return { title: "I’m putting your looks together.", line: state.status === "partial" ? "I found two looks for this." : "Your looks are ready." };
+      if (state.status === "partial") {
+        const n = state.response.outfits.length;
+        return { title: "I’m putting your looks together.", line: `I found ${n === 1 ? "one look" : n === 2 ? "two looks" : `${n} looks`} for this.` };
+      }
+      return { title: "I’m putting your looks together.", line: "Your looks are ready." };
     case "empty":
       return { title: "I couldn’t find looks for all of that.", line: "Try another budget or feel, and I’ll look again." };
     case "failed":

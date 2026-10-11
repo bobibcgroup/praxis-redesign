@@ -189,3 +189,28 @@ describe("session data", () => {
     expect(device.length + tab.length).toBe(1);
   });
 });
+
+describe("review fixes", () => {
+  it("keeps a confirmation under a correction, so dropping the correction goes back to it", async () => {
+    const sp = await import("../styleProfile");
+    let p = sp.createProfile({ photo: "own", fit: "SLIM", week: "OFFICE", tastes: [] });
+    p = sp.applyAnalysis(p, { status: "completed", undertone: { value: "cool", source: "model", adapter: "x" }, contrast: { value: "high", source: "model", adapter: "x" } } as never, "own");
+    p = sp.confirmEstimates(p);
+    p = sp.correct(p, "undertone", "warm");
+    p = sp.clearCorrection(p, "undertone");
+    expect(sp.basisOf(p.undertone)).toBe("confirmed");
+  });
+  it("keeps corrections when the answers are given again", async () => {
+    const sp = await import("../styleProfile");
+    let p = sp.createProfile({ photo: "own", fit: "SLIM", week: "OFFICE", tastes: [] });
+    p = sp.correct(p, "fit", "RELAXED");
+    p = sp.updateAnswers(p, { fit: "REGULAR", week: "SOCIAL", tastes: ["a"] });
+    expect(sp.valueOf(p.fit)).toBe("RELAXED");
+    expect(sp.valueOf(p.week)).toBe("SOCIAL");
+  });
+  it("treats a size the feed left out as unknown stock", async () => {
+    const { stockFor } = await import("../retail");
+    expect(stockFor({ availability: "in_stock", sizeAvailability: { S: "in_stock" } }, "L")).toBe("unknown");
+    expect(stockFor({ availability: "in_stock", sizeAvailability: { S: "in_stock" } }, "S")).toBe("in_stock");
+  });
+});

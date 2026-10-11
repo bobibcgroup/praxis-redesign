@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { track } from "../../../core/analytics";
 import { consentFor, IMAGE_POLICIES, PROBLEM_COPY, type ImageProblem } from "../../../core/images";
-import { applyAnalysis, confirmEstimates, createProfile, hasEstimates, type StyleProfile } from "../../../core/styleProfile";
+import { applyAnalysis, confirmEstimates, createProfile, hasEstimates, updateAnswers, type StyleProfile } from "../../../core/styleProfile";
 import { imageServices, type ColourAnalysis } from "../../../core/vision";
 import { STAND_IN_PORTRAIT } from "../../../shared/catalog";
 import { FRESH, useGated, useJourney } from "../../lib/journeyContext";
@@ -50,7 +50,9 @@ export function DnaBuild() {
       if (!alive) return;
       track("style_dna_analysis_finished", { status: analysis.status });
       if (analysis.status === "completed") {
-        const base = retake && draft ? draft : createProfile({ photo: dna.face === "own" ? "own" : "sample", fit: dna.fit ?? "REGULAR", week: dna.life ?? "MIXED", tastes: dna.taste });
+        // A draft already built (a retake, or Back from the result) keeps its corrections.
+        const answers = { fit: dna.fit ?? "REGULAR", week: dna.life ?? "MIXED", tastes: dna.taste } as const;
+        const base = draft ? (retake ? draft : updateAnswers(draft, answers)) : createProfile({ photo: dna.face === "own" ? "own" : "sample", ...answers });
         setDraft(applyAnalysis(base, analysis, dna.face === "own" ? "own" : "sample"));
       } else {
         setProblem(analysis.problem);
@@ -74,7 +76,8 @@ export function DnaBuild() {
 
   /** Without colours: the profile keeps the customer's answers and says colours are not set. */
   const skip = () => {
-    const base = retake && draft ? draft : createProfile({ photo: "none", fit: dna.fit ?? "REGULAR", week: dna.life ?? "MIXED", tastes: dna.taste });
+    const answers = { fit: dna.fit ?? "REGULAR", week: dna.life ?? "MIXED", tastes: dna.taste } as const;
+    const base = draft ? (retake ? draft : updateAnswers(draft, answers)) : createProfile({ photo: "none", ...answers });
     setDraft(base);
     go("dna/result", { retake: null }, { replace: true });
   };
@@ -82,10 +85,13 @@ export function DnaBuild() {
 
   const unreadable = state === "unreadable";
   const failed = state === "failed" || state === "disabled";
+  const disabled = state === "disabled";
   const title = unreadable ? "I couldn’t read your colours from that photo." : failed ? "I couldn’t work out your colours this time." : "I’ve got what I need.";
   const line = unreadable
     ? (problem ? PROBLEM_COPY[problem] : "Try another photo in daylight.")
-    : failed
+    : disabled
+      ? "Colours aren’t available right now. Your answers are kept, and you can add colours later."
+      : failed
       ? "Your answers are kept. Try again, or carry on without colours and add them later."
       : state === "completed"
         ? "Your Style DNA is ready."

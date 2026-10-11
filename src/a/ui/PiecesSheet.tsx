@@ -39,7 +39,9 @@ export function PiecesSheet({ look, open, onClose, selection }: PiecesSheetProps
   const chosen = selection.chosen;
   const count = chosen.length;
   const buyable = chosen.filter((p) => linkOf(p));
-  const examples = chosen.some((p) => p.priceStatus !== "live");
+  const priceNote = chosen.some((p) => (p.priceStatus ?? "example") === "example") ? "Prices are examples." : chosen.some((p) => p.priceStatus === "estimated") ? "Prices are estimates." : "";
+  const unconfirmed = chosen.some((p) => stockLine(p, selection.sizeOf(p.id)) === "Stock not confirmed" || !p.deliveryEstimate);
+  const footNote = [priceNote, unconfirmed ? "Stock and delivery aren’t confirmed." : ""].filter(Boolean).join(" ");
   const needsSize = buyable.filter((p) => p.sizes?.length && !selection.sizeOf(p.id));
 
   const pickSize = (p: Piece, size: string) => {
@@ -73,7 +75,7 @@ export function PiecesSheet({ look, open, onClose, selection }: PiecesSheetProps
                 Buying isn’t open yet
               </PrimaryButton>
               <p id="a-buy-reason" className="text-[13px] leading-5 text-[var(--muted)]">
-                {examples ? "These are example pieces, so they can’t be bought yet." : "These pieces can’t be bought from here yet."}
+                {priceNote === "Prices are examples." ? "These are example pieces, so they can’t be bought yet." : "These pieces can’t be bought from here yet."}
               </p>
             </>
           ) : needsSize.length ? (
@@ -121,7 +123,7 @@ export function PiecesSheet({ look, open, onClose, selection }: PiecesSheetProps
             );
           })}
         </div>
-        {examples ? <p className="text-[15px] leading-6 text-[var(--muted)]">Prices are examples. Stock and delivery aren’t confirmed.</p> : null}
+        {footNote ? <p className="text-[15px] leading-6 text-[var(--muted)]">{footNote}</p> : null}
       </div>
     </Sheet>
   );

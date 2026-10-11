@@ -25,10 +25,11 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   const store = useLabStore("a", user?.id);
   const { migrateToAccount } = store;
 
-  /* A visit is counted once per tab; a browser that has been here before counts as returning.
-     Records past their retention period are dropped first. */
+  /* Records past their retention period go before any screen reads them (the stores cache what they read). */
+  useState(() => pruneExpired());
+
+  /* A visit is counted once per tab; a browser that has been here before counts as returning. */
   useEffect(() => {
-    pruneExpired();
     const visit = noteVisit();
     if (visit?.returning) track("user_returned", { daysSinceLastVisit: visit.daysSinceLastVisit, visits: visit.visits });
   }, []);

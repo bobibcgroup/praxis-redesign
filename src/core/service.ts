@@ -58,6 +58,7 @@ export function createStylingService(adapter: RecommendationAdapter, history: Re
         response = validateStylingResponse(raw, request, meta).response;
         if (opts.retailer && (response.status === "completed" || response.status === "partial")) {
           response = await matchProducts(response, opts.retailer, { signal: controller.signal });
+          if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
         }
       } catch {
         if (timedOut) response = failedResponse(request, meta, "timeout", "The service took too long to answer.");
