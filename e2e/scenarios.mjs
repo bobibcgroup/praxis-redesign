@@ -5,7 +5,8 @@
  *
  *   npm run build && npm run e2e
  *
- * Starts `vite preview` on port 4173 unless BASE_URL is set. Needs a Chromium that Playwright can find
+ * Starts the production server (server/index.mjs, which adds the visitor's country) on port 4173 unless
+ * BASE_URL is set. Needs a Chromium that Playwright can find
  * (PLAYWRIGHT_BROWSERS_PATH, or CHROMIUM_PATH for a specific binary). Writes e2e/results/report.md and
  * report.json, with screenshots, and exits non-zero if anything fails.
  */
@@ -30,10 +31,10 @@ let server = null;
 let BASE = process.env.BASE_URL?.replace(/\/$/, "");
 if (!BASE) {
   BASE = "http://127.0.0.1:4173";
-  server = spawn("npx", ["vite", "preview", "--port", "4173", "--strictPort", "--host", "127.0.0.1"], { cwd: join(here, ".."), stdio: "ignore" });
-  for (let i = 0; i < 60; i++) {
+  server = spawn("node", ["server/index.mjs"], { cwd: join(here, ".."), stdio: "ignore", env: { ...process.env, PORT: "4173" } });
+  for (let i = 0; i < 80; i++) {
     try {
-      if ((await fetch(BASE)).ok) break;
+      if ((await (await fetch(`${BASE}/api/country`)).json()).ready) break;
     } catch {
       // not up yet
     }
@@ -52,13 +53,17 @@ function check(cond, what) {
   current.checks.push({ ok: Boolean(cond), what });
 }
 
-async function scenario(id, title, device, fn, { sim } = {}) {
-  const ctx = await browser.newContext({ ...(device === "phone" ? PHONE : DESKTOP), reducedMotion: "no-preference" });
+async function scenario(id, title, device, fn, { sim, ip, locale, missingFiles } = {}) {
+  const ctx = await browser.newContext({ ...(device === "phone" ? PHONE : DESKTOP), reducedMotion: "no-preference", ...(locale ? { locale } : {}) });
+  /* The visitor's address, as Railway's proxy passes it on; only on requests to our own server. */
+  if (ip) await ctx.route(`${BASE}/**`, (r) => r.continue({ headers: { ...r.request().headers(), "x-forwarded-for": ip } }));
   if (sim) await ctx.addInitScript((s) => sessionStorage.setItem("praxis_sim", s), sim);
   const page = await ctx.newPage();
   current = { id, title, device, checks: [], errors: [], status: "passed" };
   page.on("pageerror", (e) => current.errors.push(e.message));
   page.on("console", (m) => {
+    /* Scenarios about missing photos expect the browser to log the failed file. */
+    if (missingFiles && m.text().startsWith("Failed to load resource")) return;
     if (m.type() === "error") current.errors.push(m.text());
   });
   const shot = (name) => page.screenshot({ path: join(OUT, `${id}-${device}-${name}.png`) });
@@ -649,6 +654,132 @@ for (const device of ["desktop", "phone"]) {
 }
 
 /* ------------------------------------------------------------ performance */
+
+/* ------------------------------------------------------------ country photos */
+
+/* One address per priority country, from the bundled DB-IP tables. */
+const COUNTRY_IPS = { PL: "2.16.126.1", LB: "5.8.128.1", AE: "2.16.44.1", SA: "2.59.54.1", FR: "2.16.242.1", NL: "2.16.84.1", CN: "1.2.0.1" };
+const NAMES = { PL: "Poland", LB: "Lebanon", AE: "United Arab Emirates", SA: "Saudi Arabia", FR: "France", NL: "Netherlands", CN: "China" };
+const OCC = ["dinner", "work", "date", "wedding", "party"];
+const cardPhotos = (p) => p.locator(".a-cards img").evaluateAll((imgs) => imgs.map((i) => ({ photo: i.dataset.photo, src: i.currentSrc, ok: i.complete && i.naturalWidth > 0 })));
+const settled = (p) => p.waitForFunction(() => [...document.querySelectorAll(".a-cards img")].every((i) => i.complete && i.naturalWidth > 0), null, { timeout: 8000 });
+const location = (p) => p.locator(".a-home-location").innerText();
+
+for (const device of ["desktop", "phone"]) {
+  for (const [cc, ip] of Object.entries(COUNTRY_IPS)) {
+    await scenario(`GEO-${cc}`, `Visitor from ${NAMES[cc]}: country found, a full set of photos, journey unchanged`, device, async (p) => {
+      const imageRequests = [];
+      p.on("request", (r) => r.url().includes("/images/") && imageRequests.push(new URL(r.url()).pathname));
+      await p.goto(`${BASE}/?mode=light`);
+      await settled(p);
+      check((await p.locator('meta[name="praxis-country"]').getAttribute("content")) === cc, `the server found ${cc} from the address`);
+      check((await location(p)).includes(NAMES[cc]), `the location line says ${NAMES[cc]}`);
+      const photos = await cardPhotos(p);
+      check(photos.length === 5 && photos.every((x) => x.ok), "five photos loaded, none broken");
+      const ownSet = photos.every((x, i) => x.photo === `/images/occasions/${cc}/${OCC[i]}`);
+      const defaultSet = photos.every((x, i) => x.photo === `/images/home/${OCC[i]}`);
+      check(ownSet || defaultSet, `either all five ${cc} photos or all five default ones (${ownSet ? "own" : "default"})`);
+      check(!imageRequests.some((u) => u.includes("/images/occasions/") && !u.includes(`/occasions/${cc}/`)), "no other country's photos are requested");
+      const ev = (await events(p)).find((e) => e.eventName === "country_collection_loaded");
+      check(ev?.properties.country === cc && ev.properties.source === "ip" && ev.properties.localized === ownSet, "country_collection_loaded records the code, source and set");
+      check(!JSON.stringify(await events(p)).includes(ip), "no address in analytics");
+      await p.getByRole("radio", { name: "Dinner" }).first().click();
+      await p.waitForURL(/\/moment\/venue/);
+      check(/occasion=DINNER/.test(p.url()), "Dinner starts the usual journey");
+      await p.goBack();
+      await p.waitForURL((u) => u.pathname === "/");
+      await p.getByRole("radio", { name: "Work" }).first().click();
+      await p.waitForURL(/\/moment\/venue/);
+      check(/occasion=WORK/.test(p.url()), "after going back, Work starts the journey");
+    }, { ip });
+  }
+
+  await scenario("GEO-PREVIEW", "Each priority country switches all five photo paths, and a missing photo falls back", device, async (p) => {
+    for (const cc of Object.keys(COUNTRY_IPS)) {
+      const requested = new Set();
+      const onReq = (r) => r.url().includes(`/images/occasions/${cc}/`) && requested.add(new URL(r.url()).pathname.replace(/-\d+\.webp$/, ""));
+      p.on("request", onReq);
+      await p.goto(`${BASE}/?mode=light&photos=${cc}`);
+      await settled(p);
+      p.off("request", onReq);
+      check(OCC.every((o) => requested.has(`/images/occasions/${cc}/${o}`)), `${cc}: all five ${cc} paths were asked for`);
+      const photos = await cardPhotos(p);
+      check(photos.every((x) => x.ok), `${cc}: five photos showing (own or default fallback), none broken`);
+    }
+  }, { missingFiles: true });
+
+  await scenario("GEO-UNKNOWN", "Unknown location gets the default set", device, async (p) => {
+    await p.goto(`${BASE}/?mode=light`);
+    await settled(p);
+    check((await p.locator('meta[name="praxis-country"]').count()) === 0, "no country written into the page");
+    const photos = await cardPhotos(p);
+    check(photos.every((x, i) => x.ok && x.photo === `/images/home/${OCC[i]}`), "the five default photos");
+    check((await location(p)).includes("Not set"), "the location line says Not set");
+  }, { ip: "10.1.2.3" });
+
+  await scenario("GEO-UNSUPPORTED", "A country with no collection (Portugal) gets the default set, not Spain's", device, async (p) => {
+    const requests = [];
+    p.on("request", (r) => r.url().includes("/images/occasions/") && requests.push(r.url()));
+    await p.goto(`${BASE}/?mode=light`);
+    await settled(p);
+    check((await location(p)).includes("Portugal"), "Portugal is recognised");
+    const photos = await cardPhotos(p);
+    check(photos.every((x, i) => x.ok && x.photo === `/images/home/${OCC[i]}`), "the five default photos");
+    check(requests.length === 0, "no country photos are requested");
+  }, { ip: "2.80.0.1" });
+
+  await scenario("GEO-MANUAL", "Choosing a country overrides detection, survives a reload, and Automatic restores it", device, async (p, shot) => {
+    await p.goto(`${BASE}/?mode=light`);
+    await settled(p);
+    check((await location(p)).includes("Lebanon"), "detected as Lebanon");
+    await p.locator(".a-home-location").click();
+    const sheet = p.getByRole("dialog", { name: "Location" });
+    await sheet.getByRole("searchbox").fill("pol");
+    await shot("picker");
+    await sheet.getByRole("button", { name: "Poland" }).click();
+    await p.waitForTimeout(400);
+    check((await location(p)).includes("Poland"), "the location line now says Poland");
+    check((await p.evaluate(() => localStorage.getItem("praxis_country"))) === "PL", "only the code PL is kept");
+    const changed = (await events(p)).find((e) => e.eventName === "country_manually_changed");
+    check(changed?.properties.previous === "LB" && changed.properties.next === "PL", "country_manually_changed LB to PL");
+    await p.reload();
+    await settled(p);
+    check((await location(p)).includes("Poland"), "Poland is still chosen after a reload");
+    const photos = await cardPhotos(p);
+    check(photos.every((x) => x.ok), "five photos after the change");
+    await p.locator(".a-home-location").click();
+    await p.getByRole("dialog", { name: "Location" }).getByRole("button", { name: /Automatic/ }).click();
+    await p.waitForTimeout(400);
+    check((await location(p)).includes("Lebanon"), "Automatic goes back to Lebanon");
+    check((await p.evaluate(() => localStorage.getItem("praxis_country"))) === null, "the choice is forgotten");
+    await p.locator(".a-home-location").focus();
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(400);
+    const opened = await p.getByRole("dialog", { name: "Location" }).isVisible();
+    await p.keyboard.press("Escape");
+    await p.waitForTimeout(600);
+    check(opened && (await p.getByRole("dialog", { name: "Location" }).count()) === 0, "the picker opens and closes from the keyboard");
+  }, { ip: COUNTRY_IPS.LB });
+
+  await scenario("GEO-LANG", "With no address match, a browser region is a weak hint", device, async (p) => {
+    await p.goto(`${BASE}/?mode=light`);
+    await settled(p);
+    check((await location(p)).includes("Poland"), "pl-PL suggests Poland");
+    const ev = (await events(p)).find((e) => e.eventName === "country_collection_loaded");
+    check(ev?.properties.source === "language", "recorded as a language hint");
+  }, { ip: "10.1.2.3", locale: "pl-PL" });
+
+  await scenario("GEO-SLOW", "With photos slow or failing, the cards keep their size and still work", device, async (p) => {
+    await p.route("**/images/**", (r) => r.abort());
+    await p.goto(`${BASE}/?mode=light&photos=PL`);
+    await p.waitForTimeout(800);
+    const boxes = await p.locator(".a-card").evaluateAll((cs) => cs.map((c) => Math.round(c.getBoundingClientRect().height)));
+    check(boxes.length === 5 && boxes.every((h) => h > 100), `five cards at full height without photos (${boxes.join(", ")})`);
+    await p.getByRole("radio", { name: "Party" }).first().click();
+    await p.waitForURL(/\/moment\/venue/);
+    check(/occasion=PARTY/.test(p.url()), "Party still starts the journey");
+  }, { missingFiles: true });
+}
 
 const perf = [];
 for (const device of ["desktop", "phone"]) {

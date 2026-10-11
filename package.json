@@ -8,11 +8,13 @@
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "start": "serve -s dist -l ${PORT:-3000}",
+    "start": "node server/index.mjs",
     "test": "vitest run",
-    "e2e": "node e2e/scenarios.mjs"
+    "e2e": "node e2e/scenarios.mjs",
+    "photos:check": "vitest run src/config"
   },
   "dependencies": {
+    "@ip-location-db/dbip-country": "^2.3.2026060120",
     "lucide-react": "^0.462.0",
     "motion": "^13.4.4",
     "react": "^18.3.1",

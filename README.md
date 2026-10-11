@@ -9,7 +9,8 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build to dist/
 npm test           # unit tests for src/core (vitest)
-npm start          # serve dist/ (used for the preview host)
+npm start          # server/index.mjs: serves dist/ and adds the visitor's country (Railway runs this)
+npm run photos:check  # the country occasion photo registry
 ```
 
 Node 22 or newer.
@@ -57,6 +58,7 @@ Browser storage (prototype only, replace with real persistence):
 | `praxis_events` | the last 1000 analytics events (`src/core/analytics.ts`) |
 | `praxis_sync_offer_dismissed` | set when a guest closes the offer to sign in and sync |
 | `praxis_lab_a_mode` | `light` or `dark`; light is the default |
+| `praxis_country` | the country chosen in the home's Location picker, two letters only; absent means automatic |
 | `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the tab only (sessionStorage); never in localStorage, analytics or saved looks |
 | `praxis_image_consent` | which photo notices were agreed to, with the wording version and time (`src/core/images.ts`) |
 | `praxis_wardrobe` | pieces the customer owns, by name and type only, no photo (`src/core/data.ts`) |
@@ -155,7 +157,7 @@ Motion is `motion/react` only, transform and opacity only, and every animation r
 
 ## Documentation
 
-`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`.
+`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos).
 
 ## Structure
 
@@ -178,7 +180,7 @@ src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 
 The Style DNA panorama (`public/images/home/style-dna-wide-*.webp`, `style-dna-phone-*.webp`) is an interim image made by `tools/style-dna-banner.py` from the app's own look photo (`public/images/wedding_relaxed_01.jpg`): the wall is extended, warmed and given palm shadows. Replace it with a licensed editorial photograph (a man in light linen against a sunlit cream wall, subject in the left third, open wall on the right) at the same names and sizes.
 
-The home photographs live in `public/images/home` as WebP at 480 and 960 wide, cropped for the cards; sources are listed in `public/images/home/CREDITS.md` (Unsplash, free license). To swap one, replace both widths under the same name.
+The home photographs live in `public/images/home` as WebP at 480 and 960 wide, cropped for the cards; sources are listed in `public/images/home/CREDITS.md` (Unsplash, free license). To swap one, replace both widths under the same name. These are the default (international) occasion set: a country with its own active set in `src/config/occasionCollections.ts` shows that instead, chosen from the visitor's country (or the Location picker at the foot of home). How it works, how to add a country and the creative briefs are in `docs/OCCASION-PHOTOS.md`.
 
 The demo film (8.5 s, 30 fps) is rendered from `video/hero-demo`: `scene.html` and `scene.js` draw the journey as a timeline from the app's own photos, type and copy (choose Dinner, the build with its status line, the three dinner looks, open Elevated Dinner as the results page shows it (my pick for dinner: the print with its counter and glass chips, the index beside it, the summary line, the note and pieces), back to the three, then the occasions again so the loop has no cut). `node video/hero-demo/render.mjs` steps through it frame by frame in Chromium and writes `public/media/praxis-hero-demo.mp4` (1080 x 1170) and `praxis-hero-demo-mobile.mp4` (720 x 900, larger type for phones), each with a WebM and a WebP poster, and `praxis-hero-demo-device.mp4` (720 x 1560, a phone screen with the PRAXIS bar, in the warmer palette) for the phone in the homepage composition. `--stills 0,4.9,6.5` writes single frames to `video/.frames` for checking instead. Re-render whenever the home cards, the looks or the results change visibly; no vendors or prices appear in it.
 
