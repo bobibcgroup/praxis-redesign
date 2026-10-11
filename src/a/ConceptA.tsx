@@ -10,6 +10,7 @@ import { useConceptFonts } from "../shared/fonts";
 import { JourneyProvider } from "./lib/journey";
 import { useJourney } from "./lib/journeyContext";
 import { Home } from "./screens/Home";
+import { InternalAnalytics } from "./screens/Internal";
 import { LookDetail, Looks } from "./screens/Looks";
 import { Build } from "./screens/moment/Build";
 import { Question } from "./screens/moment/Question";
@@ -54,6 +55,7 @@ function Shell() {
         <Route path="dna/inspiration" element={<DnaInspiration />} />
         <Route path="dna/build" element={<DnaBuild />} />
         <Route path="dna/result" element={<DnaResult />} />
+        <Route path="internal/analytics" element={<InternalAnalytics />} />
         <Route path="*" element={<Fallback />} />
       </Routes>
       <Gate />

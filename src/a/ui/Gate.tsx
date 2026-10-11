@@ -1,17 +1,21 @@
 /**
- * The gate: sign in, then Praxis Plus, shown in place over the stage. It
- * skips any step already satisfied, traps focus, closes on Escape and
- * returns focus. On success it closes and performs the gated action.
+ * The gate, shown in place over the stage. For a Premium feature it first explains what the feature
+ * gives (the introduction), then asks for sign-in and Premium, skipping any step already satisfied.
+ * It traps focus, closes on Escape and returns focus. On success it closes and performs the action.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
-import { FRESH, useJourney } from "../lib/journeyContext";
+import { track } from "../../core/analytics";
+import { PREMIUM } from "../../core/config";
+import { useJourney } from "../lib/journeyContext";
+import { resolveFromResponse } from "../lib/looks";
+import { useStylingResponse, useStylingSpec } from "../lib/styling";
 import { stepsFor, type GateKind, type GateStep } from "../lib/user";
 import { useScrollLock } from "../lib/scrollLock";
-import { PlusCard, PlusTop, SignInStep, usePlusPayment } from "./GateSteps";
+import { DnaIntro, PremiumCard, PremiumTop, SignInStep, TryOnIntro, usePremiumPayment, type PremiumFeature } from "./GateSteps";
 
-const STEP_LABEL: Record<GateStep, string> = { signin: "Sign in", plus: "Praxis Plus" };
+const STEP_LABEL: Record<GateStep, string> = { intro: PREMIUM.name, signin: "Sign in", premium: PREMIUM.name };
 const SUCCESS_MS = 900;
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])';
 
@@ -25,15 +29,25 @@ export function Gate() {
   );
 }
 
+/** The look on the page, for the try-on introduction's picture. */
+function useCurrentLook() {
+  const { answers } = useJourney();
+  const spec = useStylingSpec();
+  const { response } = useStylingResponse(spec);
+  return useMemo(() => resolveFromResponse(response, answers.occasion, answers.hero)?.hero ?? null, [response, answers.occasion, answers.hero]);
+}
+
 function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) {
-  const { user, signIn, grantPlus, gateActions, go, reduced } = useJourney();
+  const { user, signIn, grantPremium, gateActions, gateSource, go, reduced, store } = useJourney();
   /* Frozen at open: the list must not shrink under the index once a step is satisfied. */
-  const [steps] = useState<GateStep[]>(() => stepsFor(kind, user));
+  const [steps] = useState<GateStep[]>(() => stepsFor(kind, user, { hasDna: Boolean(store.dna) }));
   const [index, setIndex] = useState(0);
   const [success, setSuccess] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const returnRef = useRef<HTMLElement | null>(null);
   const finished = useRef(false);
+  const feature: PremiumFeature | null = kind === "dna" ? "style_dna" : kind === "tryon" ? "tryon" : null;
+  const look = useCurrentLook();
 
   const perform = useCallback(() => {
     if (finished.current) return;
@@ -43,7 +57,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
     window.setTimeout(() => {
       if (registered) registered();
       else if (kind === "tryon") go("moment/tryon");
-      else if (kind === "dna") go("dna/face", { ...FRESH, face: null });
+      else if (kind === "dna") go("dna/face", { occasion: null, venue: null, time: null, vibe: null, spend: null, item: null, hero: null, done: null, face: null });
     }, 0);
   }, [gateActions, kind, onClose, go]);
 
@@ -81,22 +95,38 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
     };
   }, [onClose]);
 
+  const step = steps[index] ?? null;
+
+  /* Each step a person actually sees is counted once per opening. */
+  useEffect(() => {
+    if (!feature || !step) return;
+    if (step === "intro") track("premium_intro_viewed", { feature });
+    if (step === "premium") track("paywall_viewed", { feature });
+  }, [feature, step]);
+
+  /* A step that takes focus when it appears: the next one starts at its first control. */
+  useEffect(() => {
+    if (index > 0) panelRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+  }, [index]);
+
   const advance = useCallback(() => {
     if (index + 1 < steps.length) setIndex(index + 1);
     else perform();
   }, [index, steps.length, perform]);
 
-  const step = steps[index] ?? null;
-
-  const payment = usePlusPayment({
+  const payment = usePremiumPayment({
     onPaid: () => {
-      grantPlus();
+      grantPremium();
+      if (feature) track("premium_started", { feature });
       setSuccess(true);
       window.setTimeout(perform, SUCCESS_MS);
     },
   });
 
   const hidden = reduced ? { opacity: 0 } : { opacity: 0, y: 24 };
+  /* The introduction is not a hurdle, so the count covers only what is asked: "1 of 2, Sign in". */
+  const asked: GateStep[] = steps.filter((s) => s !== "intro");
+  const askedIndex = step ? asked.indexOf(step) : -1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center lg:items-center lg:p-8">
@@ -115,7 +145,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={success ? "You’re in" : step ? STEP_LABEL[step] : "Continue"}
+        aria-label={success ? "You’re in" : step === "intro" ? (kind === "dna" ? "Style DNA" : "Try-on") : step ? STEP_LABEL[step] : "Continue"}
         initial={hidden}
         animate={{ opacity: 1, y: 0 }}
         exit={hidden}
@@ -124,7 +154,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
       >
         <div className="flex h-14 shrink-0 items-center justify-between pl-5 pr-2 lg:pl-8 lg:pr-4">
           <span className="a-label text-[var(--muted)]" aria-live="polite">
-            {success || !step ? "" : `${index + 1} of ${steps.length}, ${STEP_LABEL[step]}`}
+            {success || !step || step === "intro" ? "" : `${askedIndex + 1} of ${asked.length}, ${STEP_LABEL[step]}`}
           </span>
           <button type="button" onClick={onClose} aria-label="Close" className="flex h-11 w-11 items-center justify-center text-[var(--text)] transition-colors duration-200 hover:text-[var(--muted)]">
             <X size={20} strokeWidth={1.5} />
@@ -135,24 +165,46 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
         {success ? (
           <div className="px-5 pb-8 pt-2 lg:px-8 lg:pb-10" aria-live="polite">
             <h2 className="a-display">You’re in.</h2>
-            <p className="mt-4 leading-6">Plus is on your account.</p>
+            <p className="mt-4 leading-6">{PREMIUM.name} is on your account.</p>
+          </div>
+        ) : step === "intro" ? (
+          <div className="a-gate-scroll px-5 pb-6 pt-2 lg:px-8 lg:pb-8">
+            {kind === "dna" ? (
+              <DnaIntro
+                onStart={() => {
+                  track("premium_intro_continued", { feature: "style_dna" });
+                  advance();
+                }}
+                onLater={onClose}
+              />
+            ) : (
+              <TryOnIntro
+                image={look?.image ?? null}
+                title={look?.title ?? null}
+                onStart={() => {
+                  track("premium_intro_continued", { feature: "tryon" });
+                  advance();
+                }}
+                onLater={onClose}
+              />
+            )}
           </div>
         ) : step === "signin" ? (
           <div className="a-gate-scroll px-5 pb-6 pt-2 lg:px-8 lg:pb-8">
             <SignInStep
-              onSignedIn={(email) => {
-                signIn(email);
+              onSignedIn={(email, method) => {
+                signIn(email, { method, surface: kind === "signin" ? gateSource.current : "gate" });
                 advance();
               }}
             />
           </div>
-        ) : step === "plus" ? (
+        ) : step === "premium" ? (
           <>
             <div className="shrink-0 px-5 pb-4 pt-2 lg:px-8">
-              <PlusTop busy={payment.busy} onApplePay={payment.applePay} />
+              <PremiumTop busy={payment.busy} onApplePay={payment.applePay} />
             </div>
             <div className="a-gate-scroll px-5 pb-6 pt-2 lg:px-8 lg:pb-8">
-              <PlusCard busy={payment.busy} onPay={payment.cardPay} />
+              <PremiumCard busy={payment.busy} onPay={payment.cardPay} />
             </div>
           </>
         ) : null}

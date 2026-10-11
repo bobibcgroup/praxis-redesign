@@ -1,11 +1,11 @@
 /**
- * Shared representative data for the Praxis design lab.
- * Reuses the real outfit library (read-only) and adds the vendor layer the
- * founder described for V1: catalog pieces from integrated vendors.
+ * The journey's options (occasions, places, times, feels, budgets, Style DNA choices) and the view
+ * model the screens draw. The looks themselves come from the recommendation service (src/core).
  * Nothing here touches production state.
  */
-import { OUTFITS, type OutfitEntry, type TierType } from "@/lib/outfitLibrary";
+import { OUTFITS, type TierType } from "@/lib/outfitLibrary";
 import type { OccasionType } from "@/types/praxis";
+import type { Availability, OutfitRole, PriceStatus, RecommendationFactor } from "@/core/contracts";
 
 export type OccasionId = OccasionType;
 
@@ -99,129 +99,50 @@ export const SPEND: readonly ChoiceOption<SpendId>[] = [
   { id: "OPEN", label: "No limit" },
 ];
 
-/** A single catalog piece from an integrated vendor. */
+/**
+ * The view model the screens draw: one piece of a look. Built from the recommendation service's
+ * response (src/a/lib/looks.ts), never from the catalogue directly.
+ */
 export interface Piece {
+  /** The garment id from the response. */
   id: string;
   slot: "top" | "bottom" | "shoes" | "extras";
   name: string;
+  /** The retailer's name, or "Your wardrobe" for an owned piece. */
   vendor: string;
   price: number;
-  /** True when this slot is filled by the user's own uploaded item. */
+  /** True when this slot is filled by the user's own item. */
   owned?: boolean;
+  priceStatus?: PriceStatus;
+  availability?: Availability;
 }
 
-/** A complete look: catalog pieces plus the reason. */
+/** The view model for one look, with the reasons the service gave for it. */
 export interface Look {
   id: string;
   occasion: OccasionId;
-  tier: TierType;
-  role: "hero" | "sharper" | "relaxed";
+  role: OutfitRole;
   title: string;
   image: string;
-  reason: string;
-  /** One short line, the "why" that teaches something. */
+  /** The stylist's line on why the pieces work together. */
   why: string;
   pieces: Piece[];
   total: number;
+  /** 1 is the pick. Absent on looks saved before the service existed. */
+  rank?: number;
+  /** One sentence tying the look to the brief, from the service. */
+  summary?: string;
+  factors?: RecommendationFactor[];
+  priceStatus?: PriceStatus;
+  /** Whether the photo shows these exact pieces or a similar styling. */
+  imageFidelity?: "exact" | "representative";
 }
 
-const VENDORS = ["Atelier Nord", "Harbour & Finch", "Maison Tarek", "Brass Lane", "Studio Oren"] as const;
-
-/** Stand-in prices per budget, so every total lands inside the range the client chose. */
-const PRICE_BY_SPEND: Record<SpendId, Record<Piece["slot"], number[]>> = {
-  SENSIBLE: { top: [49, 69, 89], bottom: [45, 59, 79], shoes: [65, 85, 99], extras: [19, 25, 29] },
-  ELEVATED: { top: [145, 195, 240], bottom: [110, 160, 195], shoes: [140, 195, 260], extras: [70, 95, 120] },
-  OPEN: { top: [310, 420, 560], bottom: [240, 320, 410], shoes: [280, 420, 560], extras: [120, 180, 240] },
-};
-
-function hash(input: string): number {
-  return Array.from(input).reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) >>> 0, 7);
-}
-
-function pick<T>(list: readonly T[], seed: string): T {
-  return list[hash(seed) % list.length];
-}
-
-function toPieces(entry: OutfitEntry, spend: SpendId): Piece[] {
-  const slots: Array<[Piece["slot"], string | undefined]> = [
-    ["top", entry.items.top],
-    ["bottom", entry.items.bottom],
-    ["shoes", entry.items.shoes],
-    ["extras", entry.items.extras],
-  ];
-  return slots
-    .filter((s): s is [Piece["slot"], string] => Boolean(s[1]))
-    .map(([slot, name]) => ({
-      id: `${entry.id}_${slot}`,
-      slot,
-      name,
-      vendor: pick(VENDORS, `${entry.id}${slot}`),
-      price: pick(PRICE_BY_SPEND[spend][slot], `${entry.id}${slot}p`),
-    }));
-}
-
-const ROLE_BY_TIER: Record<TierType, Look["role"]> = {
-  SAFEST: "hero",
-  SHARPER: "sharper",
-  RELAXED: "relaxed",
-};
-
-/** One sentence per look, true to its pieces. */
-const WHY_BY_LOOK: Record<string, string> = {
-  date_safest_01: "Easy and confident, so nothing here looks like you tried too hard.",
-  date_sharper_01: "The blazer lifts it, and the knit keeps it from feeling like work.",
-  date_relaxed_01: "A light jacket over a plain t-shirt feels easy and still looks put together.",
-  work_safest_01: "A clean shirt and tailored trousers are right in any office.",
-  work_sharper_01: "A blazer over a crisp shirt says you’re in charge of the room.",
-  work_relaxed_01: "A fine knit polo is comfortable all day and still looks professional.",
-  dinner_safest_01: "A dark knit and clean chinos look polished without overdoing it.",
-  dinner_sharper_01: "A blazer over a fitted knit looks intentional, and the boots finish it.",
-  dinner_relaxed_01: "An overshirt over a plain t-shirt keeps it relaxed and still neat.",
-  party_safest_01: "Black and a clean jacket work in any room after dark.",
-  party_sharper_01: "All black with a blazer stands out in a clean way.",
-  party_relaxed_01: "A bomber over a plain t-shirt is easy to move in and right for the night.",
-  wedding_safest_01: "A navy suit and a white shirt are always right at a wedding.",
-  wedding_sharper_01: "Charcoal and a tie give you a more serious presence.",
-  wedding_relaxed_01: "An open collar under a light blazer is elegant without feeling stiff.",
-};
-
-function toLook(entry: OutfitEntry, spend: SpendId): Look {
-  const pieces = toPieces(entry, spend);
-  return {
-    id: entry.id,
-    occasion: entry.occasion,
-    tier: entry.tier,
-    role: ROLE_BY_TIER[entry.tier],
-    title: entry.title,
-    image: entry.image_url,
-    reason: entry.reason,
-    why: WHY_BY_LOOK[entry.id] ?? entry.reason,
-    pieces,
-    total: pieces.reduce((sum, p) => sum + p.price, 0),
-  };
-}
-
-/** Returns hero, sharper, relaxed in that order for the occasion. */
-export function getLooks(occasion: OccasionId, spend: SpendId | null = null): Look[] {
-  const order: TierType[] = ["SAFEST", "SHARPER", "RELAXED"];
-  return OUTFITS.filter((o) => o.occasion === occasion)
-    .map((entry) => toLook(entry, spend ?? "ELEVATED"))
-    .sort((a, b) => order.indexOf(a.tier) - order.indexOf(b.tier));
-}
-
-/** Reorders looks so the one matching the chosen vibe is the hero. */
-export function orderByVibe(looks: Look[], vibe: VibeId | null): Look[] {
-  if (!vibe) return looks;
-  const wanted: TierType = vibe === "SHARP" ? "SHARPER" : vibe === "RELAXED" ? "RELAXED" : "SAFEST";
-  const hero = looks.find((l) => l.tier === wanted);
-  if (!hero) return looks;
-  return [hero, ...looks.filter((l) => l.id !== hero.id)];
-}
-
-/** Replaces one slot with the user's own item, marking it as owned. */
-export function withOwnedItem(look: Look, slot: Piece["slot"], name: string): Look {
-  const pieces = look.pieces.map((p) => (p.slot === slot ? { ...p, name, vendor: "Your wardrobe", price: 0, owned: true } : p));
-  return { ...look, pieces, total: pieces.reduce((sum, p) => sum + p.price, 0) };
+/** The occasion's mood picture, then the look for the feel being chosen: a preview while answering, not a recommendation. */
+export function moodImage(occasion: OccasionId, vibe: VibeId | null): string | null {
+  const tier: TierType | null = vibe === "SHARP" ? "SHARPER" : vibe === "RELAXED" ? "RELAXED" : vibe === "SAFE" ? "SAFEST" : null;
+  const entry = tier ? OUTFITS.find((o) => o.occasion === occasion && o.tier === tier) : null;
+  return entry?.image_url ?? OCCASIONS.find((o) => o.id === occasion)?.image ?? null;
 }
 
 /** Stand-in portraits for the "you" frame until a real capture exists. */

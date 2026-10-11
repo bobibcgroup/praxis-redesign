@@ -22,13 +22,6 @@ export const MOMENT_STAGES: readonly BuildStage[] = [
   { id: "render", label: "Finishing your looks", ms: 600 },
 ];
 
-export const TRYON_STAGES: readonly BuildStage[] = [
-  { id: "align", label: "Getting the proportions right", ms: 900 },
-  { id: "drape", label: "Putting the look together", ms: 1300 },
-  { id: "light", label: "Matching the light", ms: 900 },
-  { id: "finish", label: "Finishing the look", ms: 600 },
-];
-
 export const DNA_STAGES: readonly BuildStage[] = [
   { id: "tones", label: "Finding your best colours", ms: 900 },
   { id: "contrast", label: "Checking your contrast", ms: 700 },

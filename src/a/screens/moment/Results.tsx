@@ -1,37 +1,67 @@
 /**
- * Results: the looks come first. The hero fills the print with the three looks beside it as an
+ * Results: the looks come first, exactly as the recommendation service returned them for these
+ * answers, in its order, with its reasons. The pick fills the print with the others beside it as an
  * index. Move between them with the index, a sideways swipe on the print, the arrows under it on
  * desktop, or the arrow keys once the print or the index has focus; it stops at the first and the
- * last. Everything follows the one look in the URL (`hero`), so the photo, the name, the note, the
- * pieces, the prices, the total, and Check out, Share, Save and Restyle always belong to the same
- * look. A tap or click on the print opens it large to zoom in (LookViewer). The column offers to
- * make it personal (see it on me, build around something I own), lists the pieces to check out,
- * and ends with a way to start a new look. Save lands in the completion state.
+ * last. Everything follows the one look in the URL (`hero`), so the photo, the name, the reasons, the
+ * pieces, the prices, the total, the feedback, and Check out, Share, Save and Restyle always belong to
+ * the same look. A tap or click on the print opens it large to zoom in (LookViewer). Saving needs no
+ * account; the completion state offers sign-in afterwards.
  */
-import { usePieceSelection } from "../../lib/selection";
-import { useCallback, useMemo, useState, type KeyboardEvent } from "react";
+import { usePieceSelection, type PieceSelection } from "../../lib/selection";
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Navigate } from "react-router-dom";
-import { FRESH, useGateAction, useGated, useJourney } from "../../lib/journeyContext";
-import { defaultHeroId, money, occasionLabel, resolveLooks, ROLE_LABEL } from "../../lib/looks";
+import { track } from "../../../core/analytics";
+import { anonymousId } from "../../../core/identity";
+import { FRESH, useGated, useJourney } from "../../lib/journeyContext";
+import { forOccasion, money, occasionLabel, resolveFromResponse, ROLE_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
+import { useStylingResponse, useStylingSpec } from "../../lib/styling";
 import { useSwipe } from "../../lib/swipe";
 import { Completion, CompletionActions } from "../../ui/Completion";
-import { LinkButton, PlusMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
+import { LinkButton, PremiumMark, PrimaryButton, QuietButton, TextButton } from "../../ui/controls";
 import { LookViewer } from "../../ui/LookViewer";
 import { RestyleSheet } from "../../ui/RestyleSheet";
 import { ShareSheet } from "../../ui/ShareSheet";
 import { Frame } from "../../ui/Frame";
-import { LookDetails } from "../../ui/LookDetails";
+import { CHECKOUT_REASON_ID, LookDetails } from "../../ui/LookDetails";
+import { LookFeedback } from "../../ui/LookFeedback";
 import { PiecesSheet } from "../../ui/PiecesSheet";
 import { Stage } from "../../ui/Stage";
 import { Thumbs } from "../../ui/Thumbs";
+import type { StylingResponse } from "../../../core/contracts";
+
+type Method = "thumbnail" | "swipe" | "arrow" | "key" | "viewer";
+
+/** What these looks are, in one quiet line: an example from the sample set, or chosen for this person. */
+function captionFor(response: StylingResponse, occasion: string): string {
+  return response.mode === "personalized"
+    ? `Chosen for your ${occasion} plans, preferred style and budget.`
+    : "An example of the looks Praxis can help you explore. Pieces and prices are for illustration.";
+}
+
+/** Counts each tick and untick as the customer's own action. */
+function useTrackedSelection(selection: PieceSelection, outfitId: string | null, recommendationId: string | null): PieceSelection {
+  return useMemo(
+    () => ({
+      ...selection,
+      toggle: (id: string) => {
+        if (outfitId) track(selection.isChosen(id) ? "garment_deselected" : "garment_reselected", { recommendationId: recommendationId ?? undefined, outfitId, garmentId: id });
+        selection.toggle(id);
+      },
+    }),
+    [selection, outfitId, recommendationId],
+  );
+}
 
 export function Results() {
-  const { answers, params, href, go, ownedItem, store, reduced, user } = useJourney();
+  const { answers, params, href, go, store, reduced, user } = useJourney();
   const gated = useGated();
-  const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
+  const spec = useStylingSpec();
+  const { response, loading } = useStylingResponse(spec);
+  const resolved = useMemo(() => resolveFromResponse(response, answers.occasion, answers.hero), [response, answers.occasion, answers.hero]);
   const [sheet, setSheet] = useState(false);
   const [viewer, setViewer] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -39,62 +69,94 @@ export function Results() {
   /** Which way the last move went (+1 to the next look), so the photo glides in from that side. */
   const [dir, setDir] = useState(0);
   const hero = resolved?.hero ?? null;
-  const selection = usePieceSelection(hero);
+  const recommendationId = response?.recommendationId ?? null;
+  const selection = useTrackedSelection(usePieceSelection(hero), hero?.id ?? null, recommendationId);
   const label = occasionLabel(answers.occasion);
+  const shared = params.get("via") !== null && !answers.done;
 
   const save = useCallback(() => {
-    if (!hero) return;
-    store.saveLook(hero, label);
+    if (!hero || !response) return;
+    store.saveLook(hero, label, { owner: { anonymousSessionId: anonymousId(), userId: user?.id }, recommendationId: response.recommendationId, requestId: response.requestId, inputKey: response.inputKey });
+    track("look_saved", { recommendationId: response.recommendationId, outfitId: hero.id, signedIn: Boolean(user) });
     go("moment/results", { done: "saved" }, { replace: true });
-  }, [hero, label, store, go]);
-  const openBuy = useCallback(() => setSheet(true), []);
-  useGateAction("save", save);
+  }, [hero, response, label, store, user, go]);
+  const openBuy = useCallback(() => {
+    if (hero && selection.chosen.length > 0) track("checkout_initiated", { recommendationId: recommendationId ?? undefined, outfitId: hero.id, pieces: selection.chosen.length, total: selection.total, priceStatus: hero.priceStatus ?? "example" });
+    setSheet(true);
+  }, [hero, selection, recommendationId]);
 
   const looksNow = resolved?.looks ?? [];
   const index = hero ? Math.max(0, looksNow.findIndex((l) => l.id === hero.id)) : 0;
   const canPrev = index > 0;
   const canNext = index < looksNow.length - 1;
   const show = useCallback(
-    (id: string, d?: number) => {
+    (id: string, d: number | undefined, method: Method) => {
       const to = looksNow.findIndex((l) => l.id === id);
       if (to < 0 || to === index) return;
       setDir(d ?? Math.sign(to - index));
+      if (recommendationId) track("outfit_selected", { recommendationId, outfitId: id, rank: looksNow[to].rank ?? to + 1, method });
       go("moment/results", { hero: id }, { replace: true });
     },
-    [looksNow, index, go],
+    [looksNow, index, go, recommendationId],
   );
   const step = useCallback(
-    (d: number) => {
+    (d: number, method: Method) => {
       const to = looksNow[index + d];
-      if (to) show(to.id, d);
+      if (to) show(to.id, d, method);
     },
     [looksNow, index, show],
   );
-  const prev = useCallback(() => step(-1), [step]);
-  const next = useCallback(() => step(1), [step]);
-  const openViewer = useCallback(() => setViewer(true), []);
-  const swipe = useSwipe({ canPrev, canNext, onPrev: prev, onNext: next, onTap: openViewer });
+  const swipePrev = useCallback(() => step(-1, "swipe"), [step]);
+  const swipeNext = useCallback(() => step(1, "swipe"), [step]);
+  const openViewer = useCallback(() => {
+    if (hero && recommendationId) track("outfit_enlarged", { recommendationId, outfitId: hero.id });
+    setViewer(true);
+  }, [hero, recommendationId]);
+  const swipe = useSwipe({ canPrev, canNext, onPrev: swipePrev, onNext: swipeNext, onTap: openViewer });
   const onGalleryKey = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
-    if (e.key === "ArrowLeft" && canPrev) prev();
-    else if (e.key === "ArrowRight" && canNext) next();
+    if (e.key === "ArrowLeft" && canPrev) step(-1, "key");
+    else if (e.key === "ArrowRight" && canNext) step(1, "key");
     else return;
     e.preventDefault();
   };
 
-  if (!answers.spend || !resolved || !hero) return <Navigate to={href("moment/occasion")} replace />;
+  /* The looks for this recommendation are counted as seen once per visit. */
+  useEffect(() => {
+    if (!response || !resolved) return;
+    track("results_viewed", { recommendationId: response.recommendationId, outfits: resolved.looks.length, mode: response.mode, shared }, { once: response.recommendationId });
+  }, [response, resolved, shared]);
+
+  if (!answers.spend || !spec) return <Navigate to={href("moment/occasion")} replace />;
+  if (loading) return null;
+  if (!response || !resolved || !hero) {
+    return (
+      <Stage spine={momentSpine("looks", answers, href)} back={href("moment/spend")} band="looks" canvas={<Frame image={null} alt="" reduced={reduced} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <PrimaryButton onClick={() => go("moment/build", { hero: null }, { replace: true })}>Try again</PrimaryButton>
+            <TextButton onClick={() => setRestyling(true)}>Change my answers</TextButton>
+          </div>
+        }
+      >
+        <h1 className="a-display">I couldn’t put your looks together this time.</h1>
+        <p className="mt-4 max-w-[40ch] leading-6 text-[var(--muted)]">Your answers are kept. Try again, or change one of them.</p>
+        <RestyleSheet open={restyling} onClose={() => setRestyling(false)} />
+      </Stage>
+    );
+  }
 
   const { looks } = resolved;
-  const saved = store.looks.some((s) => s.look.id === hero.id && s.occasionLabel === label);
+  const savedKey = `${hero.id}|${response.inputKey}`;
+  const saved = store.looks.some((s) => s.dedupeKey === savedKey);
   const done = answers.done;
-  const plus = user?.plus ?? false;
-  const isPick = hero.id === defaultHeroId(looks, answers.vibe);
-  const hasFace = Boolean(answers.face || store.dna?.portrait);
-  const eyebrow = isPick ? `My pick for ${label.toLowerCase()}` : `${ROLE_LABEL[hero.role]} for ${label.toLowerCase()}`;
+  const premium = user?.premium ?? false;
+  const isPick = index === 0;
+  const eyebrow = isPick ? `My pick ${forOccasion(answers.occasion)}` : `${ROLE_LABEL[hero.role]} ${forOccasion(answers.occasion)}`;
   /* Opened from someone's shared link: show their looks and invite this visitor to get their own. */
-  const shared = params.get("via") !== null && !done;
   const fresh = href("", FRESH);
-  const seeOnMe = () => gated("tryon", () => go(hasFace ? "moment/tryon" : "moment/you/face"));
+  const seeOnMe = () => gated("tryon", () => go("moment/tryon"));
+  const none = selection.chosen.length === 0;
 
   return (
     <>
@@ -106,19 +168,19 @@ export function Results() {
           <Frame
             book
             image={hero.image}
-            alt={`${hero.title}, the ${ROLE_LABEL[hero.role].toLowerCase()} look for ${label.toLowerCase()}`}
+            alt={`${hero.title}, the ${ROLE_LABEL[hero.role].toLowerCase()} look ${forOccasion(answers.occasion)}`}
             reduced={reduced}
-            aside={<Thumbs looks={looks} activeId={hero.id} onPick={show} reduced={reduced} vertical />}
+            aside={<Thumbs looks={looks} activeId={hero.id} onPick={(id) => show(id, undefined, "thumbnail")} reduced={reduced} vertical />}
             bleedDesktop
             swap={{ dir, drag: swipe.drag }}
-            label="Your three looks"
+            label={looks.length === 1 ? "Your look" : `Your ${looks.length} looks`}
             onKeyDown={onGalleryKey}
             overlay={
               <>
                 <button
                   type="button"
                   className="a-enlarge"
-                  aria-label={`View ${hero.title} larger. Swipe or use the arrow keys for the other looks.`}
+                  aria-label={`View ${hero.title} larger.${looks.length > 1 ? " Swipe or use the arrow keys for the other looks." : ""}`}
                   aria-haspopup="dialog"
                   {...swipe.handlers}
                 />
@@ -126,19 +188,21 @@ export function Results() {
                   <Search size={16} strokeWidth={1.5} />
                   <span className="a-zoom-cue-text a-transition">View details</span>
                 </span>
-                <div className="a-look-nav">
-                  <button type="button" className="a-viewer-btn" onClick={prev} aria-disabled={!canPrev} aria-label="Previous look">
-                    <ChevronLeft size={20} strokeWidth={1.5} />
-                  </button>
-                  <span className="a-label" aria-hidden="true">
-                    {index + 1} of {looks.length}
-                  </span>
-                  <button type="button" className="a-viewer-btn" onClick={next} aria-disabled={!canNext} aria-label="Next look">
-                    <ChevronRight size={20} strokeWidth={1.5} />
-                  </button>
-                </div>
+                {looks.length > 1 ? (
+                  <div className="a-look-nav">
+                    <button type="button" className="a-viewer-btn" onClick={() => step(-1, "arrow")} aria-disabled={!canPrev} aria-label="Previous look">
+                      <ChevronLeft size={20} strokeWidth={1.5} />
+                    </button>
+                    <span className="a-label" aria-hidden="true">
+                      {index + 1} of {looks.length}
+                    </span>
+                    <button type="button" className="a-viewer-btn" onClick={() => step(1, "arrow")} aria-disabled={!canNext} aria-label="Next look">
+                      <ChevronRight size={20} strokeWidth={1.5} />
+                    </button>
+                  </div>
+                ) : null}
                 <div className="a-thumbs-index">
-                  <Thumbs looks={looks} activeId={hero.id} onPick={show} reduced={reduced} vertical />
+                  <Thumbs looks={looks} activeId={hero.id} onPick={(id) => show(id, undefined, "thumbnail")} reduced={reduced} vertical />
                 </div>
               </>
             }
@@ -152,19 +216,19 @@ export function Results() {
               <LinkButton to={fresh} variant="primary">
                 Get your own looks
               </LinkButton>
-              <TextButton onClick={openBuy} disabled={selection.chosen.length === 0}>
+              <TextButton onClick={openBuy} disabled={none} aria-describedby={none ? CHECKOUT_REASON_ID : undefined}>
                 Check out
               </TextButton>
               <TextButton onClick={() => setSharing(true)}>Share</TextButton>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-1 lg:gap-2">
-              <PrimaryButton onClick={openBuy} disabled={selection.chosen.length === 0}>
+              <PrimaryButton onClick={openBuy} disabled={none} aria-describedby={none ? CHECKOUT_REASON_ID : undefined}>
                 Check out
-                <span className="hint">{money(selection.total)}</span>
+                {none ? null : <span className="hint">{money(selection.total)}</span>}
               </PrimaryButton>
               <TextButton onClick={() => setSharing(true)}>Share</TextButton>
-              <TextButton onClick={() => gated("save", save)} disabled={saved}>
+              <TextButton onClick={save} disabled={saved}>
                 {saved ? "Saved" : "Save"}
               </TextButton>
               <TextButton onClick={() => setRestyling(true)} className="lg:ml-auto lg:-mr-2">
@@ -189,13 +253,14 @@ export function Results() {
             eyebrow={eyebrow}
             compact={done !== null}
             selection={selection}
+            caption={captionFor(response, label.toLowerCase())}
+            explain={!shared}
+            after={shared ? null : <LookFeedback look={hero} response={response} />}
             personal={
               done ? null : shared ? (
                 <div className="mt-6">
                   <p className="a-label text-[var(--muted)]">Shared with you</p>
-                  <p className="a-note mt-3">
-                    A friend asked me to style them {answers.occasion === "WORK" ? "for work" : `for a ${label.toLowerCase()}`}. Tell me about your moment and I’ll style three looks for you.
-                  </p>
+                  <p className="a-note mt-3">A friend asked me to style them {forOccasion(answers.occasion)}. Tell me about your moment and I’ll style three looks for you.</p>
                 </div>
               ) : (
                 <div className="mt-6">
@@ -203,11 +268,9 @@ export function Results() {
                   <div className="a-personal mt-3">
                     <QuietButton onClick={seeOnMe}>
                       See it on me
-                      <PlusMark show={!plus} price />
+                      <PremiumMark show={!premium} price />
                     </QuietButton>
-                    <QuietButton onClick={() => go("moment/you/item")}>
-                      {ownedItem ? "Change my piece" : "Use something I own"}
-                    </QuietButton>
+                    <QuietButton onClick={() => go("moment/you/item")}>{answers.item ? "Change my piece" : "Use something I own"}</QuietButton>
                   </div>
                 </div>
               )
@@ -215,12 +278,12 @@ export function Results() {
           />
         </motion.div>
         {done ? <Completion kind={done} /> : null}
-        <ShareSheet look={hero} eyebrow={eyebrow} occasion={label.toLowerCase()} open={sharing} onClose={() => setSharing(false)} />
+        <ShareSheet look={hero} eyebrow={eyebrow} occasion={label.toLowerCase()} recommendationId={response.recommendationId} open={sharing} onClose={() => setSharing(false)} />
         <RestyleSheet open={restyling} onClose={() => setRestyling(false)} />
         <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
       </Stage>
       {/* Outside the stage, so the column's entry motion never holds it while it opens. */}
-      <LookViewer open={viewer} looks={looks} activeId={hero.id} onPick={show} onClose={() => setViewer(false)} reduced={reduced} />
+      <LookViewer open={viewer} looks={looks} activeId={hero.id} onPick={(id, d) => show(id, d, "viewer")} onClose={() => setViewer(false)} reduced={reduced} />
     </>
   );
 }

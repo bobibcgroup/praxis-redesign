@@ -1,23 +1,21 @@
 /**
- * Making the looks personal, reached from the results: add your face (then the try-on),
- * or add one item (then the looks rebuild around it). Each lives on its own route so Back works.
+ * Making the looks personal, reached from the results: add one piece you own, then the looks are
+ * styled again around it. Its own route so Back works.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { track } from "../../../core/analytics";
 import { useJourney, type Slot } from "../../lib/journeyContext";
-import { canvasImage, occasionLabel, resolveLooks, SAMPLE_ITEMS, SLOT_LABEL } from "../../lib/looks";
+import { canvasImage, occasionLabel, SAMPLE_ITEMS, SLOT_LABEL } from "../../lib/looks";
 import { momentSpine } from "../../lib/spine";
 import { fileToDataUrl, shrinkImage } from "../../lib/image";
-import { ChoiceList, QuietButton, TextButton } from "../../ui/controls";
-import { Capture } from "../../ui/Capture";
+import { ChoiceList, TextButton } from "../../ui/controls";
 import { Frame } from "../../ui/Frame";
-import { useAttachStream } from "../../lib/stream";
 import { Stage } from "../../ui/Stage";
 
 function useYouCanvas() {
-  const { answers, ownedItem } = useJourney();
-  const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
-  return { image: canvasImage(answers, resolved), alt: answers.occasion ? `${occasionLabel(answers.occasion)} look` : "", night: answers.time === "NIGHT" };
+  const { answers } = useJourney();
+  return { image: canvasImage(answers), alt: answers.occasion ? `${occasionLabel(answers.occasion)} look` : "", night: answers.time === "NIGHT" };
 }
 
 /** The old sixth step: the looks now come first and offer this on the results, so the route goes there. */
@@ -26,36 +24,13 @@ export function You() {
   return <Navigate to={href("moment/results")} replace />;
 }
 
+/**
+ * Try-on used to ask for a face photo here. While try-on is in preview no photo is needed, so none is
+ * asked for; old links go to the preview.
+ */
 export function YouFace() {
-  const { answers, href, go, setFaceImage, reduced } = useJourney();
-  const canvas = useYouCanvas();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  useAttachStream(videoRef, stream);
-  const onStream = useCallback((s: MediaStream | null) => setStream(s), []);
-
-  if (!answers.spend) return <Navigate to={href("moment/occasion")} replace />;
-
-  return (
-    <Stage
-      spine={momentSpine("looks", answers, href)}
-      back={href("moment/results")}
-      canvas={<Frame {...canvas} liveRef={videoRef} live={Boolean(stream)} reduced={reduced} />}
-      actions={<QuietButton onClick={() => go("moment/results")}>Not now</QuietButton>}
-    >
-      <h1 className="a-display">Let’s see it on you.</h1>
-      <div className="mt-6">
-        <Capture
-          videoRef={videoRef}
-          onStream={onStream}
-          onCapture={({ image, source }) => {
-            setFaceImage(source === "own" ? image : null);
-            go("moment/tryon", { face: source });
-          }}
-        />
-      </div>
-    </Stage>
-  );
+  const { href } = useJourney();
+  return <Navigate to={href("moment/tryon")} replace />;
 }
 
 const SLOT_OPTIONS = (Object.keys(SLOT_LABEL) as Slot[]).map((id) => ({ id, label: SLOT_LABEL[id] }));
@@ -79,6 +54,7 @@ export function YouItem() {
   const finish = (name: string, image: string | null) => {
     if (!slot) return;
     setOwnedItem({ slot, name, image });
+    track("wardrobe_item_added", { slot, source: image ? "upload" : "sample" });
     go("moment/build", { item: slot, hero: null });
   };
 

@@ -1,6 +1,10 @@
-/** Derives the three looks (stable order) and the hero for the current answers. Pure. */
-import { OCCASIONS, STAND_IN_PORTRAIT, getLooks, withOwnedItem, type Look, type VibeId } from "../../shared/catalog";
-import type { Answers, OwnedItem, Slot } from "./journeyContext";
+/**
+ * Turns the recommendation service's response into the looks the screens draw. The screens never
+ * rank, price or explain a look themselves; they show what the response says, in its order.
+ */
+import { OCCASIONS, moodImage, type Look, type OccasionId } from "../../shared/catalog";
+import type { OutfitRecommendation, OutfitRole, StylingResponse } from "../../core/contracts";
+import type { Answers, Slot } from "./journeyContext";
 
 export const SAMPLE_ITEMS: Record<Slot, string> = {
   top: "Your navy overshirt",
@@ -9,52 +13,59 @@ export const SAMPLE_ITEMS: Record<Slot, string> = {
   extras: "Your steel watch",
 };
 
+export function toLook(o: OutfitRecommendation, occasion: OccasionId): Look {
+  return {
+    id: o.outfitId,
+    occasion,
+    role: o.role,
+    title: o.title,
+    image: o.visualization.url,
+    why: o.rationale,
+    rank: o.rank,
+    summary: o.explanation.summary,
+    factors: o.explanation.contributingFactors,
+    priceStatus: o.pricing.status,
+    imageFidelity: o.visualization.fidelity,
+    total: o.pricing.total,
+    pieces: o.garments.map((g) =>
+      g.source === "wardrobe"
+        ? { id: g.garmentId, slot: g.slot, name: g.name, vendor: "Your wardrobe", price: 0, owned: true }
+        : { id: g.garmentId, slot: g.slot, name: g.name, vendor: g.product.retailerName, price: g.product.price, priceStatus: g.product.priceStatus, availability: g.product.availability },
+    ),
+  };
+}
+
 export interface ResolvedLooks {
-  /** Safe, sharper, relaxed, always in this order so the thumbnails never move. */
+  /** In the service's order: the pick first. The order never changes while browsing. */
   looks: Look[];
   hero: Look;
 }
 
-export function defaultHeroId(looks: Look[], vibe: VibeId | null): string | null {
-  const wanted = vibe === "SHARP" ? "SHARPER" : vibe === "RELAXED" ? "RELAXED" : "SAFEST";
-  return looks.find((l) => l.tier === wanted)?.id ?? looks[0]?.id ?? null;
-}
-
-export function resolveLooks(answers: Answers, ownedItem: OwnedItem | null): ResolvedLooks | null {
-  if (!answers.occasion) return null;
-  const base = getLooks(answers.occasion, answers.spend);
-  const looks = answers.item && ownedItem ? base.map((l) => withOwnedItem(l, ownedItem.slot, ownedItem.name)) : base;
-  if (looks.length === 0) return null;
-  const hero = looks.find((l) => l.id === answers.hero) ?? looks.find((l) => l.id === defaultHeroId(looks, answers.vibe)) ?? looks[0];
-  return { looks, hero };
+/** The looks of a response, with the one in the URL in front (or the pick). */
+export function resolveFromResponse(response: StylingResponse | null, occasion: OccasionId | null, heroId: string | null): ResolvedLooks | null {
+  if (!response || !occasion || response.outfits.length === 0) return null;
+  const looks = response.outfits.map((o) => toLook(o, occasion));
+  return { looks, hero: looks.find((l) => l.id === heroId) ?? looks[0] };
 }
 
 export function occasionLabel(id: Answers["occasion"]): string {
   return OCCASIONS.find((o) => o.id === id)?.label ?? "";
 }
 
-/** The image the canvas shows for the answers so far: mood, then the chosen tier. */
-export function canvasImage(answers: Answers, resolved: ResolvedLooks | null): string | null {
-  if (!answers.occasion) return null;
-  if (answers.hero && resolved) return resolved.hero.image;
-  if (answers.vibe && resolved) return resolved.hero.image;
-  return OCCASIONS.find((o) => o.id === answers.occasion)?.image ?? null;
+/** "for dinner", "for work", "for a date". */
+export function forOccasion(id: Answers["occasion"]): string {
+  const label = occasionLabel(id).toLowerCase();
+  return id === "WORK" || id === "DINNER" ? `for ${label}` : `for a ${label}`;
 }
 
-export function portraitFor(face: Answers["face"], faceImage: string | null, dnaPortrait?: string): string | null {
-  if (face === "own" && faceImage) return faceImage;
-  if (face) return STAND_IN_PORTRAIT;
-  return dnaPortrait ?? null;
-}
-
-/** The shared stand-in is a full-length photo; tighten it to the face when it stands for "you". */
-export function faceCropStyle(src: string | null): { transform: string; transformOrigin: string } | undefined {
-  return src === STAND_IN_PORTRAIT ? { transform: "scale(2)", transformOrigin: "50% 4%" } : undefined;
+/** The picture beside a question: the occasion's mood, then the feel being chosen. A preview, not a look. */
+export function canvasImage(answers: Answers): string | null {
+  return answers.occasion ? moodImage(answers.occasion, answers.vibe) : null;
 }
 
 export function money(n: number): string {
   return n === 0 ? "Owned" : `$${n.toLocaleString("en-US")}`;
 }
 
-export const ROLE_LABEL: Record<Look["role"], string> = { hero: "Classic", sharper: "Sharper", relaxed: "Relaxed" };
+export const ROLE_LABEL: Record<OutfitRole, string> = { classic: "Classic", sharper: "Sharper", relaxed: "Relaxed" };
 export const SLOT_LABEL: Record<Slot, string> = { top: "Top", bottom: "Bottom", shoes: "Shoes", extras: "Accessory" };

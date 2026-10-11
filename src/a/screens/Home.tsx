@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
+import { track } from "../../core/analytics";
 import { OCCASIONS, STAND_IN_PORTRAIT, type OccasionId } from "../../shared/catalog";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
 import { LinkButton } from "../ui/controls";
@@ -16,18 +17,21 @@ import { OccasionCards, photoSet } from "../ui/OccasionCards";
 import { Stage } from "../ui/Stage";
 import { TopBar } from "../ui/TopBar";
 
-const LINE = "Choose your occasion. Discover three looks designed for it.";
+const LINE = "Choose your occasion, answer four quick questions, and I’ll show you three looks for it.";
 const STEPS = [
   { n: "01", title: "Choose your occasion", line: "Tell me where you’re going." },
-  { n: "02", title: "Discover three looks", line: "Real pieces, put together for the moment." },
-  { n: "03", title: "Save or share", line: "Keep your favorites or send them to a friend." },
+  { n: "02", title: "Discover three looks", line: "Picked from your answers. The pieces and prices are examples for now." },
+  { n: "03", title: "Save or share", line: "Keep your favorites without an account, or send them to a friend." },
 ];
 const DNA_IMAGE = "/images/home/dna";
 
 function StyleDna() {
   const { store, go, href } = useJourney();
   const gated = useGated();
-  const explore = () => gated("dna", () => go("dna/face", { ...FRESH, face: null }));
+  const explore = () => {
+    track("style_dna_explored", { surface: "home" });
+    gated("dna", () => go("dna/face", { ...FRESH, face: null }));
+  };
 
   return (
     <section className="a-dna" aria-labelledby="dna-title">
@@ -43,7 +47,7 @@ function StyleDna() {
           Your style. More personal.
         </h2>
         <p className="mt-4 max-w-[44ch] text-[16px] leading-6 text-[var(--muted)]">
-          {store.dna ? "Your Style DNA is saved. Every look I put together starts from it." : "Discover a styling experience shaped around your preferences with Style DNA."}
+          {store.dna ? "Your Style DNA is saved. You can look it over or start again at any time." : "Tell me your colours, your fit and your taste once, and I’ll keep them together in your Style DNA. You can change them at any time."}
         </p>
         {store.dna ? (
           <LinkButton to={href("dna", { hero: null })} variant="secondary" className="mt-6 gap-2">
@@ -62,9 +66,20 @@ function StyleDna() {
 }
 
 export function Home() {
-  const { answers, href, go, store, reduced, setFaceImage } = useJourney();
+  const { answers, params, href, go, store, reduced, setFaceImage } = useJourney();
   const [pending, setPending] = useState<OccasionId | null>(null);
   const dna = store.dna;
+  const via = params.get("via");
+
+  useEffect(() => {
+    if (answers.done) return;
+    track("landing_viewed", { via: via === "story" || via === "friend" || via === "link" ? via : "none" }, { once: "home" });
+  }, [answers.done, via]);
+
+  const choose = (id: OccasionId) => {
+    setPending(id);
+    track("occasion_selected", { occasion: id, surface: "home" });
+  };
 
   useEffect(() => {
     if (!pending) return;
@@ -97,7 +112,7 @@ export function Home() {
             <p className="mt-5 max-w-[44ch] text-[16px] leading-6 lg:text-[17px] lg:leading-7">{LINE}</p>
             <p className="a-label mt-8 text-[var(--muted)] lg:mt-10">Where are you going?</p>
             <div className="mt-4">
-              <OccasionCards options={OCCASIONS} value={pending} onChange={setPending} />
+              <OccasionCards options={OCCASIONS} value={pending} onChange={choose} />
             </div>
             {store.looks.length > 0 ? (
               <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="a-phone mt-4 self-start !px-0">

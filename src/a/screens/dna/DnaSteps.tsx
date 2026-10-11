@@ -4,6 +4,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { track } from "../../../core/analytics";
 import { FITS, LIFESTYLES, STYLE_PRESETS, type FitId, type LifestyleId } from "../../../shared/catalog";
 import { useJourney } from "../../lib/journeyContext";
 import { useDnaAnswers, useDnaPortrait } from "../../lib/dna";
@@ -23,6 +24,11 @@ export function DnaFace() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   useAttachStream(videoRef, stream);
   const onStream = useCallback((s: MediaStream | null) => setStream(s), []);
+
+  /* Opening the first question starts a Style DNA; counted once per visit. */
+  useEffect(() => {
+    track("style_dna_started", {}, { once: "dna" });
+  }, []);
 
   return (
     <Stage
@@ -48,6 +54,8 @@ export function DnaFace() {
             onStream={onStream}
             onCapture={({ image, source }) => {
               setFaceImage(source === "own" ? image : null);
+              // Only which kind of photo: never the photo itself.
+              track("style_dna_step", { step: "photo", answer: source });
               go("dna/face", { face: source });
             }}
           />
@@ -76,7 +84,15 @@ export function DnaFit() {
       <Count step={2} total={4} />
       <h1 className="a-display">How do you like your clothes to fit?</h1>
       <div className="mt-6">
-        <ChoiceList label="How do you like your clothes to fit?" options={FITS} value={pending ?? dna.fit} onChange={(id) => setPending(id)} />
+        <ChoiceList
+          label="How do you like your clothes to fit?"
+          options={FITS}
+          value={pending ?? dna.fit}
+          onChange={(id) => {
+            setPending(id);
+            track("style_dna_step", { step: "fit", answer: id });
+          }}
+        />
       </div>
     </Stage>
   );
@@ -101,7 +117,15 @@ export function DnaLifestyle() {
       <Count step={3} total={4} />
       <h1 className="a-display">What does most of your week look like?</h1>
       <div className="mt-6">
-        <ChoiceList label="What does most of your week look like?" options={LIFESTYLES} value={pending ?? dna.life} onChange={(id) => setPending(id)} />
+        <ChoiceList
+          label="What does most of your week look like?"
+          options={LIFESTYLES}
+          value={pending ?? dna.life}
+          onChange={(id) => {
+            setPending(id);
+            track("style_dna_step", { step: "week", answer: id });
+          }}
+        />
       </div>
     </Stage>
   );
@@ -126,7 +150,16 @@ export function DnaInspiration() {
       spine={dnaSpine("taste", href)}
       back={href("dna/lifestyle")}
       canvas={<Frame image={last?.images[0] ?? portrait} alt={last ? `${last.label} look` : "Your portrait"} reduced={reduced} />}
-      actions={<PrimaryButton onClick={() => go("dna/build", { taste: picked.length ? picked.join(",") : null })}>{picked.length ? "Build my Style DNA" : "Skip this"}</PrimaryButton>}
+      actions={
+        <PrimaryButton
+          onClick={() => {
+            track("style_dna_step", { step: "taste", answer: picked.length ? picked.join(",") : "skipped" });
+            go("dna/build", { taste: picked.length ? picked.join(",") : null });
+          }}
+        >
+          {picked.length ? "Build my Style DNA" : "Skip this"}
+        </PrimaryButton>
+      }
     >
       <Count step={4} total={4} />
       <h1 className="a-display">Which of these feel most like you?</h1>

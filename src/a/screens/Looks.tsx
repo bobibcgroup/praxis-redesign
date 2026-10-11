@@ -6,11 +6,12 @@ import { usePieceSelection } from "../lib/selection";
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { track } from "../../core/analytics";
 import { FRESH, readSession, useJourney, writeSession } from "../lib/journeyContext";
 import type { SavedLook } from "../../shared/store";
 import { LinkButton, PrimaryButton, TextButton } from "../ui/controls";
-import { BELOW, Frame, FrameCaption } from "../ui/Frame";
-import { LookDetails } from "../ui/LookDetails";
+import { BELOW, Frame } from "../ui/Frame";
+import { CHECKOUT_REASON_ID, LookDetails } from "../ui/LookDetails";
 import { PiecesSheet } from "../ui/PiecesSheet";
 import { Stage } from "../ui/Stage";
 import { TopBar } from "../ui/TopBar";
@@ -77,7 +78,7 @@ export function Looks() {
               <motion.li key={s.id} initial={reduced ? false : { opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: reduced ? 0 : Math.min(i, 6) * 0.05, duration: 0.3, ease: "easeOut" }} className="shrink-0 snap-start">
                 <Link to={href(`looks/${s.id}`)} className="group flex flex-col">
                   <span className="a-rail-print block">
-                    <img src={s.tryOnImage ?? s.look.image} alt={`${s.look.title} for ${s.occasionLabel.toLowerCase()}`} className="h-full w-full object-cover object-top transition-opacity duration-200 group-hover:opacity-85" draggable={false} />
+                    <img src={s.look.image} alt={`${s.look.title} for ${s.occasionLabel.toLowerCase()}`} className="h-full w-full object-cover object-top transition-opacity duration-200 group-hover:opacity-85" draggable={false} />
                   </span>
                   <span className="mt-4 block font-[family-name:var(--font-display)] text-[19px] leading-6">{s.look.title}</span>
                   <span className="a-label mt-1 block text-[var(--muted)]">
@@ -97,9 +98,17 @@ export function LookDetail() {
   const { id } = useParams();
   const { href, go, store, reduced } = useJourney();
   const [sheet, setSheet] = useState(false);
-  const openBuy = useCallback(() => setSheet(true), []);
   const saved = store.looks.find((s) => s.id === id);
   const selection = usePieceSelection(saved?.look ?? null);
+  const outfitId = saved?.look.id;
+  const openBuy = useCallback(() => {
+    if (saved && selection.chosen.length > 0) track("checkout_initiated", { recommendationId: saved.recommendationId, outfitId: saved.look.id, pieces: selection.chosen.length, total: selection.total, priceStatus: saved.look.priceStatus ?? "example" });
+    setSheet(true);
+  }, [saved, selection]);
+
+  useEffect(() => {
+    if (outfitId && id) track("saved_look_reopened", { outfitId }, { once: id });
+  }, [outfitId, id]);
 
   if (!saved) return <Navigate to={href("looks")} replace />;
 
@@ -110,16 +119,17 @@ export function LookDetail() {
       canvas={
         <Frame
           book
-          image={saved.tryOnImage ?? saved.look.image}
+          image={saved.look.image}
           alt={`${saved.look.title} for ${saved.occasionLabel.toLowerCase()}`}
           reduced={reduced}
-          belowHeight={saved.tryOnImage ? BELOW.caption : BELOW.none}
-          below={saved.tryOnImage ? <FrameCaption>On you</FrameCaption> : undefined}
+          belowHeight={BELOW.none}
         />
       }
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <PrimaryButton onClick={openBuy}>Check out</PrimaryButton>
+          <PrimaryButton onClick={openBuy} disabled={selection.chosen.length === 0} aria-describedby={selection.chosen.length === 0 ? CHECKOUT_REASON_ID : undefined}>
+            Check out
+          </PrimaryButton>
           <TextButton
             onClick={() => {
               writeSession(REMOVED_KEY, saved);
@@ -132,7 +142,12 @@ export function LookDetail() {
         </div>
       }
     >
-      <LookDetails look={saved.look} eyebrow={`${saved.occasionLabel}, saved ${savedOn(saved.savedAt)}`} selection={selection} />
+      <LookDetails
+        look={saved.look}
+        eyebrow={`${saved.occasionLabel}, saved ${savedOn(saved.savedAt)}`}
+        selection={selection}
+        caption={saved.look.priceStatus === "live" ? undefined : "Pieces and prices are for illustration."}
+      />
       <PiecesSheet look={saved.look} open={sheet} onClose={() => setSheet(false)} selection={selection} />
     </Stage>
   );

@@ -1,6 +1,7 @@
 /** Primitives built to the Hairline rules: 44 px controls, text centred by the box, label and hint on one baseline. */
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { PREMIUM, premiumPrice } from "../../core/config";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement>;
 
@@ -32,12 +33,9 @@ export function LinkButton({ to, variant = "secondary", className = "", children
   );
 }
 
-/** The premium marker inside a gated control. Gone once the user has Plus. */
-export const PLUS_PRICE = "$9 a month";
-
-/** The premium marker inside a gated control. Gone once the user has Plus. With `price`, it says what Plus costs up front. */
-export function PlusMark({ show, price = false }: { show: boolean; price?: boolean }) {
-  return show ? <span className="hint">{price ? `Plus, ${PLUS_PRICE}` : "Plus"}</span> : null;
+/** The Premium marker inside a gated control. Gone once the user has Premium. With `price`, it says what Premium costs up front. */
+export function PremiumMark({ show, price = false }: { show: boolean; price?: boolean }) {
+  return show ? <span className="hint">{price ? `${PREMIUM.name}, ${premiumPrice()}` : PREMIUM.name}</span> : null;
 }
 
 interface FieldProps {
@@ -60,7 +58,7 @@ export function Field({ id, label, value, onChange, placeholder, type = "text", 
   );
 }
 
-/** "Step 2 of 5" above a question, so the end is always in sight. */
+/** "Step 2 of 4" above a question, so the end is always in sight. */
 export function Count({ step, total }: { step: number; total: number }) {
   return (
     <p className="a-label mb-3 text-[var(--muted)]">

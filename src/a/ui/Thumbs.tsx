@@ -1,5 +1,5 @@
 /**
- * The three looks, always visible under the print once they exist. 64 x 85
+ * The looks (usually three), always visible under the print once they exist. 64 x 85
  * prints, 12 px apart, inactive at 0.7, each named under its print; the one
  * in the big frame carries a 2 px accent underline 6 px below, drawn in as it changes. Tapping another
  * crossfades the print and moves the underline. Nothing is ever removed.
@@ -19,7 +19,7 @@ interface Props {
 
 export function Thumbs({ looks, activeId, onPick, reduced, vertical = false }: Props) {
   return (
-    <ul className={vertical ? "a-thumbs a-thumbs-vertical" : "a-thumbs"} role="group" aria-label="The three looks">
+    <ul className={vertical ? "a-thumbs a-thumbs-vertical" : "a-thumbs"} role="group" aria-label={looks.length === 3 ? "The three looks" : "The looks"}>
       <AnimatePresence initial={false}>
         {looks.map((look) => {
           const active = look.id === activeId;

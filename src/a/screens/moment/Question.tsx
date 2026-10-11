@@ -1,12 +1,15 @@
 /**
  * One question per frame. Tapping an answer fills the control, lets the
- * canvas react, then advances after a beat. The spine says where he is.
+ * canvas react, then advances after a beat. The spine says where they are.
+ * The occasion is chosen before the questions (on home, or here), so the count
+ * covers the four questions that follow it: Step 1 of 4 is the place.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { track } from "../../../core/analytics";
 import { Navigate } from "react-router-dom";
-import { OCCASIONS, SPEND, VENUES, VIBES, timesFor, type ChoiceOption } from "../../../shared/catalog";
+import { OCCASIONS, SPEND, VENUES, VIBES, timesFor, type ChoiceOption, type OccasionId } from "../../../shared/catalog";
 import { useJourney, type Answers } from "../../lib/journeyContext";
-import { canvasImage, occasionLabel, resolveLooks } from "../../lib/looks";
+import { canvasImage, occasionLabel } from "../../lib/looks";
 import { momentSpine, type MomentGroup } from "../../lib/spine";
 import { ChoiceList, Count } from "../../ui/controls";
 import { Frame } from "../../ui/Frame";
@@ -27,35 +30,53 @@ interface StepDef {
 }
 
 const STEPS: Record<string, StepDef> = {
-  occasion: { key: "occasion", group: "occasion", step: 1, question: () => "Where are you going?", options: () => OCCASIONS, next: "moment/venue", prev: "", requires: [] },
+  occasion: { key: "occasion", group: "occasion", step: 0, question: () => "Where are you going?", options: () => OCCASIONS, next: "moment/venue", prev: "", requires: [] },
   venue: {
     key: "venue",
     group: "room",
-    step: 2,
+    step: 1,
     question: () => "Where is it?",
     options: (a) => (a.occasion ? VENUES[a.occasion] : []),
     next: "moment/time",
     prev: "moment/occasion",
     requires: ["occasion"],
   },
-  time: { key: "time", group: "room", step: 3, question: (a) => (a.occasion === "WORK" ? "Day or night?" : "What time of day?"), options: (a) => timesFor(a.occasion), next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
-  feel: { key: "vibe", group: "feel", step: 4, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/time", requires: ["occasion", "venue", "time"] },
-  spend: { key: "spend", group: "feel", step: 5, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/build", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
+  time: { key: "time", group: "room", step: 2, question: (a) => (a.occasion === "WORK" ? "Day or night?" : "What time of day?"), options: (a) => timesFor(a.occasion), next: "moment/feel", prev: "moment/venue", requires: ["occasion", "venue"] },
+  feel: { key: "vibe", group: "feel", step: 3, question: () => "How do you want to come across?", options: () => VIBES, next: "moment/spend", prev: "moment/time", requires: ["occasion", "venue", "time"] },
+  spend: { key: "spend", group: "feel", step: 4, question: () => "What would you like to spend?", options: () => SPEND, next: "moment/build", prev: "moment/feel", requires: ["occasion", "venue", "time", "vibe"] },
 };
 
 const ADVANCE_MS = 260;
-/** Occasion, place, day or night, feel, spend, you. */
-export const MOMENT_STEPS = 5;
+/** Place, time of day, feel, spend. The occasion comes first and is not counted. */
+export const MOMENT_STEPS = 4;
 
 export function Question({ step }: { step: string }) {
   const def = STEPS[step];
-  const { answers, params, href, go, ownedItem, reduced } = useJourney();
+  const { answers, params, href, go, reduced } = useJourney();
   /* Sent here from the results to change one answer: go straight back to the looks after it. */
   const restyle = params.get("restyle") !== null;
   const [pending, setPending] = useState<string | null>(null);
 
   const missing = def.requires.find((k) => !answers[k]);
-  const resolved = useMemo(() => resolveLooks(answers, ownedItem), [answers, ownedItem]);
+
+  /* Leaving the page (closing the tab, going elsewhere) on an unanswered question counts as dropping off there. */
+  const answered = useRef(false);
+  useEffect(() => {
+    answered.current = false;
+    const onHide = () => {
+      if (!answered.current && !missing) track("step_abandoned", { question: def.key });
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+  }, [def.key, missing]);
+
+  const choose = (id: string) => {
+    answered.current = true;
+    setPending(id);
+    track("question_answered", { question: def.key, answer: id, step: def.step, restyle });
+    if (def.key === "occasion") track("occasion_selected", { occasion: id as OccasionId, surface: "question" });
+    if (restyle) track("restyle_changed", { field: def.key });
+  };
 
   useEffect(() => {
     if (!pending) return;
@@ -72,8 +93,7 @@ export function Question({ step }: { step: string }) {
 
   const value = pending ?? answers[def.key];
   const preview: Answers = pending ? { ...answers, [def.key]: pending } : answers;
-  const previewResolved = pending ? resolveLooks(preview, ownedItem) : resolved;
-  const image = canvasImage(preview, previewResolved);
+  const image = canvasImage(preview);
 
   return (
     <Stage
@@ -81,10 +101,10 @@ export function Question({ step }: { step: string }) {
       back={restyle ? href("moment/results", { restyle: null }) : def.prev === "" ? href("") : href(def.prev)}
       canvas={<Frame image={image} alt={answers.occasion ? `${occasionLabel(answers.occasion)} look` : ""} night={preview.time === "NIGHT"} golden={preview.time === "SUNRISE" || preview.time === "SUNSET" ? preview.time : null} preview={OCCASIONS} reduced={reduced} />}
     >
-      {restyle ? <p className="a-label mb-3 text-[var(--muted)]">Restyle</p> : <Count step={def.step} total={MOMENT_STEPS} />}
+      {restyle ? <p className="a-label mb-3 text-[var(--muted)]">Restyle</p> : def.step > 0 ? <Count step={def.step} total={MOMENT_STEPS} /> : null}
       <h1 className="a-display">{def.question(answers)}</h1>
       <div className="mt-8">
-        <ChoiceList label={def.question(answers)} options={def.options(answers)} value={value} onChange={(id) => setPending(id)} />
+        <ChoiceList label={def.question(answers)} options={def.options(answers)} value={value} onChange={choose} />
       </div>
     </Stage>
   );

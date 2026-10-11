@@ -1,6 +1,6 @@
 /**
  * Journey state for Concept A. Answers live in the URL so reload and Back
- * keep the user where he was; captured images live in session storage.
+ * keep the user where they were; captured images live in session storage.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useResolvedPath, useSearchParams } from "react-router-dom";
@@ -8,16 +8,46 @@ import { useReducedMotion } from "motion/react";
 import { useLabStore } from "../../shared/store";
 import { useMode } from "./mode";
 import { stepsFor, useUser, type GateKind } from "./user";
-import { FACE_KEY, GATES, ITEM_KEY, JourneyContext, parseAnswers, readSession, withPatch, writeSession, type JourneyContextValue, type OwnedItem, type Patch } from "./journeyContext";
+import { FACE_KEY, GATES, ITEM_KEY, JourneyContext, parseAnswers, readSession, withPatch, writeSession, type JourneyContextValue, type OwnedItem, type Patch, type SignInMethod, type SignInSurface } from "./journeyContext";
+import { migrateFeedback } from "../../core/account";
+import { track } from "../../core/analytics";
+import { feedbackStore } from "../../core/feedback";
+import { anonymousId, noteVisit } from "../../core/identity";
 
 export function JourneyProvider({ children }: { children: ReactNode }) {
   const base = useResolvedPath("").pathname.replace(/\/$/, "");
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const store = useLabStore("a");
   const reduced = useReducedMotion() ?? false;
   const { mode, setMode } = useMode();
-  const { user, signIn, signOut, grantPlus } = useUser();
+  const { user, signIn: userSignIn, signOut, grantPremium } = useUser();
+  const store = useLabStore("a", user?.id);
+  const { migrateToAccount } = store;
+
+  /* A visit is counted once per tab; a browser that has been here before counts as returning. */
+  useEffect(() => {
+    const visit = noteVisit();
+    if (visit?.returning) track("user_returned", { daysSinceLastVisit: visit.daysSinceLastVisit, visits: visit.visits });
+  }, []);
+
+  const signIn = useCallback(
+    (email: string | undefined, how: { method: SignInMethod; surface: SignInSurface }) => {
+      const account = userSignIn(email);
+      track("signin_completed", how);
+      const anon = anonymousId();
+      // Looks first; feedback only once they are safely on the account. A failed write changes nothing.
+      const looks = migrateToAccount(account.id, anon);
+      if (!looks.ok) {
+        track("account_migration_failed", { part: "looks" });
+        return;
+      }
+      const feedback = migrateFeedback(feedbackStore.all(), account.id, anon);
+      const feedbackMoved = feedbackStore.replaceAll(feedback.records);
+      track("account_migrated", { looks: looks.moved, duplicates: looks.duplicates, feedback: feedbackMoved ? feedback.moved : 0 });
+      if (!feedbackMoved) track("account_migration_failed", { part: "feedback" });
+    },
+    [userSignIn, migrateToAccount],
+  );
   const { pathname } = useLocation();
   const gateActions = useRef<Partial<Record<GateKind, () => void>>>({});
 
@@ -49,9 +79,12 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
 
   const gateParam = params.get("gate");
   const gate = GATES.find((g) => g === gateParam) ?? null;
-  const needsGate = useCallback((kind: GateKind) => stepsFor(kind, user).length > 0, [user]);
+  const hasDna = Boolean(store.dna);
+  const needsGate = useCallback((kind: GateKind) => stepsFor(kind, user, { hasDna }).length > 0, [user, hasDna]);
+  const gateSource = useRef<SignInSurface>("menu");
   const openGate = useCallback(
-    (kind: GateKind) => {
+    (kind: GateKind, source: SignInSurface = "menu") => {
+      gateSource.current = source;
       const next = new URLSearchParams(params);
       next.set("gate", kind);
       navigate(`${pathname}?${next.toString()}`, { replace: true });
@@ -84,14 +117,15 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
       user,
       signIn,
       signOut,
-      grantPlus,
+      grantPremium,
       gate,
       needsGate,
       openGate,
       closeGate,
       gateActions,
+      gateSource,
     }),
-    [base, answers, params, href, go, begun, faceImage, ownedItem, store, reduced, mode, setMode, user, signIn, signOut, grantPlus, gate, needsGate, openGate, closeGate],
+    [base, answers, params, href, go, begun, faceImage, ownedItem, store, reduced, mode, setMode, user, signIn, signOut, grantPremium, gate, needsGate, openGate, closeGate],
   );
 
   return <JourneyContext.Provider value={value}>{children}</JourneyContext.Provider>;

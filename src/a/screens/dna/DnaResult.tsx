@@ -7,10 +7,11 @@ import { Navigate } from "react-router-dom";
 import { SAMPLE_TONES, STAND_IN_PORTRAIT, type ToneResult } from "../../../shared/catalog";
 import { DNA_STAGES, useGuidedBuild } from "../../../shared/guided";
 import type { SavedDna } from "../../../shared/store";
+import { track } from "../../../core/analytics";
 import { FRESH, useGated, useJourney } from "../../lib/journeyContext";
 import { useDnaAnswers, useDnaPortrait } from "../../lib/dna";
 import { dnaSpine } from "../../lib/spine";
-import { LinkButton, PlusMark, PrimaryButton, TextButton } from "../../ui/controls";
+import { LinkButton, PremiumMark, PrimaryButton, TextButton } from "../../ui/controls";
 import { BELOW, Frame, ProgressLine } from "../../ui/Frame";
 import { ModeRadio } from "../../ui/Mode";
 import { Stage } from "../../ui/Stage";
@@ -97,6 +98,7 @@ export function DnaResult() {
       portrait: dna.face === "own" && faceImage ? faceImage : STAND_IN_PORTRAIT,
     };
     store.saveDna(entry);
+    track("style_dna_completed", { photo: dna.face === "own" ? "own" : "sample", tasteCount: dna.taste.length });
     go("", { ...FRESH, face: null, done: "dna" });
   };
 
@@ -139,7 +141,7 @@ export function DnaHome() {
           </LinkButton>
           <TextButton onClick={() => gated("dna", () => go("dna/face", { ...FRESH, face: null }))}>
             Update my Style DNA
-            <PlusMark show={!user?.plus} />
+            <PremiumMark show={!user?.premium} />
           </TextButton>
         </div>
       }
@@ -156,7 +158,7 @@ export function DnaHome() {
         <div className="mt-6 flex items-center justify-between gap-4 border-t border-[var(--rule)] pt-6">
           <p className="text-[15px] leading-5">
             {user.name}
-            <span className="ml-2 text-[13px] text-[var(--muted)]">{user.plus ? "Plus" : user.email}</span>
+            <span className="ml-2 text-[13px] text-[var(--muted)]">{user.premium ? "Premium" : user.email}</span>
           </p>
           <TextButton onClick={signOut}>Sign out</TextButton>
         </div>

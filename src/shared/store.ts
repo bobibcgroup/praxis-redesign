@@ -1,17 +1,26 @@
 /**
- * Tiny namespaced persistence for the lab so each concept can show
- * returning-user states (saved looks, a saved DNA) without touching
- * production storage keys or Supabase.
+ * Saved looks and the saved Style DNA, kept in this browser. Saving needs no account: each look is
+ * owned by the anonymous id, and signing in moves the guest's looks onto the account without
+ * duplicates (src/core/account.ts). A signed-in person sees their account's looks plus any guest
+ * looks on this device; looks of another account stay hidden.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Look, ToneResult, FitId, LifestyleId } from "./catalog";
+import { migrateLooks, visibleTo, type Owner } from "../core/account";
 
 export interface SavedLook {
   id: string;
   savedAt: string;
   look: Look;
   occasionLabel: string;
+  /** Earlier builds saved a stand-in try-on picture here; it is no longer saved or shown. */
   tryOnImage?: string;
+  recommendationId?: string;
+  requestId?: string;
+  inputKey?: string;
+  owner?: Owner;
+  /** The same look for the same brief has the same key; used to keep one copy at sign-in. */
+  dedupeKey: string;
 }
 
 export interface SavedDna {
@@ -34,31 +43,54 @@ function keyFor(concept: string): string {
   return `praxis_lab_${concept}`;
 }
 
+function legacyKey(look: Look, occasionLabel: string): string {
+  const owned = look.pieces
+    .filter((p) => p.owned)
+    .map((p) => `${p.slot}:${p.name}`)
+    .join("+");
+  return `${look.id}|${occasionLabel}|${owned}`;
+}
+
+/** Brings looks saved by earlier builds up to date: role names, keys, and no stand-in try-on picture. */
+function normalise(s: SavedLook): SavedLook {
+  const role = (s.look.role as string) === "hero" ? "classic" : s.look.role;
+  const { tryOnImage: _dropped, ...rest } = s;
+  void _dropped;
+  return { ...rest, look: { ...s.look, role }, dedupeKey: s.dedupeKey ?? legacyKey(s.look, s.occasionLabel) };
+}
+
 function read(concept: string): LabState {
   try {
     const raw = localStorage.getItem(keyFor(concept));
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw) as Partial<LabState>;
-    return { looks: parsed.looks ?? [], dna: parsed.dna ?? null };
+    return { looks: (parsed.looks ?? []).map(normalise), dna: parsed.dna ?? null };
   } catch {
     return EMPTY;
   }
 }
 
-function write(concept: string, state: LabState): void {
+function write(concept: string, state: LabState): boolean {
   try {
     localStorage.setItem(keyFor(concept), JSON.stringify(state));
+    return true;
   } catch {
     // Storage unavailable; the prototype still works for the session.
+    return false;
   }
 }
 
-export function useLabStore(concept: string) {
-  const [state, setState] = useState<LabState>(EMPTY);
+export interface SaveMeta {
+  owner: Owner;
+  recommendationId?: string;
+  requestId?: string;
+  inputKey?: string;
+}
 
-  useEffect(() => {
-    setState(read(concept));
-  }, [concept]);
+export function useLabStore(concept: string, userId?: string) {
+  // Read on the first render, so nothing (a styling request, the gate's steps) ever sees an empty store
+  // before the saved Style DNA arrives.
+  const [state, setState] = useState<LabState>(() => read(concept));
 
   const update = useCallback(
     (fn: (prev: LabState) => LabState) => {
@@ -72,13 +104,17 @@ export function useLabStore(concept: string) {
   );
 
   const saveLook = useCallback(
-    (look: Look, occasionLabel: string, tryOnImage?: string) => {
+    (look: Look, occasionLabel: string, meta: SaveMeta) => {
       const entry: SavedLook = {
         id: `${look.id}_${Date.now()}`,
         savedAt: new Date().toISOString(),
         look,
         occasionLabel,
-        tryOnImage,
+        recommendationId: meta.recommendationId,
+        requestId: meta.requestId,
+        inputKey: meta.inputKey,
+        owner: meta.owner,
+        dedupeKey: meta.inputKey ? `${look.id}|${meta.inputKey}` : legacyKey(look, occasionLabel),
       };
       update((prev) => ({ ...prev, looks: [entry, ...prev.looks] }));
       return entry;
@@ -101,11 +137,29 @@ export function useLabStore(concept: string) {
     [update],
   );
 
+  /**
+   * Moves this device's guest looks onto the account in one write. If the write fails, nothing
+   * changes and the guest keeps every look.
+   */
+  const migrateToAccount = useCallback(
+    (accountId: string, anonymousSessionId: string) => {
+      const current = read(concept);
+      const result = migrateLooks(current.looks, accountId, anonymousSessionId);
+      const next = { ...current, looks: result.looks };
+      const ok = write(concept, next);
+      if (ok) setState(next);
+      return { ok, moved: result.moved, duplicates: result.duplicates };
+    },
+    [concept],
+  );
+
   const saveDna = useCallback((dna: SavedDna) => update((prev) => ({ ...prev, dna })), [update]);
 
   const clearDna = useCallback(() => update((prev) => ({ ...prev, dna: null })), [update]);
 
   const reset = useCallback(() => update(() => EMPTY), [update]);
 
-  return { ...state, saveLook, removeLook, restoreLook, saveDna, clearDna, reset };
+  const looks = useMemo(() => state.looks.filter((l) => visibleTo(l, userId)), [state.looks, userId]);
+
+  return { looks, dna: state.dna, saveLook, removeLook, restoreLook, migrateToAccount, saveDna, clearDna, reset };
 }

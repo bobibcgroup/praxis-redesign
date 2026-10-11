@@ -589,6 +589,131 @@
   line-height: 28px;
 }
 
+/* The line that ties a look to the brief, from the recommendation service. */
+[data-concept="a"] .a-summary {
+  font-size: 15px;
+  line-height: 24px;
+  color: var(--muted);
+}
+
+/* Why this look: a quiet fold, then the answers that shaped it and what each did. */
+[data-concept="a"] .a-why {
+  margin-top: 8px;
+}
+
+[data-concept="a"] .a-why-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  margin-left: -8px;
+  padding: 0 8px;
+  border-radius: var(--r-control);
+  color: var(--muted);
+  outline: none;
+  transition: color 200ms ease;
+}
+
+[data-concept="a"] .a-why-toggle:hover {
+  color: var(--text);
+}
+
+[data-concept="a"] .a-why-toggle:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] .a-why-toggle svg {
+  transition: transform 200ms ease;
+}
+
+[data-concept="a"] .a-why-toggle svg[data-open] {
+  transform: rotate(180deg);
+}
+
+[data-concept="a"] .a-why-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--rule);
+}
+
+[data-concept="a"] .a-why-list > div {
+  display: grid;
+  grid-template-columns: minmax(96px, 136px) 1fr;
+  column-gap: 16px;
+  align-items: baseline;
+}
+
+[data-concept="a"] .a-why-list dt {
+  color: var(--muted);
+}
+
+[data-concept="a"] .a-why-list dd {
+  margin: 0;
+  font-size: 15px;
+  line-height: 24px;
+}
+
+/* More like this, Not for me, and the one-tap reasons. */
+[data-concept="a"] .a-feedback-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+[data-concept="a"] .a-feedback {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+[data-concept="a"] .a-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+[data-concept="a"] .a-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-control);
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--text);
+  text-align: left;
+  outline: none;
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+[data-concept="a"] .a-chip:hover {
+  background: var(--control-hover-bg);
+  border-color: color-mix(in srgb, var(--text) 30%, transparent);
+}
+
+[data-concept="a"] .a-chip:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+/* The look on a model, in the try-on introduction. */
+[data-concept="a"] .a-intro-print {
+  width: 96px;
+  margin: 0;
+}
+
+[data-concept="a"] .a-intro-print img {
+  display: block;
+  width: 96px;
+  height: 128px;
+  object-fit: cover;
+  object-position: top;
+  border: 1px solid var(--rule);
+}
+
 @media (min-width: 1024px) and (max-width: 1279px) {
   [data-concept="a"] .a-thumbs-index {
     right: 16px;

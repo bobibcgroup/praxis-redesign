@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, Bookmark, Menu as MenuIcon, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { track } from "../../core/analytics";
 import { FRESH, useJourney } from "../lib/journeyContext";
 import { useScrollLock } from "../lib/scrollLock";
 import { TextButton } from "./controls";
@@ -58,7 +59,11 @@ export function TopBar({ spine, back = null }: TopBarProps) {
             Saved looks
           </Link>
           <span className="a-bar-rule" aria-hidden="true" />
-          <Link to={store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" })} className="a-control a-tertiary a-signin">
+          <Link
+            to={store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" })}
+            onClick={() => (store.dna ? undefined : track("style_dna_explored", { surface: "bar" }))}
+            className="a-control a-tertiary a-signin"
+          >
             Style DNA
           </Link>
           <span className="a-bar-rule" aria-hidden="true" />
@@ -70,7 +75,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
             </span>
           </button>
         ) : (
-          <button type="button" onClick={() => openGate("signin")} className="a-control a-tertiary a-desktop a-signin">
+          <button type="button" onClick={() => openGate("signin", "menu")} className="a-control a-tertiary a-desktop a-signin">
             Sign in
           </button>
         )}
@@ -155,7 +160,14 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
             <ul className="flex flex-col gap-2">
               {items.map((item, i) => (
                 <motion.li key={item.label} initial={reduced ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduced ? 0 : 0.5, delay: reduced ? 0 : 0.08 * i, ease: "easeOut" }}>
-                  <Link to={item.to} onClick={onClose} className="a-display inline-block py-2 text-[var(--text)] transition-colors duration-200 hover:text-[var(--accent)]">
+                  <Link
+                    to={item.to}
+                    onClick={() => {
+                      if (item.label === "Style DNA" && !store.dna) track("style_dna_explored", { surface: "menu" });
+                      onClose();
+                    }}
+                    className="a-display inline-block py-2 text-[var(--text)] transition-colors duration-200 hover:text-[var(--accent)]"
+                  >
                     {item.label}
                   </Link>
                 </motion.li>
@@ -169,7 +181,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
                   </span>
                   <span className="text-[15px] leading-5">
                     {user.name}
-                    <span className="ml-2 text-[13px] text-[var(--muted)]">{user.plus ? "Plus" : user.email}</span>
+                    <span className="ml-2 text-[13px] text-[var(--muted)]">{user.premium ? "Premium" : user.email}</span>
                   </span>
                   <TextButton onClick={signOut} className="ml-auto">
                     Sign out
@@ -179,7 +191,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
                 <TextButton
                   onClick={() => {
                     onClose();
-                    openGate("signin");
+                    openGate("signin", "menu");
                   }}
                   className="-ml-2"
                 >

@@ -8,6 +8,7 @@ The approved front-end direction for Praxis, extracted as a standalone React app
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build to dist/
+npm test           # unit tests for src/core (vitest)
 npm start          # serve dist/ (used for the preview host)
 ```
 
@@ -19,7 +20,7 @@ One full-viewport stage. The left column asks one question at a time; the right 
 
 Journeys:
 
-- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, a guided build, then the looks first: three looks with the hero in the print and three labelled thumbnails beside it. Move between the looks with the thumbnails, a sideways swipe on the print, the arrows and counter under the print on desktop, or the left and right keys once the print or the thumbnails have focus; it stops at the first and last look. Everything on the page follows the one look in the URL (`hero`): photo, name, note, pieces, prices, total, Check out, Share, Save and Restyle. A tap or click on the print (a small glass marks it; on desktop it reads View details on hover) opens the look large to study: zoom with the + and − controls, the wheel or trackpad, a pinch or a double tap, drag to move around, Reset to go back; only the photo zooms, never the page. At normal size a sideways swipe or the arrows move between the looks and a swipe down closes it, back on the same look. The results offer "Make it yours": see it on me (face by camera, upload or sample, then the try-on) or use something I own (one item by slot, then the looks rebuild around it). Then try-on, save, share, check out (every piece ticked by default with a live total, then a sheet by retailer with one Purchase action; open to everyone, no sign in).
+- **Style a moment**: occasion (chosen on home), venue, day or night, feel, spend, a guided build, then the looks first: three looks with the hero in the print and three labelled thumbnails beside it. Move between the looks with the thumbnails, a sideways swipe on the print, the arrows and counter under the print on desktop, or the left and right keys once the print or the thumbnails have focus; it stops at the first and last look. Everything on the page follows the one look in the URL (`hero`): photo, name, note, pieces, prices, total, Check out, Share, Save and Restyle. A tap or click on the print (a small glass marks it; on desktop it reads View details on hover) opens the look large to study: zoom with the + and − controls, the wheel or trackpad, a pinch or a double tap, drag to move around, Reset to go back; only the photo zooms, never the page. At normal size a sideways swipe or the arrows move between the looks and a swipe down closes it, back on the same look. The results offer "Make it yours": see it on me (the try-on preview, on a model for now) or use something I own (one item by slot, then the looks rebuild around it). Then try-on, save, share, check out (every piece ticked by default with a live total, then a sheet by retailer with one Purchase action; open to everyone, no sign in). Each look has "Why this look" (the factors it was picked on) and More like this or Not for me (with a reason or a piece).
 - **Style DNA**: face, fit, lifestyle, up to two inspiration presets, a guided build, and a plain-language result (undertone, contrast, palette, one line of advice). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
 - **Style DNA**: the saved Style DNA, start again, sign out, light or dark.
@@ -37,30 +38,57 @@ Mounted at `/`. Step routes:
 /moment/build  /moment/results  /moment/tryon
 /looks  /looks/:id
 /dna  /dna/face  /dna/fit  /dna/lifestyle  /dna/inspiration  /dna/build  /dna/result
+/internal/analytics                 events recorded in this browser (not linked from the app)
 ```
 
-Answers travel in search params so reload restores any step: `occasion, venue, time, vibe, spend, face, item, hero, done, mode`; DNA: `face, fit, life, taste`. The gate popup uses `?gate=tryon|dna|save|signin`.
+Answers travel in search params so reload restores any step: `occasion, venue, time, vibe, spend, face, item, hero, done, mode`; DNA: `face, fit, life, taste`. The gate popup uses `?gate=tryon|dna|signin`; saving needs no gate.
 
 Browser storage (prototype only, replace with real persistence):
 
 | Key | Holds |
 |---|---|
-| `praxis_lab_a` | saved looks and the saved DNA (`src/shared/store.ts`) |
-| `praxis_lab_a_user` | `{ name, email, plus }` for the sign-in and Plus previews (`src/a/lib/user.ts`) |
+| `praxis_lab_a` | saved looks (each with its owner, recommendation and request ids) and the saved Style DNA (`src/shared/store.ts`) |
+| `praxis_lab_a_user` | `{ id, name, email, premium }` for the sign-in and Premium previews (`src/a/lib/user.ts`) |
+| `praxis_lab_a_accounts` | the stand-in account id for each address signed in on this browser (random, `src/core/identity.ts`) |
+| `praxis_anon` | the anonymous visitor id with first and last visit (`src/core/identity.ts`) |
+| `praxis_styling_history` | the last 20 styling requests with their validated responses (`src/core/service.ts`) |
+| `praxis_feedback` | More like this and Not for me, with reason or piece (`src/core/feedback.ts`) |
+| `praxis_events` | the last 1000 analytics events (`src/core/analytics.ts`) |
+| `praxis_sync_offer_dismissed` | set when a guest closes the offer to sign in and sync |
 | `praxis_lab_a_mode` | `light` or `dark`; light is the default |
 | `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the session (sessionStorage) |
 | `praxis_lab_a_viewer_hint` | set once a look has been opened large, so the zoom and swipe hint shows only the first time |
 
 ## What is a stand-in
 
-- **Sign-in and payment** (`src/a/ui/Gate.tsx`, `GateSteps.tsx`): visual previews of Apple, Google and email sign-in, and of a "Praxis Plus" purchase with Apple Pay or card. No Clerk or Stripe calls. Replace with Clerk for identity and a Stripe Payment Element (Apple Pay enabled) for the purchase, then check the entitlement server-side before try-on and DNA endpoints run. The plan shape (one membership, $9 a month) and the price are placeholders.
-- **Share** (`src/a/ui/ShareSheet.tsx`, `src/a/lib/card.ts`, `src/a/lib/share.ts`): from the results. Draws a 1080 x 1920 story card on a canvas (print, PRAXIS, eyebrow, title, the stylist's note, the address) and hands it to the phone's share sheet (Instagram stories, WhatsApp, Messages); on a computer it saves the image. "Ask a friend to choose" shares the results link with a question (WhatsApp on a computer). Every shared link is tagged with `via` (story, friend or link) and `utm_source=praxis`, `utm_medium`, `utm_campaign=shared_look`, so any analytics tool added later can count visits per channel. A visitor arriving on a tagged link sees the shared view of the results: a "Shared with you" note and "Get your own looks" as the main button, with Check out and Share kept. Starting a journey drops the tags. Nothing is counted yet; there is no analytics in the app.
+- **Recommendations** (`src/core/adapters/mock.ts`): a rules adapter, not a stylist. It scores the fifteen library outfits on the feel, the place, the time and the budget, explains each look with the factors it used, and says the looks are examples. Replace it by adding an adapter (see Recommendation architecture) and setting `VITE_RECOMMENDATION_ADAPTER`.
+- **Sign-in and payment** (`src/a/ui/Gate.tsx`, `GateSteps.tsx`): visual previews of Apple, Google and email sign-in, and of a "Premium" purchase with Apple Pay or card. No Clerk or Stripe calls. Replace with Clerk for identity and a Stripe Payment Element (Apple Pay enabled) for the purchase, then check the entitlement server-side before try-on and DNA endpoints run. The plan shape (one membership, $9 a month) and the price are placeholders.
+- **Share** (`src/a/ui/ShareSheet.tsx`, `src/a/lib/card.ts`, `src/a/lib/share.ts`): from the results. Draws a 1080 x 1920 story card on a canvas (print, PRAXIS, eyebrow, title, the stylist's note, the address) and hands it to the phone's share sheet (Instagram stories, WhatsApp, Messages); on a computer it saves the image. "Ask a friend to choose" shares the results link with a question (WhatsApp on a computer). Every shared link is tagged with `via` (story, friend or link) and `utm_source=praxis`, `utm_medium`, `utm_campaign=shared_look`, so any analytics tool added later can count visits per channel. A visitor arriving on a tagged link sees the shared view of the results: a "Shared with you" note and "Get your own looks" as the main button, with Check out and Share kept. Starting a journey drops the tags. Shares are counted as `look_shared` (see Analytics).
 - **Check out** (`src/a/ui/PiecesSheet.tsx`, `src/a/lib/selection.ts`): every piece carries a box, all chosen at first; the client unticks what they do not want, the total follows, and "Purchase" shows the order placed state. No payment or retailer order happens. Replace with the retailer checkout, sending only the chosen pieces.
-- **Looks and pieces** (`src/shared/catalog.ts`): built from the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented vendors and prices; prices are picked from the band the client chose so every total fits the budget. Replace with the vendor catalog, filtered by budget.
+- **Looks and pieces** (`src/core/adapters/mock.ts`): the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented houses and example prices inside the chosen budget; every price is marked `example` and every stock level `unknown`, and the screens say so. Replace with the vendor catalog behind an adapter.
 - **Guided build** (`src/shared/guided.ts`): fixed, named stages with fixed durations. Keep the stage names and drive the progress from real backend events instead of timers.
-- **Try-on**: the shared stand-in portrait with a different crop. Replace with the rendering pipeline; keep the wipe, the "Here’s how it looks on you" caption and the note.
+- **Try-on**: in preview. It shows the look on a model, says so ("On a model, not you. Try-on is in preview."), and asks for no photo. Replace with the rendering pipeline, then ask for the photo again.
 - **DNA result**: `SAMPLE_TONES` for every capture. Replace with the face pipeline.
 - **Images**: `public/images/*.jpg` (catalog looks) and `src/assets/styles/*.jpg` (inspiration presets).
+
+## Recommendation architecture
+
+`src/core` holds everything that is not UI and imports no React. The screens never build looks themselves:
+
+1. `request.ts` turns the answers in the URL, the piece the customer owns and their Style DNA id into a `StylingRequest` (`contracts.ts`, version 1.0). Every answer is in it, budgets as numbers. `inputKey` names the inputs; feedback is sent as `preferences` but is not part of the key.
+2. `service.ts` hands the request to the configured adapter (`RecommendationAdapter`: `id`, `version`, `recommend(request)`), validates whatever comes back (`validate.ts`) and records both in the request history. An adapter that throws or answers nonsense becomes a `failed` response; a malformed look is dropped and the answer marked `partial`, never padded.
+3. `src/a/lib/styling.ts` sends one request per set of inputs and reuses the stored answer on reload or Back. The build, results, try-on and saved looks read the same response, so a look keeps its `recommendationId`, `requestId` and `outfitId` everywhere.
+4. `src/a/lib/looks.ts` (`toLook`) maps an `OutfitRecommendation` to what the screens draw. Rank 1 is "My pick".
+
+Garments are either `retail` (a `ProductRef` with price, price status and stock) or `wardrobe` (a piece the customer owns, never in the total). Visualizations say what they are: a product photo, a styled image, or a try-on, and whether they are exact or representative. Only an adapter other than the mock can answer in `personalized` mode.
+
+## Analytics
+
+`src/core/analytics.ts` is a closed dictionary: each event has a category, a trigger and typed properties. `track()` refuses unknown events or properties, missing or mistyped values, and any string over 160 characters or containing `@`, `data:`, `blob:` or `base64`, so no email, photo or face data can be recorded. Each event carries an event id, time, the anonymous id, the account id when signed in, the journey and the app version. Events go to every sink registered with `addSink`; today the only one is local storage, viewable at `/internal/analytics` (download as JSON, or clear). Adding a real analytics tool is one sink.
+
+## Accounts and saved looks
+
+Saving needs no account. A guest's looks belong to the anonymous id; after saving, the guest is offered to sign in and sync, once, and can close it. Signing in moves this browser's guest looks and feedback onto the account (`src/core/account.ts`): a look saved both ways is kept once, and another account's looks are never touched or shown.
 
 ## Brand and element rules
 
@@ -95,7 +123,9 @@ src/main.tsx            mounts ConceptA at /
 src/a/ConceptA.tsx      root: theme, fonts, routes
 src/a/screens/          home, moment/*, dna/*, looks, you
 src/a/ui/               Stage, Frame, Thumbs, controls, TopBar, Gate, sheets
-src/a/lib/              journey context, spine, looks, dna, user, mode, image, stream
+src/a/lib/              journey context, spine, looks, styling, dna, user, mode, image, stream
+src/core/               contracts, request, validation, service, mock adapter, identity, feedback, analytics, accounts (no React)
+src/core/__tests__/     unit tests
 src/a/a.css, a-layout.css   tokens and layout
 src/shared/             catalog, guided build, fonts, store
 src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
@@ -103,7 +133,7 @@ src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 
 ## Home
 
-`src/a/screens/Home.tsx` is a page that scrolls, not a split. Hero: "Your personal stylist", the headline with "Every time." in italic, one line ("Choose your occasion. Discover three looks designed for it."), then the occasions as photographs (`src/a/ui/OccasionCards.tsx`): three then two on desktop, two to a row with Party across the width on a phone; the name in the serif over a soft shade, an arrow, a slight zoom on hover. The card classes carry `a-transition` so the lab rule in `src/index.css` does not switch their transitions off. Beside it (under it on a phone), `src/a/ui/HomeDemo.tsx` plays the demo film: no controls, muted, looping, only while on screen; the poster (the three looks) shows while it loads, if it cannot play, and instead of it when motion is reduced. Below: How it works in three steps, then Style DNA on a deeper stone (`--stone`) with a photograph of tailoring cloth, a Premium tag and "Explore Style DNA".
+`src/a/screens/Home.tsx` is a page that scrolls, not a split. Hero: "Your personal stylist", the headline with "Every time." in italic, one line ("Choose your occasion, answer four quick questions, and I’ll show you three looks for it."), then the occasions as photographs (`src/a/ui/OccasionCards.tsx`): three then two on desktop, two to a row with Party across the width on a phone; the name in the serif over a soft shade, an arrow, a slight zoom on hover. The card classes carry `a-transition` so the lab rule in `src/index.css` does not switch their transitions off. Beside it (under it on a phone), `src/a/ui/HomeDemo.tsx` plays the demo film: no controls, muted, looping, only while on screen; the poster (the three looks) shows while it loads, if it cannot play, and instead of it when motion is reduced. Below: How it works in three steps, then Style DNA on a deeper stone (`--stone`) with a photograph of tailoring cloth, a Premium tag and "Explore Style DNA".
 
 The home photographs live in `public/images/home` as WebP at 480 and 960 wide, cropped for the cards; sources are listed in `public/images/home/CREDITS.md` (Unsplash, free license). To swap one, replace both widths under the same name.
 

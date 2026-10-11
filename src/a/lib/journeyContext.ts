@@ -19,6 +19,9 @@ import type { useLabStore } from "../../shared/store";
 import type { ModeId } from "./mode";
 import type { GateKind, LabUser } from "./user";
 
+export type SignInMethod = "apple" | "google" | "email";
+export type SignInSurface = "sync_offer" | "gate" | "menu";
+
 export type FaceSource = "sample" | "own";
 export type Slot = Piece["slot"];
 export type DoneKind = "saved" | "dna";
@@ -91,7 +94,7 @@ export function parseAnswers(params: URLSearchParams): Answers {
 
 export type Patch = Partial<Record<keyof Answers | "fit" | "life" | "taste" | "gate" | "restyle", string | null>>;
 
-export const GATES: readonly GateKind[] = ["tryon", "dna", "save", "signin"];
+export const GATES: readonly GateKind[] = ["tryon", "dna", "signin"];
 
 export function withPatch(params: URLSearchParams, patch: Patch): URLSearchParams {
   const next = new URLSearchParams(params);
@@ -126,18 +129,21 @@ export interface JourneyContextValue {
   mode: ModeId;
   setMode: (m: ModeId) => void;
   user: LabUser | null;
-  signIn: (email?: string) => void;
+  /** Signs in (a preview) and moves this device's guest looks and feedback onto the account. */
+  signIn: (email: string | undefined, how: { method: SignInMethod; surface: SignInSurface }) => void;
   signOut: () => void;
-  grantPlus: () => void;
+  grantPremium: () => void;
   /** The gate open on this page, from ?gate=. */
   gate: GateKind | null;
-  /** True when the action still needs sign-in or Plus. */
+  /** True when the action still needs its introduction, sign-in or Premium. */
   needsGate: (kind: GateKind) => boolean;
   /** Opens the gate in place (replace, no navigation). */
-  openGate: (kind: GateKind) => void;
+  /** Where a plain sign-in was opened from, for analytics. */
+  openGate: (kind: GateKind, source?: SignInSurface) => void;
   closeGate: () => void;
   /** Screens register what the gate should do once it clears. */
   gateActions: MutableRefObject<Partial<Record<GateKind, () => void>>>;
+  gateSource: MutableRefObject<SignInSurface>;
 }
 
 export const JourneyContext = createContext<JourneyContextValue | null>(null);

@@ -1,28 +1,122 @@
-/** The two gate steps: sign in, then Praxis Plus. Both are previews; nothing leaves the browser. */
+/**
+ * The gate steps: the introduction to a Premium feature, sign in, then Premium. Value first, then
+ * the commitment. Sign-in and payment are previews; nothing leaves the browser and no charge is made.
+ */
 import { useState } from "react";
 import { Apple, Check, Lock } from "lucide-react";
-import { Field, PrimaryButton, QuietButton } from "./controls";
+import { premiumAmount, premiumPrice, PREMIUM } from "../../core/config";
+import type { SignInMethod } from "../lib/journeyContext";
+import { Field, PrimaryButton, QuietButton, TextButton } from "./controls";
 
 const SIGNIN_MS = 900;
 const PAY_MS = 1200;
 
-type Way = "apple" | "google" | "email";
+/* ------------------------------------------------------------- introductions */
+
+export type PremiumFeature = "style_dna" | "tryon";
+
+const DNA_GETS = [
+  "Looks shaped around you, not only the occasion",
+  "Your colours, read from a photo",
+  "Your fit and taste, remembered",
+  "One profile you can review and change",
+  "Your own pieces, worked into your looks",
+];
+
+function Gets({ items }: { items: string[] }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {items.map((b) => (
+        <li key={b} className="flex items-start gap-2 text-[15px] leading-6">
+          <Check size={16} strokeWidth={1.5} aria-hidden="true" className="mt-1 shrink-0 text-[var(--accent)]" />
+          {b}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function IntroHead({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div>
+      <p className="a-label flex items-center gap-3 text-[var(--muted)]">
+        {eyebrow}
+        <span className="a-tag">{PREMIUM.name}</span>
+      </p>
+      <h2 className="a-display mt-3">{title}</h2>
+    </div>
+  );
+}
+
+function IntroFoot({ onStart, onLater, start }: { onStart: () => void; onLater: () => void; start: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="flex items-baseline gap-2">
+        <span className="text-[15px]">{PREMIUM.name}</span>
+        <span className="a-mono text-[15px] text-[var(--muted)]">{premiumPrice()}</span>
+        <span className="text-[13px] text-[var(--muted)]">Cancel any time.</span>
+      </p>
+      <div className="flex items-center gap-2">
+        <PrimaryButton onClick={onStart}>{start}</PrimaryButton>
+        <TextButton onClick={onLater}>Not now</TextButton>
+      </div>
+    </div>
+  );
+}
+
+/** Style DNA, explained before anything is asked: what it gives, what it takes, how long, the price. */
+export function DnaIntro({ onStart, onLater }: { onStart: () => void; onLater: () => void }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <IntroHead eyebrow="Style DNA" title="Your style. More personal." />
+      <Gets items={DNA_GETS} />
+      <div>
+        <p className="a-label text-[var(--muted)]">What it takes</p>
+        <p className="mt-2 text-[15px] leading-6">Four short steps: a photo of your face, or a sample instead, then your fit, your week and your taste. About two minutes.</p>
+      </div>
+      <p className="text-[13px] leading-5 text-[var(--muted)]">Style DNA is in preview. It keeps your profile today; looks built on it come next.</p>
+      <IntroFoot onStart={onStart} onLater={onLater} start="Start" />
+    </div>
+  );
+}
+
+/** Try-on, explained honestly before anything is asked. The picture is the look on a model, and says so. */
+export function TryOnIntro({ image, title, onStart, onLater }: { image: string | null; title: string | null; onStart: () => void; onLater: () => void }) {
+  return (
+    <div className="flex flex-col gap-6">
+      <IntroHead eyebrow="Try-on" title="See it on you." />
+      <div className="flex items-start gap-4">
+        {image ? (
+          <figure className="a-intro-print shrink-0">
+            <img src={image} alt={title ? `${title}, on a model` : "The look, on a model"} draggable={false} />
+            <figcaption className="a-label mt-2 text-[var(--muted)]">On a model</figcaption>
+          </figure>
+        ) : null}
+        <p className="text-[15px] leading-6">When try-on is ready, I’ll show this look on a photo of you, so you can judge the fit and the colours before you buy.</p>
+      </div>
+      <p className="text-[13px] leading-5 text-[var(--muted)]">Try-on is in preview. Until it is ready you’ll see the look on a model, never a picture made to look like you.</p>
+      <IntroFoot onStart={onStart} onLater={onLater} start="Continue" />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ sign in */
 
 interface SignInProps {
-  onSignedIn: (email?: string) => void;
+  onSignedIn: (email: string | undefined, method: SignInMethod) => void;
 }
 
 export function SignInStep({ onSignedIn }: SignInProps) {
-  const [busy, setBusy] = useState<Way | null>(null);
+  const [busy, setBusy] = useState<SignInMethod | null>(null);
   const [email, setEmail] = useState("");
 
-  const start = (way: Way) => {
+  const start = (way: SignInMethod) => {
     if (busy) return;
     setBusy(way);
-    window.setTimeout(() => onSignedIn(way === "email" ? email.trim() || undefined : undefined), SIGNIN_MS);
+    window.setTimeout(() => onSignedIn(way === "email" ? email.trim() || undefined : undefined, way), SIGNIN_MS);
   };
 
-  const label = (way: Way, text: string) => (busy === way ? "Signing you in" : text);
+  const label = (way: SignInMethod, text: string) => (busy === way ? "Signing you in" : text);
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,7 +146,9 @@ export function SignInStep({ onSignedIn }: SignInProps) {
   );
 }
 
-const BENEFITS = ["See every look on you", "Keep your Style DNA", "Start straight from the occasion next time"];
+/* ------------------------------------------------------------------ Premium */
+
+const BENEFITS = ["Style DNA: your colours, fit and taste in one profile", "Try-on, in preview while it is built"];
 
 function groups(v: string): string {
   return v.replace(/\D/g, "").slice(0, 16).replace(/(\d{4})(?=\d)/g, "$1 ");
@@ -63,16 +159,16 @@ function expiry(v: string): string {
   return d.length > 2 ? `${d.slice(0, 2)} / ${d.slice(2)}` : d;
 }
 
-interface PlusProps {
+interface PremiumProps {
   onPaid: () => void;
 }
 
-/** The parts of the Plus step that must always be visible: benefits, price, Apple Pay. */
-export function PlusTop({ busy, onApplePay }: { busy: "apple" | "card" | null; onApplePay: () => void }) {
+/** The parts of the Premium step that must always be visible: what it includes, the price, Apple Pay. */
+export function PremiumTop({ busy, onApplePay }: { busy: "apple" | "card" | null; onApplePay: () => void }) {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="a-display">Praxis Plus</h2>
+        <h2 className="a-display">{PREMIUM.name}</h2>
         <ul className="mt-4 flex flex-col gap-2">
           {BENEFITS.map((b) => (
             <li key={b} className="flex items-center gap-2 text-[15px] leading-6">
@@ -84,8 +180,8 @@ export function PlusTop({ busy, onApplePay }: { busy: "apple" | "card" | null; o
       </div>
       <div>
         <p className="flex items-baseline gap-2">
-          <span className="a-display a-display-md">$9</span>
-          <span className="text-[15px] text-[var(--muted)]">a month</span>
+          <span className="a-display a-display-md">{premiumAmount()}</span>
+          <span className="text-[15px] text-[var(--muted)]">a {PREMIUM.period}</span>
         </p>
         <p className="mt-1 text-[13px] leading-5 text-[var(--muted)]">Cancel any time.</p>
       </div>
@@ -104,7 +200,7 @@ export function PlusTop({ busy, onApplePay }: { busy: "apple" | "card" | null; o
 }
 
 /** The card form under Apple Pay; this part may scroll on a short phone. */
-export function PlusCard({ busy, onPay }: { busy: "apple" | "card" | null; onPay: () => boolean }) {
+export function PremiumCard({ busy, onPay }: { busy: "apple" | "card" | null; onPay: () => boolean }) {
   const [card, setCard] = useState("");
   const [exp, setExp] = useState("");
   const [cvc, setCvc] = useState("");
@@ -144,7 +240,7 @@ export function PlusCard({ busy, onPay }: { busy: "apple" | "card" | null; onPay
         </p>
       ) : null}
       <PrimaryButton type="submit" className="w-full" disabled={busy !== null} aria-busy={busy === "card"}>
-        {busy === "card" ? "One moment" : "Pay $9"}
+        {busy === "card" ? "One moment" : `Pay ${premiumAmount()}`}
       </PrimaryButton>
       <p className="flex items-center gap-1.5 text-[12px] leading-4 text-[var(--muted)]">
         <Lock size={12} strokeWidth={1.5} aria-hidden="true" />
@@ -155,7 +251,7 @@ export function PlusCard({ busy, onPay }: { busy: "apple" | "card" | null; onPay
 }
 
 /** Owns the paying state for both routes so the header and the card share it. */
-export function usePlusPayment({ onPaid }: PlusProps) {
+export function usePremiumPayment({ onPaid }: PremiumProps) {
   const [busy, setBusy] = useState<"apple" | "card" | null>(null);
   const pay = (route: "apple" | "card") => {
     if (busy) return false;

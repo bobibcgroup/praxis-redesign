@@ -4,6 +4,7 @@
  * three looks), save the image, copy the link.
  */
 import { useEffect, useState } from "react";
+import { track } from "../../core/analytics";
 import type { Look } from "../../shared/catalog";
 import { renderLookCard } from "../lib/card";
 import { askFriend, copyLink, download, shareImage, sharedUrl } from "../lib/share";
@@ -14,6 +15,8 @@ interface Props {
   look: Look;
   eyebrow: string;
   occasion: string;
+  /** The recommendation the look came from, for analytics. */
+  recommendationId?: string;
   open: boolean;
   onClose: () => void;
 }
@@ -22,7 +25,7 @@ function fileName(look: Look): string {
   return `praxis-${look.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
 }
 
-export function ShareSheet({ look, eyebrow, occasion, open, onClose }: Props) {
+export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, onClose }: Props) {
   const [card, setCard] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -47,24 +50,31 @@ export function ShareSheet({ look, eyebrow, occasion, open, onClose }: Props) {
 
   useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
 
+  /** Counted only when the share went somewhere: never on a cancelled or failed attempt. */
+  const shared = (channel: "story" | "friend" | "image" | "link") => track("look_shared", { recommendationId, outfitId: look.id, channel });
+
   const story = async () => {
     if (!card) return;
     const outcome = await shareImage(card, fileName(look), `My ${occasion} look, styled by Praxis.`, sharedUrl("story"));
+    if (outcome === "shared" || outcome === "saved") shared("story");
     if (outcome === "saved") setNote("Saved. Post it to your story from your photos.");
   };
 
   const ask = async () => {
-    await askFriend(`Which one should I wear for ${occasion}? Help me choose.`, sharedUrl("friend"));
+    const outcome = await askFriend(`Which one should I wear for ${occasion}? Help me choose.`, sharedUrl("friend"));
+    if (outcome === "shared") shared("friend");
   };
 
   const save = () => {
     if (!card) return;
     download(card, fileName(look));
+    shared("image");
     setNote("Saved to your downloads.");
   };
 
   const copy = async () => {
     const outcome = await copyLink(sharedUrl("link"));
+    if (outcome === "copied") shared("link");
     setNote(outcome === "copied" ? "Link copied." : "I couldn’t copy the link.");
   };
 
@@ -93,7 +103,7 @@ export function ShareSheet({ look, eyebrow, occasion, open, onClose }: Props) {
       <div className="flex flex-col items-center gap-4">
         <div className="a-card-preview">{preview ? <img src={preview} alt={`${look.title}, the image you will share`} /> : null}</div>
         <p className="max-w-[34ch] text-center text-[13px] leading-5 text-[var(--muted)]" aria-live="polite">
-          {note ?? "Made for Instagram stories. Your friends see all three looks and can get their own."}
+          {note ?? "Made for Instagram stories. Your friends see all the looks and can get their own."}
         </p>
       </div>
     </Sheet>
