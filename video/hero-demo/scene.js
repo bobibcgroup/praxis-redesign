@@ -18,7 +18,9 @@
  */
 (function () {
   const params = new URLSearchParams(location.search);
-  const MOBILE = params.get("layout") === "mobile";
+  const LAYOUT = params.get("layout") ?? "desktop";
+  const MOBILE = LAYOUT === "mobile";
+  const DEVICE = LAYOUT === "device";
   const DURATION = 8.5;
 
   // ---------- content ----------
@@ -41,7 +43,13 @@
   const PIECES = ["Blazer over a fitted knit", "Tailored trousers", "Chelsea boots"];
 
   // ---------- layout (CSS px; rendered at 2x) ----------
-  const L = MOBILE ? mobileLayout() : desktopLayout();
+  const L = DEVICE ? deviceLayout() : MOBILE ? mobileLayout() : desktopLayout();
+
+  // Colours. The device cut sits in the warmer homepage composition, so it takes the warmer palette.
+  const C = DEVICE
+    ? { stage: "#f4ede1", text: "#25221e", muted: "#6e665d", rule: "#d9ccba", ink: "#292620", inkFg: "#fff9f0", chip: "#faf5ed", print: "#e8d9c5" }
+    : { stage: "#e8e3d6", text: "#1e1d1a", muted: "#6b665c", rule: "#dcd5c6", ink: "#1e1d1a", inkFg: "#f1ede1", chip: "#f1ede1", print: "#e3d8c6" };
+  for (const [k, v] of Object.entries(C)) document.documentElement.style.setProperty(`--${k}`, v);
 
   function desktopLayout() {
     const W = 540, H = 585, P = 28;
@@ -68,6 +76,43 @@
       printLabel: { gap: 14, size: 11, title: 17 },
       hero, index, counter: true, chip: 28,
       col: { x: colX, w: colW, eyebrow: 58, title: 78, titleSize: 26, summary: 114, summarySize: 12, summaryLh: 17, note: 154, noteSize: 13.5, noteLh: 20, rows: 222, rowH: 42, rowSize: 14, box: 15 },
+      thumbLabel: { size: 9 },
+      touch: 44,
+    };
+  }
+
+  // A phone screen (9:19.5) for the phone in the homepage composition: the PRAXIS bar stays on top,
+  // the home with its headline and cards, then the same story with everything sized to read small.
+  function deviceLayout() {
+    const W = 360, H = 780, P = 16, BAR = 56;
+    const inner = W - 2 * P;
+    const cw = (inner - 8) / 2, ch = 168;
+    const gridTop = 222;
+    const cards = [
+      { x: P, y: gridTop, w: cw, h: ch },
+      { x: P + cw + 8, y: gridTop, w: cw, h: ch },
+      { x: P, y: gridTop + ch + 8, w: cw, h: ch },
+      { x: P + cw + 8, y: gridTop + ch + 8, w: cw, h: ch },
+      { x: P, y: gridTop + 2 * (ch + 8), w: inner, h: 132 },
+    ];
+    const pw = (inner - 16) / 3;
+    const prints = [0, 1, 2].map((i) => ({ x: P + i * (pw + 8), y: 236, w: pw, h: 436 }));
+    const hero = { x: P, y: BAR + 16, w: 236, h: 352 };
+    const index = { x: 260, y: BAR + 16, w: 84, h: 352 };
+    const thumbs = [0, 1, 2].map((i) => ({ x: index.x + 14, y: index.y + 10 + i * 114, w: 56, h: 76 }));
+    return {
+      W, H, P, cards, prints, thumbs, bar: BAR,
+      full: { x: 0, y: BAR + 1, w: W, h: H - BAR - 1 },
+      home: { eyebrow: 80, title: 100, size: 34, lh: 40 },
+      occLabel: { y: 198, size: 11 },
+      cardName: 20, cardPad: 12,
+      eyebrow: { y: 84, size: 11 },
+      headline: { y: 104, size: 28, lh: 34, w: inner },
+      status: { y: 180, size: 13 },
+      progress: { y: 212, w: inner },
+      printLabel: { gap: 14, size: 10, title: 13 },
+      hero, index, counter: false, chip: 30,
+      col: { x: P, w: inner, eyebrow: 442, title: 460, titleSize: 26, summary: 496, summarySize: 12.5, summaryLh: 18, note: 540, noteSize: 15, noteLh: 22, rows: 618, rowH: 44, rowSize: 15, box: 16 },
       thumbLabel: { size: 9 },
       touch: 44,
     };
@@ -181,16 +226,17 @@
     resultLine: el("div", "abs serif", stage, "Three looks for dinner."),
   };
   header.buildEyebrow.textContent = "Dinner";
-  for (const e of [header.buildEyebrow, header.resultEyebrow]) text(e, { x: L.P, y: L.eyebrow.y, size: L.eyebrow.size, lh: 16, color: "#6b665c" });
-  for (const e of [header.buildLine, header.resultLine]) text(e, { x: L.P, y: L.headline.y, size: L.headline.size, lh: L.headline.lh });
-  for (const e of [header.working, header.ready]) text(e, { x: L.P, y: L.status.y, size: L.status.size, color: "#6b665c" });
+  for (const e of [header.buildEyebrow, header.resultEyebrow]) text(e, { x: L.P, y: L.eyebrow.y, size: L.eyebrow.size, lh: 16, color: C.muted });
+  for (const e of [header.buildLine, header.resultLine]) text(e, { x: L.P, y: L.headline.y, size: L.headline.size, lh: L.headline.lh, w: L.headline.w });
+  if (DEVICE) header.resultLine.innerHTML = "Your looks for <em>Dinner</em>";
+  for (const e of [header.working, header.ready]) text(e, { x: L.P, y: L.status.y, size: L.status.size, color: C.muted });
   place(header.track, { x: L.P, y: L.progress.y, w: L.progress.w, h: 1 });
-  header.track.style.background = "#dcd5c6";
+  header.track.style.background = C.rule;
   // The working segment lives inside the hairline, which clips it at both ends.
   header.track.appendChild(header.fill);
   header.track.style.overflow = "hidden";
   place(header.fill, { x: 0, y: 0, w: L.progress.w, h: 1 });
-  header.fill.style.background = "#1e1d1a";
+  header.fill.style.background = C.ink;
   header.fill.style.transformOrigin = "left center";
 
   const prints = LOOKS.map((look) => {
@@ -218,15 +264,15 @@
       return r;
     }),
   };
-  text(col.eyebrow, { x: L.col.x, y: L.col.eyebrow, size: L.eyebrow.size, lh: 16, color: "#6b665c" });
+  text(col.eyebrow, { x: L.col.x, y: L.col.eyebrow, size: L.eyebrow.size, lh: 16, color: C.muted });
   text(col.title, { x: L.col.x, y: L.col.title, size: L.col.titleSize, lh: Math.round(L.col.titleSize * 1.22), w: L.col.w });
-  text(col.summary, { x: L.col.x, y: L.col.summary, size: L.col.summarySize, lh: L.col.summaryLh, w: L.col.w, color: "#6b665c" });
+  text(col.summary, { x: L.col.x, y: L.col.summary, size: L.col.summarySize, lh: L.col.summaryLh, w: L.col.w, color: C.muted });
   text(col.note, { x: L.col.x, y: L.col.note, size: L.col.noteSize, lh: L.col.noteLh, w: L.col.w, italic: true });
   col.rows.forEach((r, i) => place(r, { x: L.col.x, y: L.col.rows + i * L.col.rowH, w: L.col.w, h: L.col.rowH }));
 
   const panel = el("div", "abs");
   place(panel, L.index);
-  panel.style.background = "#f1ede1";
+  panel.style.background = C.chip;
   panel.style.borderRadius = "2px";
   const thumbs = LOOKS.map((look, i) => {
     const c = el("div", "abs print");
@@ -235,7 +281,7 @@
     place(c, L.thumbs[i]);
     const label = el("div", "abs label", stage, look.label);
     const r = L.thumbs[i];
-    text(label, { x: L.index.x, y: r.y + r.h + 4, size: L.thumbLabel.size, lh: 12, w: L.index.w, color: i === PICK ? "#1e1d1a" : "#6b665c" });
+    text(label, { x: L.index.x, y: r.y + r.h + 4, size: L.thumbLabel.size, lh: 12, w: L.index.w, color: i === PICK ? C.ink : C.muted });
     label.style.textAlign = "center";
     return { c, label };
   });
@@ -243,7 +289,7 @@
   {
     const r = L.thumbs[PICK];
     place(underline, { x: r.x, y: r.y + r.h + 19, w: r.w, h: 1.5 });
-    underline.style.background = "#1e1d1a";
+    underline.style.background = C.ink;
     underline.style.transformOrigin = "center";
   }
 
@@ -255,9 +301,9 @@
     e.style.display = "flex";
     e.style.alignItems = "center";
     e.style.justifyContent = "center";
-    e.style.background = "#f1ede1";
+    e.style.background = C.chip;
     e.style.borderRadius = "2px";
-    e.style.color = "#1e1d1a";
+    e.style.color = C.ink;
   };
   const counter = L.counter ? el("div", "abs", stage, `<span style="opacity:0.35;display:flex">${CHEVRON("m15 18-6-6 6-6")}</span><span class="label" style="font-size:9px;margin:0 12px 0 14px">${PICK + 1} of 3</span>${CHEVRON("m9 18 6-6-6-6")}`) : null;
   const glass = el("div", "abs", stage, GLASS);
@@ -269,19 +315,40 @@
     label: el("div", "abs label", stage, "Where are you going?"),
     cards: OCCASIONS.map((o) => makeCard(o, stage)),
   };
-  occ.bg.style.background = "#e8e3d6";
+  occ.bg.style.background = C.stage;
   place(occ.bg, { x: 0, y: 0, w: L.W, h: L.H });
-  text(occ.label, { x: L.P, y: L.occLabel.y, size: L.occLabel.size, lh: 16, color: "#6b665c" });
+  text(occ.label, { x: L.P, y: L.occLabel.y, size: L.occLabel.size, lh: 16, color: C.muted });
   OCCASIONS.forEach((_, i) => place(occ.cards[i].c, L.cards[i]));
+  const home = L.home
+    ? {
+        eyebrow: el("div", "abs label", stage, "Your personal stylist"),
+        title: el("div", "abs serif", stage, "Know what to wear. <em>Every time.</em>"),
+      }
+    : null;
+  if (home) {
+    text(home.eyebrow, { x: L.P, y: L.home.eyebrow, size: 11, lh: 16, color: C.muted });
+    text(home.title, { x: L.P, y: L.home.title, size: L.home.size, lh: L.home.lh, w: L.W - 2 * L.P - 40 });
+  }
   const ring = el("div", "abs");
   ring.style.borderRadius = "3px";
-  ring.style.boxShadow = "0 0 0 2px #e8e3d6, 0 0 0 3px #1e1d1a";
+  ring.style.boxShadow = `0 0 0 2px ${C.stage}, 0 0 0 3px ${C.ink}`;
 
+  // The app's top bar on the phone screen: the wordmark centred over a hairline, the menu at the right.
+  if (L.bar) {
+    const bar = el("div", "abs");
+    place(bar, { x: 0, y: 0, w: L.W, h: L.bar + 1 });
+    bar.style.background = C.stage;
+    bar.style.borderBottom = `1px solid ${C.rule}`;
+    const mark = el("div", "abs serif", bar, "Praxis");
+    Object.assign(mark.style, { left: "0", width: L.W + "px", top: "0", lineHeight: L.bar + "px", textAlign: "center", fontSize: "17px", letterSpacing: "0.36em", textTransform: "uppercase", textIndent: "0.36em" });
+    const menu = el("div", "abs", bar, `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>`);
+    Object.assign(menu.style, { right: "16px", top: (L.bar - 20) / 2 + "px", height: "20px" });
+  }
   const touch1 = el("div", "abs touch");
   const touch2 = el("div", "abs touch");
 
   // ---------- the timeline ----------
-  const full = { x: 0, y: 0, w: L.W, h: L.H };
+  const full = L.full ?? { x: 0, y: 0, w: L.W, h: L.H };
   const center = (r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 });
 
   function seek(t) {
@@ -295,6 +362,7 @@
     const pushOrigin = center(L.cards[0]);
     occ.bg.style.opacity = t < 1.6 ? 1 - inOut(span(t, 1.5, 1.95)) : t >= 8.0 ? veil : 0;
     occ.label.style.opacity = occOn;
+    if (home) home.eyebrow.style.opacity = home.title.style.opacity = occOn;
     const origin = `${pushOrigin.x}px ${pushOrigin.y}px`;
     for (let i = 1; i < 5; i++) {
       const c = occ.cards[i];
@@ -374,7 +442,7 @@
       p.img.style.objectPosition = `center ${lerp(42, 40, moved)}%`;
       const lab = Math.min(out(span(t, 3.3 + i * 0.16, 3.8 + i * 0.16)), 1 - out(span(t, 5.4, 5.55))) || out(span(t, 7.45 + i * 0.06, 7.8 + i * 0.06));
       const lr = L.prints[i];
-      text(p.label, { x: lr.x, y: lr.y + lr.h + L.printLabel.gap, size: L.printLabel.size, lh: 16, color: "#6b665c" });
+      text(p.label, { x: lr.x, y: lr.y + lr.h + L.printLabel.gap, size: L.printLabel.size, lh: 16, color: C.muted });
       text(p.title, { x: lr.x, y: lr.y + lr.h + L.printLabel.gap + 18, size: L.printLabel.title, lh: L.printLabel.title + 6 });
       p.label.style.opacity = lab;
       p.title.style.opacity = lab;

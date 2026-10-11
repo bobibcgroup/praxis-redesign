@@ -8,14 +8,14 @@
       html,
       body {
         margin: 0;
-        background: #e8e3d6;
+        background: var(--stage);
         -webkit-font-smoothing: antialiased;
       }
       #stage {
         position: relative;
         overflow: hidden;
-        background: #e8e3d6;
-        color: #1e1d1a;
+        background: var(--stage);
+        color: var(--text);
         font-family: "Geist", system-ui, sans-serif;
       }
       #stage * {
@@ -71,7 +71,7 @@
       .print {
         overflow: hidden;
         border-radius: 2px;
-        background: #e3d8c6;
+        background: var(--print);
       }
       .print img {
         position: absolute;
@@ -90,15 +90,15 @@
       .row {
         display: flex;
         align-items: center;
-        border-bottom: 1px solid #dcd5c6;
+        border-bottom: 1px solid var(--rule);
       }
       .box {
         flex: none;
         display: grid;
         place-items: center;
         border-radius: 2px;
-        background: #1e1d1a;
-        color: #f1ede1;
+        background: var(--ink);
+        color: var(--inkFg);
       }
     </style>
   </head>

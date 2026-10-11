@@ -3,7 +3,7 @@
  * finished files to public/media. MP4 (H.264) first, and a VP9 WebM for
  * browsers built without H.264 (open source Chromium on Linux, for one).
  *
- *   node video/hero-demo/render.mjs                 both layouts, every file
+ *   node video/hero-demo/render.mjs                 every layout (desktop, mobile, device), every file
  *   node video/hero-demo/render.mjs --stills 0,2.5,4.5,6.5   only PNG stills, for checking
  *   node video/hero-demo/render.mjs --layout mobile
  *
@@ -31,7 +31,7 @@ const flag = (name) => {
   const i = args.indexOf(name);
   return i === -1 ? null : args[i + 1];
 };
-const layouts = flag("--layout") ? [flag("--layout")] : ["desktop", "mobile"];
+const layouts = flag("--layout") ? [flag("--layout")] : ["desktop", "mobile", "device"];
 const stills = flag("--stills")?.split(",").map(Number);
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE ?? "playwright").catch(() => import("/opt/node22/lib/node_modules/playwright/index.mjs"));
@@ -68,7 +68,7 @@ for (const layout of layouts) {
   const { w, h, duration } = await page.evaluate(() => ({ ...window.size, duration: window.DURATION }));
   await page.setViewportSize({ width: w, height: h });
   const stage = page.locator("#stage");
-  const name = layout === "mobile" ? "praxis-hero-demo-mobile" : "praxis-hero-demo";
+  const name = { desktop: "praxis-hero-demo", mobile: "praxis-hero-demo-mobile", device: "praxis-hero-demo-device" }[layout];
 
   if (stills) {
     await mkdir(WORK, { recursive: true });
