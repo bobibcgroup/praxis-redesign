@@ -143,6 +143,14 @@ Layout rules: on phones the primary action is pinned at the bottom of the column
 
 Motion is `motion/react` only, transform and opacity only, and every animation respects `prefers-reduced-motion`.
 
+## Tests
+
+`npm test` runs the unit tests in `src/core/__tests__`. `npm run build && npm run e2e` runs the twelve customer scenarios, accessibility, layout and load checks in Chromium on desktop and phone (`e2e/scenarios.mjs`); results go to `e2e/results`. See `docs/testing-report.md`.
+
+## Documentation
+
+`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`.
+
 ## Structure
 
 ```

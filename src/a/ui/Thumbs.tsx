@@ -19,7 +19,7 @@ interface Props {
 
 export function Thumbs({ looks, activeId, onPick, reduced, vertical = false }: Props) {
   return (
-    <ul className={vertical ? "a-thumbs a-thumbs-vertical" : "a-thumbs"} role="group" aria-label={looks.length === 3 ? "The three looks" : "The looks"}>
+    <ul className={vertical ? "a-thumbs a-thumbs-vertical" : "a-thumbs"} aria-label={looks.length === 3 ? "The three looks" : "The looks"}>
       <AnimatePresence initial={false}>
         {looks.map((look) => {
           const active = look.id === activeId;

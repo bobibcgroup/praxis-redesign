@@ -109,7 +109,7 @@ function sizeStock(v: unknown): Record<string, Availability> | undefined {
 }
 
 /** A way to buy is accepted only when it can be followed: an https link, or a named integration. */
-function purchaseRoute(v: unknown): PurchaseRoute | undefined {
+export function purchaseRoute(v: unknown): PurchaseRoute | undefined {
   if (!isObj(v)) return undefined;
   if ((v.kind === "retailer_site" || v.kind === "affiliate") && typeof v.url === "string" && /^https:\/\//i.test(v.url) && safeUrl(v.url)) return { kind: v.kind, url: v.url };
   if ((v.kind === "retailer_integration" || v.kind === "native") && isStr(v.integrationId, 80)) return { kind: v.kind, integrationId: v.integrationId };

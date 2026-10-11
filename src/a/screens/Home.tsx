@@ -39,14 +39,14 @@ function StyleDna() {
         <img {...photoSet(DNA_IMAGE)} sizes="(min-width: 1024px) 40vw, 100vw" alt="Folds of tailoring cloth in camel, houndstooth and brown" loading="lazy" decoding="async" />
       </div>
       <div className="a-dna-copy">
-        <p className="a-label flex items-center gap-3 text-[var(--muted)]">
+        <p className="a-label flex items-center gap-3 text-[var(--text)]">
           Introducing Style DNA
           <span className="a-tag">Premium</span>
         </p>
         <h2 id="dna-title" className="a-display a-display-md mt-4">
           Your style. More personal.
         </h2>
-        <p className="mt-4 max-w-[44ch] text-[16px] leading-6 text-[var(--muted)]">
+        <p className="mt-4 max-w-[44ch] text-[16px] leading-6 text-[var(--text)]">
           {store.dna ? "Your Style DNA is saved. You can look it over or start again at any time." : "Tell me your colours, your fit and your taste once, and I’ll keep them together in your Style DNA. You can change them at any time."}
         </p>
         {store.dna ? (

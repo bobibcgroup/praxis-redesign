@@ -15,7 +15,7 @@ import { TopBar } from "../ui/TopBar";
 
 function Line({ label, value, action }: { label: string; value: string; action?: React.ReactNode }) {
   return (
-    <div className="a-piece">
+    <div className="a-piece" role="listitem">
       <span>
         <span className="block text-[15px] leading-6">{label}</span>
         <span className="block text-[13px] leading-5 text-[var(--muted)]">{value}</span>

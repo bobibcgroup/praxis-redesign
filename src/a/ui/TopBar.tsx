@@ -101,7 +101,7 @@ function Spine({ steps }: { steps: SpineStep[] }) {
       <ol className="flex items-center gap-3 sm:gap-5">
         {steps.map((s) => {
           /* Where he is reads at once: the current step in ink with a hairline under it, the rest quiet. */
-          const color = s.state === "current" ? "a-spine-current text-[var(--text)]" : s.state === "done" ? "text-[var(--muted)]" : "text-[var(--muted)] opacity-60";
+          const color = s.state === "current" ? "a-spine-current text-[var(--text)]" : s.state === "done" ? "text-[var(--muted)]" : "text-[var(--muted)]";
           return (
             <li key={s.label} aria-current={s.state === "current" ? "step" : undefined}>
               {s.to && s.state === "done" ? (

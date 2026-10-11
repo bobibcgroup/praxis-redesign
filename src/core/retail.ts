@@ -5,6 +5,7 @@
  * and says the pieces cannot be bought. A real retailer feed replaces it behind the same interface.
  */
 import type { Availability, ProductRef, PurchaseRoute, Slot, StylingResponse } from "./contracts";
+import { purchaseRoute } from "./validate";
 
 /** What a retailer says about one product, right now. Fields left out keep what the recommendation said. */
 export interface RetailerProductInfo {
@@ -104,8 +105,10 @@ function mergeProduct(p: ProductRef, i: RetailerProductInfo): ProductRef {
   if (i.availability) merged.availability = i.availability;
   if (i.availableSizes?.length) merged.availableSizes = [...i.availableSizes];
   if (i.sizeAvailability) merged.sizeAvailability = { ...i.sizeAvailability };
-  if (i.productUrl) merged.productUrl = i.productUrl;
-  if (i.purchase) merged.purchase = i.purchase;
+  // A feed's links are checked like an engine's: only an https link out is ever followed.
+  if (i.productUrl && /^https:\/\//i.test(i.productUrl)) merged.productUrl = i.productUrl;
+  const route = purchaseRoute(i.purchase);
+  if (route) merged.purchase = route;
   if (i.deliveryEstimate) merged.deliveryEstimate = i.deliveryEstimate;
   if (i.lastUpdatedAt) merged.lastUpdatedAt = i.lastUpdatedAt;
   return merged;

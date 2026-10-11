@@ -151,3 +151,18 @@ describe("processing states", () => {
     expect(processingReducer(idle, { type: "CANCEL" })).toBe(idle);
   });
 });
+
+describe("retailer links", () => {
+  it("follows only https purchase links from a feed", async () => {
+    const { matchProducts } = await import("../retail");
+    const response = { status: "completed", outfits: [{ garments: [{ source: "retail", product: { productId: "a" } }, { source: "retail", product: { productId: "b" } }] }] } as never;
+    const out = (await matchProducts(response, {
+      lookup: async () => [
+        { productId: "a", purchase: { kind: "retailer_site", url: "javascript:alert(1)" } },
+        { productId: "b", purchase: { kind: "affiliate", url: "https://shop.example/b" } },
+      ],
+    } as never)) as never as { outfits: { garments: { product: { purchase?: { kind: string } } }[] }[] };
+    expect(out.outfits[0].garments[0].product.purchase).toBeUndefined();
+    expect(out.outfits[0].garments[1].product.purchase?.kind).toBe("affiliate");
+  });
+});
