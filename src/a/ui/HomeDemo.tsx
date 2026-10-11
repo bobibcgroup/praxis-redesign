@@ -4,17 +4,17 @@
  * video/hero-demo with the app's own photos, type and copy, so the page only plays a file.
  *
  * It plays on a phone, as the customer would hold Praxis, layered over two photographs: the cloth of a
- * tailored jacket behind, the dinner table beside. The phone's bar and Save look button are part of the
- * picture, not controls. MP4 first, WebM for browsers without H.264. Muted, no controls, loops, plays
+ * tailored jacket behind, the dinner table beside. The film is the phone screen cut (9:19.5), so it
+ * fills the screen exactly. MP4 first, WebM for browsers without H.264. Muted, no controls, loops, plays
  * only while on screen. The poster shows while the file loads, if it cannot play, and instead of the
  * film when motion is reduced. A pause control appears for keyboard users only.
  */
 import { useEffect, useRef, useState } from "react";
-import { Bookmark, Pause, Play } from "lucide-react";
+import { Pause, Play } from "lucide-react";
 import { photoSet } from "./OccasionCards";
 
-/** The phone cut of the film (4:5), shown under the phone's bar. */
-const CUT = { src: "/media/praxis-hero-demo-mobile", poster: "/media/praxis-hero-demo-mobile-poster.webp", width: 720, height: 900 };
+/** The phone screen cut of the film, PRAXIS bar included. */
+const CUT = { src: "/media/praxis-hero-demo-device", poster: "/media/praxis-hero-demo-device-poster.webp", width: 720, height: 1560 };
 
 export function HomeDemo({ reduced }: { reduced: boolean }) {
   const cut = CUT;
@@ -83,17 +83,7 @@ export function HomeDemo({ reduced }: { reduced: boolean }) {
         <img {...photoSet("/images/home/dinner")} sizes="(min-width: 1024px) 20vw, 40vw" alt="" decoding="async" />
       </span>
       <span className="a-phone-device">
-        <span className="a-phone-screen">
-          <span className="a-phone-bar" aria-hidden="true">
-            <span className="a-phone-mark">PRAXIS</span>
-            <span className="a-phone-menu" />
-          </span>
-          <span className="a-phone-film">{film}</span>
-          <span className="a-phone-save" aria-hidden="true">
-            <Bookmark size={13} strokeWidth={1.5} />
-            Save look
-          </span>
-        </span>
+        <span className="a-phone-screen">{film}</span>
       </span>
       {still ? null : (
         <button type="button" onClick={toggle} className="a-demo-toggle" aria-label={held ? "Play the demo" : "Pause the demo"}>

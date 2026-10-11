@@ -684,7 +684,7 @@
   top: 0;
   bottom: 0;
   display: block;
-  aspect-ratio: 9 / 18.2;
+  aspect-ratio: 9 / 19;
   padding: 2.4%;
   border-radius: 13% / 6.4%;
   background: #1f1c18;
@@ -692,76 +692,22 @@
   transform: translateX(-38%) rotate(3deg);
 }
 
-/* The screen is a picture of the light app in either mode, so its colours are fixed. */
+/* The screen is the film; its own background shows only while it loads. */
 [data-concept="a"] .a-phone-screen {
-  display: flex;
-  flex-direction: column;
+  display: block;
   height: 100%;
   overflow: hidden;
-  border-radius: 11% / 5.4%;
-  /* The film's own background, so the screen reads as one surface. */
-  background: #e8e3d5;
-  color: #25221e;
+  border-radius: 11% / 5.2%;
+  background: #f1e9dc;
 }
 
-[data-concept="a"] .a-phone-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  flex: none;
-  height: 13%;
-  padding-top: 5%;
-  border-bottom: 1px solid #d9ccba;
-}
-
-[data-concept="a"] .a-phone-mark {
-  font-family: var(--font-display);
-  font-size: clamp(11px, 1.1vw, 15px);
-  letter-spacing: 0.32em;
-}
-
-[data-concept="a"] .a-phone-menu {
-  position: absolute;
-  right: 9%;
-  top: 58%;
-  width: 7%;
-  height: 7px;
-  border-top: 1px solid currentColor;
-  border-bottom: 1px solid currentColor;
-}
-
-[data-concept="a"] .a-phone-film {
-  display: block;
-  flex: none;
-  aspect-ratio: 4 / 5;
-  margin: auto 0;
-  overflow: hidden;
-}
-
-[data-concept="a"] .a-phone-film video,
-[data-concept="a"] .a-phone-film img {
+[data-concept="a"] .a-phone-screen video,
+[data-concept="a"] .a-phone-screen img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
   pointer-events: none;
-}
-
-[data-concept="a"] .a-phone-save {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  flex: none;
-  height: 7.5%;
-  margin: 0 7% 8%;
-  border-radius: 2px;
-  background: #292620;
-  color: #fff9f0;
-  font-size: clamp(9px, 0.85vw, 12px);
-  letter-spacing: 0.02em;
 }
 
 [data-concept="a"] .a-demo-toggle {
