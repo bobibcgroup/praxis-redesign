@@ -1,6 +1,6 @@
 # China occasion photos
 
-All from Unsplash, free to use under the Unsplash License (https://unsplash.com/license). Cropped to 2:3 and resized; no other changes.
+All from Unsplash, free to use under the Unsplash License (https://unsplash.com/license). Cropped to 4:3 and resized; no other changes.
 
 | Card | Photo | Photographer | Taken in |
 | --- | --- | --- | --- |
