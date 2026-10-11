@@ -1,16 +1,20 @@
 /**
- * The country picker behind the home's small "Location" line. It changes the occasion photos only:
+ * The country picker behind the home's small "Location" line. It lists only the countries in the photo
+ * registry (src/config/occasionCollections.ts); one still waiting for photos says so. It changes the occasion photos only:
  * never the language, prices, questions or looks. A chosen country is kept in this browser until
  * Automatic is chosen again. Searchable, keyboard friendly, and a bottom sheet on a phone.
  */
 import { useMemo, useState } from "react";
 import { Check } from "lucide-react";
 import { COUNTRY_COLLECTIONS } from "../../config/occasionCollections";
-import { COUNTRY_CODES, countryName } from "../../shared/countries";
+import { countryName } from "../../shared/countries";
 import { resolveCountry, useCountry } from "../lib/country";
 import { Sheet } from "./Sheet";
 
-const ALL = COUNTRY_CODES.map((code) => ({ code, name: countryName(code) })).sort((a, b) => a.name.localeCompare(b.name, "en"));
+/* Only the countries Praxis has, or is preparing, photos for: the registry, not the whole world. */
+const ALL = Object.keys(COUNTRY_COLLECTIONS)
+  .map((code) => ({ code, name: COUNTRY_COLLECTIONS[code].name }))
+  .sort((a, b) => a.name.localeCompare(b.name, "en"));
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 export function CountrySheet({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -54,13 +58,13 @@ export function CountrySheet({ open, onClose }: { open: boolean; onClose: () => 
       <ul className="a-country-list mt-3" aria-label="Countries">
         {shown.map((c) => {
           const current = manual && resolution.countryCode === c.code;
-          const own = COUNTRY_COLLECTIONS[c.code]?.status === "active";
+          const coming = COUNTRY_COLLECTIONS[c.code].status !== "active";
           return (
             <li key={c.code}>
               <button type="button" className="a-country-row a-transition" aria-pressed={current} onClick={() => pick(c.code)}>
                 <span>
                   {c.name}
-                  {own ? <span className="hint">Own photos</span> : null}
+                  {coming ? <span className="hint">Photos to come</span> : null}
                 </span>
                 {current ? <Check size={16} strokeWidth={1.5} aria-hidden="true" /> : null}
               </button>

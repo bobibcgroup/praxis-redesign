@@ -737,6 +737,8 @@ for (const device of ["desktop", "phone"]) {
     check((await location(p)).includes("Lebanon"), "detected as Lebanon");
     await p.locator(".a-home-location").click();
     const sheet = p.getByRole("dialog", { name: "Location" });
+    const listed = await sheet.getByRole("list", { name: "Countries" }).getByRole("button").allInnerTexts();
+    check(listed.length === 36 && listed.some((t) => t.startsWith("Poland")) && !listed.some((t) => t.startsWith("Chile")), `only the countries Praxis covers are listed (${listed.length})`);
     await sheet.getByRole("searchbox").fill("pol");
     await shot("picker");
     await sheet.getByRole("button", { name: "Poland" }).click();
