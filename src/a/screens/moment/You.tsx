@@ -5,7 +5,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { track } from "../../../core/analytics";
-import { rememberWardrobeItem } from "../../../core/data";
+import { rememberWardrobeItem, setWardrobePhoto, wardrobeEntries, wardrobePhoto, type WardrobeEntry } from "../../../core/data";
+import { visibleTo } from "../../../core/account";
 import { anonymousId } from "../../../core/identity";
 import { shortHash } from "../../../core/ids";
 import { consentFor } from "../../../core/images";
@@ -58,13 +59,25 @@ export function YouItem() {
 
   if (!answers.spend) return <Navigate to={href("")} replace />;
 
+  const anon = anonymousId();
+  // Pieces already in the wardrobe for this slot come first, so they are used rather than added again.
+  const owned = slot ? wardrobeEntries().filter((e) => e.slot === slot && e.source !== "sample" && visibleTo({ owner: e.owner }, user?.id, anon)) : [];
+
   const finish = (name: string, image: string | null) => {
     if (!slot) return;
-    setOwnedItem({ slot, name, image });
+    const ref = wardrobeRef(slot, name, image ? "upload" : "sample", image ? shortHash(image) : "");
+    setOwnedItem({ slot, name, image, wardrobeItemId: ref.wardrobeItemId, source: ref.source });
     // Remembered by name and type for next time; the photo stays in this tab only.
-    rememberWardrobeItem(wardrobeRef(slot, name, image ? "upload" : "sample", image ? shortHash(image) : ""), { anonymousSessionId: anonymousId(), userId: user?.id });
-    track("wardrobe_item_added", { slot, source: image ? "upload" : "sample" });
+    rememberWardrobeItem(ref, { anonymousSessionId: anon, userId: user?.id });
+    if (image) setWardrobePhoto(ref.wardrobeItemId, image);
+    track("wardrobe_item_added", { slot, source: ref.source, surface: "looks" });
     go("moment/build", { item: slot, hero: null });
+  };
+
+  const useOwned = (e: WardrobeEntry) => {
+    setOwnedItem({ slot: e.slot, name: e.label, image: wardrobePhoto(e.wardrobeItemId), wardrobeItemId: e.wardrobeItemId, source: e.source, colour: e.colour });
+    track("wardrobe_item_used", { slot: e.slot });
+    go("moment/build", { item: e.slot, hero: null });
   };
 
   const onFile = async (file: File | undefined) => {
@@ -103,13 +116,16 @@ export function YouItem() {
             <ChoiceList
               label="How to add the piece"
               options={[
-                { id: "upload" as const, label: "Upload a photo" },
-                { id: "sample" as const, label: "Try it with an example", hint: sampleHint(slot) },
+                ...owned.map((e) => ({ id: `owned:${e.wardrobeItemId}`, label: e.label, hint: "From your wardrobe" })),
+                { id: "upload", label: "Upload a photo" },
+                { id: "sample", label: "Try it with an example", hint: sampleHint(slot) },
               ]}
               value={null}
-              onChange={(id) => {
+              onChange={(id: string) => {
                 setError(null);
-                if (id === "sample") finish(SAMPLE_ITEMS[slot], null);
+                const own = owned.find((e) => id === `owned:${e.wardrobeItemId}`);
+                if (own) useOwned(own);
+                else if (id === "sample") finish(SAMPLE_ITEMS[slot], null);
                 else if (consentFor("wardrobe_garment")) fileRef.current?.click();
                 else setAsking(true);
               }}

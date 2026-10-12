@@ -48,11 +48,13 @@ export const STORES: readonly StoreInfo[] = [
   { key: "praxis_dna_draft", where: "tab", holds: "A Style DNA not saved yet (no photo)", personal: "preferences" },
   { key: "praxis_lab_a_removed", where: "tab", holds: "A look just removed, for Undo", personal: "preferences" },
   { key: "praxis_lab_a_item", where: "tab", holds: "The piece you own, with its photo", personal: "photo" },
+  { key: "praxis_wardrobe_photos", where: "tab", holds: "Photos of pieces in your wardrobe", personal: "photo" },
   { key: "praxis_tryon_photo", where: "tab", holds: "Your See it on me photo", personal: "photo" },
   { key: "praxis_tryon_request", where: "tab", holds: "The last try-on request and its answer (no photo)", personal: "none" },
   { key: "praxis_visit", where: "tab", holds: "Whether this visit was counted", personal: "none" },
   { key: "praxis_events_once", where: "tab", holds: "Events already counted this visit", personal: "none" },
   { key: "praxis_sim", where: "tab", holds: "Test mode", personal: "none" },
+  { key: "praxis_errors_sent", where: "tab", holds: "Which errors this tab already reported (names only)", personal: "none" },
 ];
 
 const DAY = 86_400_000;
@@ -131,6 +133,7 @@ export function lastSelection(recommendationId: string, storage: () => Storage |
 
 export interface WardrobeEntry extends WardrobeItemRef {
   addedAt: string;
+  updatedAt?: string;
   owner: Owner;
 }
 
@@ -144,6 +147,7 @@ export function wardrobeEntries(storage: () => Storage | undefined = local): War
 /** Remembers a piece by name and type. Its photo is never written here. */
 export function rememberWardrobeItem(ref: WardrobeItemRef, owner: Owner, storage: () => Storage | undefined = local, now = new Date()): WardrobeEntry {
   const entry: WardrobeEntry = { wardrobeItemId: ref.wardrobeItemId, slot: ref.slot, label: ref.label, source: ref.source, addedAt: now.toISOString(), owner };
+  if (ref.colour) entry.colour = ref.colour;
   const rest = wardrobeEntries(storage).filter((e) => e.wardrobeItemId !== ref.wardrobeItemId);
   writeJson(storage(), WARDROBE_KEY, [entry, ...rest].slice(0, WARDROBE_LIMIT));
   return entry;
@@ -153,8 +157,51 @@ export function writeWardrobe(entries: readonly WardrobeEntry[], storage: () => 
   return writeJson(storage(), WARDROBE_KEY, entries);
 }
 
-export function forgetWardrobeItem(id: string, storage: () => Storage | undefined = local): void {
-  writeJson(storage(), WARDROBE_KEY, wardrobeEntries(storage).filter((e) => e.wardrobeItemId !== id));
+export function forgetWardrobeItem(id: string, storage: () => Storage | undefined = local, tab: () => Storage | undefined = session): boolean {
+  setWardrobePhoto(id, null, tab);
+  return writeJson(storage(), WARDROBE_KEY, wardrobeEntries(storage).filter((e) => e.wardrobeItemId !== id));
+}
+
+export type WardrobeEdit = Partial<Pick<WardrobeEntry, "label" | "slot" | "colour">>;
+
+/** Changes a piece's name, type or colour. Its id stays, so it stays the same piece. */
+export function updateWardrobeItem(id: string, edit: WardrobeEdit, storage: () => Storage | undefined = local, now = new Date()): WardrobeEntry | null {
+  const entries = wardrobeEntries(storage);
+  const at = entries.findIndex((e) => e.wardrobeItemId === id);
+  if (at < 0) return null;
+  const next: WardrobeEntry = { ...entries[at], updatedAt: now.toISOString() };
+  if (edit.label !== undefined) next.label = edit.label.trim().slice(0, 60) || entries[at].label;
+  if (edit.slot !== undefined) next.slot = edit.slot;
+  if (edit.colour !== undefined) {
+    const colour = edit.colour.trim().slice(0, 30);
+    if (colour) next.colour = colour;
+    else delete next.colour;
+  }
+  const out = [...entries];
+  out[at] = next;
+  return writeJson(storage(), WARDROBE_KEY, out) ? next : null;
+}
+
+/* ------------------------------------------------- wardrobe photos (tab) */
+
+const WARDROBE_PHOTOS_KEY = "praxis_wardrobe_photos";
+/** Photos are large; the tab keeps the most recent few. */
+const WARDROBE_PHOTOS_LIMIT = 8;
+
+/** A piece's photo, if it was added in this tab. Photos never reach the device store. */
+export function wardrobePhoto(id: string, tab: () => Storage | undefined = session): string | null {
+  return readJson<Record<string, string>>(tab(), WARDROBE_PHOTOS_KEY)?.[id] ?? null;
+}
+
+export function setWardrobePhoto(id: string, image: string | null, tab: () => Storage | undefined = session): boolean {
+  const all = { ...(readJson<Record<string, string>>(tab(), WARDROBE_PHOTOS_KEY) ?? {}) };
+  delete all[id];
+  const ids = Object.keys(all);
+  if (image) {
+    for (const old of ids.slice(0, Math.max(0, ids.length - WARDROBE_PHOTOS_LIMIT + 1))) delete all[old];
+    all[id] = image;
+  }
+  return writeJson(tab(), WARDROBE_PHOTOS_KEY, all);
 }
 
 /** At sign-in, this browser's guest pieces join the account. */

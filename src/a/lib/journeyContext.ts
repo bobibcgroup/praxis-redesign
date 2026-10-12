@@ -42,6 +42,10 @@ export interface OwnedItem {
   slot: Slot;
   name: string;
   image: string | null;
+  /** Set when the piece comes from the wardrobe, so the request names that same piece. */
+  wardrobeItemId?: string;
+  source?: "sample" | "upload" | "described";
+  colour?: string;
 }
 
 const SLOTS: readonly Slot[] = ["top", "bottom", "shoes", "extras"];

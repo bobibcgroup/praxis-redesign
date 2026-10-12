@@ -103,4 +103,31 @@ export default async function (H) {
     await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "result", null, { timeout: 8000 });
     check(calls.length === 0, `no AI, image, retailer or payment request left the page (${calls.slice(0, 3).join(", ") || "none"})`);
   }, { premium: true });
+
+  await scenario("P4-12e", "The live build hides test mode, says no paid provider is on, and logs page errors without personal details", "desktop", async (p) => {
+    const h = await (await fetch(`${BASE}/api/health`)).json();
+    check(h.ok && h.version && h.commit, `health answers (${h.version}, ${h.commit})`);
+    check(h.ai.providersSet.length === 0 && !h.ai.billableAllowed && !h.tryOn.providerSet && !h.tryOn.billableAllowed, "no AI or try-on provider is on, paid calls are off");
+    check((await fetch(`${BASE}/api/client-error`)).status === 405, "error reports are POST only");
+    check((await fetch(`${BASE}/api/client-error`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "not json" })).status === 400, "a broken report is refused");
+    await p.goto(`${BASE}/internal/analytics?mode=light`);
+    await p.waitForTimeout(800);
+    check(!/Analytics in this browser/.test(await H.body(p)) && new URL(p.url()).pathname === "/", "the test mode page is not in the live build (it leads home)");
+    const sent = [];
+    await p.route("**/api/client-error", async (route) => {
+      sent.push(route.request().postData() ?? "");
+      await route.fulfill({ status: 204 });
+    });
+    await p.evaluate(() => setTimeout(() => {
+      const e = new TypeError("sam@example.com broke it");
+      throw e;
+    }, 0));
+    await p.waitForTimeout(800);
+    // The error was thrown on purpose; it is not a fault of the page.
+    H.current.errors = H.current.errors.filter((m) => !/broke it/.test(m));
+    check(sent.length === 1, "an uncaught error is reported once");
+    const r = JSON.parse(sent[0] || "{}");
+    check(r.name === "TypeError" && r.where === "window" && r.path === "/" && r.release, "the report has the error's name, where, path and release");
+    check(!/sam@|broke/.test(sent[0] || ""), "and never the message");
+  });
 }

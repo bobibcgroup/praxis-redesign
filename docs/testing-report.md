@@ -4,9 +4,9 @@ Deliverable G of the master spec. Three layers of tests cover the app. All of th
 
 | Layer | Command | What it covers | Result |
 | --- | --- | --- | --- |
-| Unit | `npm test` | `src/core`: request building, validation of adapter answers, the mock adapter, the service with timeouts, cancel and the retailer lookup, processing states, feedback, accounts and migration, identity, analytics guards, photo policies and checks, consent, Style DNA layers, retention and deletion | 204 tests in 13 files, all pass (2026-10-12) |
+| Unit | `npm test` | `src/core`: request building, validation of adapter answers, the mock adapter, the service with timeouts, cancel and the retailer lookup, processing states, feedback, accounts and migration, identity, analytics guards, photo policies and checks, consent, Style DNA layers, retention and deletion | 210 tests in 14 files, all pass (2026-10-12) |
 | Type and build | `npm run build` | strict TypeScript and the production bundle | passes |
-| Scenarios | `npm run build && npm run e2e` | thirteen suites (below) in Chromium on desktop (1440 x 900) and phone (390 x 844), seven viewports from 375 x 812 to 1920 x 1080, axe (WCAG 2.1 A and AA), 44px targets, sideways scroll and load | 174 of 174 runs, 1648 of 1648 checks pass, twice in a row (2026-10-12) |
+| Scenarios | `npm run build && npm run e2e` | thirteen suites (below) in Chromium on desktop (1440 x 900) and phone (390 x 844), seven viewports from 375 x 812 to 1920 x 1080, axe (WCAG 2.1 A and AA), 44px targets, sideways scroll and load | 179 of 179 runs, 1794 of 1794 checks pass (2026-10-12, release 0.4.0) |
 
 `npm run e2e` starts the app's own server (`server/index.mjs`) itself (or uses `BASE_URL`), needs a Chromium that Playwright can find (`PLAYWRIGHT_BROWSERS_PATH`, or `CHROMIUM_PATH`), writes `e2e/results/report.md`, `report.json` and screenshots, and exits non-zero on any failure. `SUITE=4 npm run e2e` runs one suite (or `SUITE=4,11`); `ONLY=TRY1,P3-4a npm run e2e` runs single scenarios. Scenarios that need a misbehaving service use test mode (`src/core/sim.ts`), set per tab, so nothing in the app changes for them.
 
@@ -21,7 +21,7 @@ Each suite is a file in `e2e/suites/` (`01-home.mjs` to `13-analytics.mjs`), loa
 | 3 | Outfit results | switching by thumbnail, swipe and keys updates title, photo, pieces and total; unticking lowers the total; empty selection blocks Check out with the reason; viewer zoom and Escape; Restyle; nothing stale |
 | 4 | See it on me | explanation, privacy, consent and decline, camera (fake device) and upload, text file and broken JPEG refused, preview, retake, close and reopen, the right outfit sent, timeout then retry, unreadable photo, honest label, photo kept to the tab |
 | 5 | Style DNA | intro, sign in, preview payment with no charge, the four steps, profile, corrections, saved per account, used in the next request, consent for an own photo |
-| 6 | Digital wardrobe | an uploaded piece is classified as the customer says, invalid files refused, changing the piece, owned never priced, deleting everything from Your data |
+| 6 | Digital wardrobe | an uploaded piece is classified as the customer says, invalid files refused, changing the piece, owned never priced, deleting everything from Your data; the wardrobe page: add with or without a photo, correct, remove and undo, reload, use in the looks, separate per account |
 | 7 | Saved looks and accounts | guest save, reload, reopen, remove and undo, migration on sign in, shared link opened elsewhere, separation between accounts |
 | 8 | Retailer and checkout preparation | sizes, stock, sold out, the Check out total, external link only when a retailer gives one (https only), no purchase is ever made |
 | 9 | Failure and recovery | slow, timeout, empty, partial, failure, invalid answer, offline, expired sign in, cancel; answers kept every time |
@@ -64,7 +64,7 @@ Nothing is blocked. Scenarios 5 and 10 test the previews of sign-in and the reta
 
 ## Last run
 
-2026-10-12 09:00 UTC, against a local production build, Chromium (Playwright 1.56.1): 174 of 174 runs passed, 1648 of 1648 checks, none skipped. The run before it (08:34 UTC) gave the same result. Every check is listed in `e2e/results/report.md`.
+2026-10-12 12:04 UTC, release 0.4.0, against a local production build, Chromium (Playwright 1.56.1): 179 of 179 runs passed, 1794 of 1794 checks, none skipped. The run before it (11:33 UTC) gave the same totals. Every check is listed in `e2e/results/report.md`.
 
 | Suite | Runs | Checks |
 | --- | --- | --- |
@@ -73,16 +73,16 @@ Nothing is blocked. Scenarios 5 and 10 test the previews of sign-in and the reta
 | 3 Outfit results | 21 | 116 |
 | 4 See it on me | 17 | 124 |
 | 5 Style DNA | 13 | 59 |
-| 6 Digital wardrobe | 4 | 23 |
+| 6 Digital wardrobe (P4-6d to P4-6f added) | 8 | 57 |
 | 7 Saved looks and accounts | 24 | 77 |
 | 8 Retailer and checkout preparation | 6 | 35 |
 | 9 Failure and recovery | 13 | 43 |
-| 10 Responsiveness | 10 | 557 |
-| 11 Accessibility | 9 | 97 |
-| 12 AI integration contracts | 5 | 123 |
+| 10 Responsiveness (wardrobe added) | 10 | 655 |
+| 11 Accessibility (wardrobe added) | 9 | 103 |
+| 12 AI integration contracts (P4-12e added) | 6 | 131 |
 | 13 Analytics | 2 | 35 |
 
-Load: desktop largest paint 196 ms; phone (throttled to 150 ms, 1.6 Mbit/s) 2448 ms; no layout shift.
+After a deploy, `node tools/smoke.mjs <url>` runs read-only checks against the live site (`.github/workflows/smoke.yml` runs it automatically).
 
 ## Fixed during the master spec Phase 3
 

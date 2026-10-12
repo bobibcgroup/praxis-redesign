@@ -95,7 +95,7 @@ function suiteOf(id) {
   if (LEGACY_SUITE[id]) return LEGACY_SUITE[id];
   if (id.startsWith("GEO")) return 1;
   if (id.startsWith("TRY")) return 4;
-  const n = Number(/^P3-(\d+)/.exec(id)?.[1]);
+  const n = Number(/^P[34]-(\d+)/.exec(id)?.[1]);
   return n || 0;
 }
 /** SUITE=4,9 runs just those suites. */

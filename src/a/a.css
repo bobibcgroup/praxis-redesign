@@ -540,9 +540,14 @@
 }
 
 @media (min-width: 1024px) {
-  /* No box: the links sit straight on the photo in ink, with a soft ivory halo that only shows where the photo is dark. */
+  /* The links sit on the same frosted ivory as the thumbnails, so they stay readable over any part of a photo
+     (with three links the group reaches the model's head); on a plain page the panel is the page colour. */
   [data-concept="a"] .a-topright {
     gap: 4px;
+    padding: 0 4px 0 8px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(8px);
   }
 
   [data-concept="a"] .a-topright .a-tertiary {

@@ -1,0 +1,36 @@
+# Smoke tests against the live site after each Railway deploy (and on demand). Read-only: see
+# tools/smoke.mjs. No secrets are used and no paid service can be reached.
+name: Smoke test live site
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Site to test
+        default: https://praxis-redesign-production.up.railway.app
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright-core install chromium
+      - name: Smoke test
+        env:
+          SMOKE_URL: ${{ github.event.inputs.url || 'https://praxis-redesign-production.up.railway.app' }}
+          SMOKE_COMMIT: ${{ github.event.deployment.sha }}
+        run: |
+          # Railway reports success when the new build is up; give the switch-over a moment.
+          sleep 30
+          node tools/smoke.mjs "$SMOKE_URL" "$SMOKE_COMMIT"

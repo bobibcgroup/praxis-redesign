@@ -1,0 +1,302 @@
+# AI integration handover (Phase 4)
+
+How each future AI capability plugs into Praxis. **None of them is switched on.** Every service runs on a free, deterministic mock, and the live site's `/api/health` reports `providersSet: []`. The quality of real recommendations, generated images, garment recognition and try-on has **not** been validated. That can only happen after a provider is connected and tested.
+
+## What every integration shares
+
+- **Envelope:** `ServiceRequest` / `ServiceResponse` in `src/core/ai/envelope.ts`. A request carries a request id, service, contract version `ai-2026-10-12`, anonymous id, user id, attempt and payload. A response carries a status, result, error `{code, message, retryable}`, provider `{id, version, mode, processing, billable}`, attempts and duration.
+- **Runner:** `callService` runs every call in the same order:
+  1. checks the payload
+  2. applies the billable guard
+  3. enforces the time limit and honours cancel
+  4. retries once
+  5. checks the result
+
+  It never throws into a screen.
+- **Contracts and mocks:** the contract for each service is in `DEFINITIONS`, and its mock is in `MOCKS`, both in `src/core/ai/services.ts`. Every mock runs all eight scenarios: success, delayed, partial, empty, validation error, failure, timeout and retry success.
+- **Page to server:** `src/core/ai/http.ts` sends `POST /api/ai/<service>`. On the server, `server/ai.mjs` checks the envelope and loads `server/providers/<name>.mjs`. Provider keys live only in the server's environment. The page never holds one.
+- **Expected errors:** these error codes apply to every service.
+
+  | Code | When |
+  | --- | --- |
+  | `validation_error` | The payload was refused before sending. The screen says what to fix. |
+  | `invalid_response` | The provider's answer broke the contract. The screen shows a clean failure with Try again. |
+  | `provider_error` | Retryable once, then a failure state. |
+  | `timeout` | The per-service limit was reached. The screen shows its delay line, then a failure with Try again. |
+  | `cancelled` | The customer cancelled. |
+  | `billing_blocked` | A paid provider is set but paid calls are off. Status is `disabled` and nothing is charged. |
+  | `not_connected` | No provider is set. Status is `disabled`. |
+  | `consent_missing` | A photo without current consent. Refused before sending. |
+
+- **Switches:** three switches turn a provider on, and all three are off today. With any one of them off, the service answers `disabled`.
+  - Server, which provider: `AI_PROVIDER_<SERVICE>=<name>`
+  - Server, paid calls: `ALLOW_BILLABLE_AI=true`
+  - Page build: `VITE_AI_PROVIDERS=<service,...>`, plus `VITE_ALLOW_BILLABLE_IMAGES=true` for image services
+- **Shared tests:**
+  - `src/core/__tests__/ai-services.test.ts` covers all nine contracts, the scenarios and the billable guard.
+  - `phase2-integrity.test.ts` checks that every answer reaches the request.
+  - e2e suite 12 (`e2e/suites/12-contracts.mjs`) covers the server plug-in points, that no key is in the page, and that a session makes no AI calls.
+
+## 1. Gemini styling and reasoning
+
+**Services:** `styling_recommendation`, plus `styling_explanation`.
+
+**Provider interface:**
+- `RecommendationAdapter` (`src/core/service.ts`), reached through `serviceRecommendationAdapter` in `src/core/ai/bridge.ts`.
+- On the server, a module `server/providers/<name>.mjs` exporting `id`, `version`, `billable` and `run(request, { signal })`.
+
+**Request schema:**
+- `StylingRequest` (`src/core/contracts.ts`): every quiz answer (occasion, venue, time, feel, budget band), the owned piece as `WardrobeItemRef` (id, slot, label, source, colour), the Style DNA summary, the feedback snapshot, location, and the input key.
+- Explanation payload: `{ request, outfitId }`.
+
+**Response schema:**
+- `StylingResponse`: `outfits[]`, each with a title, rationale, factors, garments (`retail` with a `ProductRef`, or `wardrobe`), pricing and image refs. Plus the recommendation id, provider version and error.
+- Explanation result: `{ outfitId, summary, factors, source: "model" }`.
+
+**Mock provider:**
+- `src/core/adapters/mock.ts`, the rules engine the app uses today.
+- `MOCKS.styling_recommendation` and `MOCKS.styling_explanation` in `src/core/ai/services.ts`.
+
+**Configuration:**
+- `AI_PROVIDER_STYLING_RECOMMENDATION=gemini` (and `..._STYLING_EXPLANATION`)
+- `ALLOW_BILLABLE_AI=true`
+- `VITE_AI_PROVIDERS=styling_recommendation`
+- The Gemini key goes in the server's environment, for example `GEMINI_API_KEY`, read only by the provider module.
+
+**Error handling:**
+- Time limit 20 s for styling and 10 s for the explanation, with one retry.
+- An answer that breaks the contract becomes `invalid_response`.
+- Results shows the failure with Try again and Change my answers, keeping the answers (e2e P2B, P3-9a).
+
+**Frontend components:**
+- `src/a/lib/styling.ts` (`useStylingSpec`, `useStylingResponse`), `Build.tsx` (processing states), `Results.tsx`, `LookDetails.tsx`.
+- Explanations are read from `outfit.rationale` and `factors` today. No screen calls `styling_explanation` separately yet.
+
+**Backend changes needed:**
+- Write `server/providers/gemini.mjs`: map `StylingRequest` to a prompt, and map Gemini's JSON to `StylingResponse`.
+- Products must come from a real catalogue (see 7), never be invented by the model.
+
+**Tests:** `mock.test.ts`, `request.test.ts`, `validate.test.ts`, `phase2-integrity.test.ts`, e2e suites 2, 3 and 9.
+
+**Remaining dependencies:**
+- Your approval and a Gemini key.
+- A product catalogue for the model to choose from.
+- An evaluation set to judge recommendation quality, which has not been validated.
+
+## 2. Outfit image generation
+
+**Service:** `outfit_visualization`.
+
+**Provider interface:** `OutfitVisualizationAdapter` (`src/core/vision.ts`), plus the server provider module.
+
+**Request schema:** `{ outfitId, garmentIds[] }`.
+
+**Response schema:**
+- `{ outfitId, imageUrl, fidelity: "exact" | "representative", generated }`
+- The page sees it as a `GeneratedImage` (`vision.ts`): image id, kind, source garments, provider, model version, status, retention.
+
+**Mock provider:** `mockVisualization` (`vision.ts`) and `MOCKS.outfit_visualization`. Both answer `disabled` / `not_connected`, and no picture is made.
+
+**Configuration:**
+- `AI_PROVIDER_OUTFIT_VISUALIZATION=<name>`
+- `ALLOW_BILLABLE_AI=true`
+- `VITE_AI_PROVIDERS=outfit_visualization`
+- `VITE_ALLOW_BILLABLE_IMAGES=true`
+
+**Error handling:**
+- Time limit 30 s, one retry.
+- On failure the look keeps its library photo, so a generated image is never required.
+
+**Frontend components:** `Frame.tsx` and `LookViewer.tsx` show the look's photo. Today they show library photos from `src/a/lib/looks.ts`.
+
+**Backend changes needed:**
+- Write a provider module.
+- Store generated images, with retention and deletion.
+- Wire `imageServices().visualize` into Results, with the label "A picture of this look, made for you" when `generated` is true.
+
+**Tests:** `ai-services.test.ts` (visualization contract), `phase2-privacy.test.ts` (billable guard).
+
+**Remaining dependencies:**
+- Approval and a provider.
+- Image storage.
+- Copy for the generated-picture label.
+- Image accuracy has not been validated.
+
+## 3. Virtual try-on
+
+**Services:** `virtual_try_on`, plus its own endpoint `POST /api/tryon`.
+
+**Provider interface:** `TryOnAdapter` (`src/core/vision.ts`); the HTTP adapter is `src/core/adapters/tryonHttp.ts`; the server side is `server/tryon.mjs` with `server/providers/*.mjs`. Details are in `docs/TRY-ON.md`.
+
+**Request schema:**
+- `{ requestId, outfitId, garmentIds[], person: { image, width, height, consentVersion } }`
+- The service-layer version is `TryOnPayload`.
+
+**Response schema:** `GeneratedImage` with status `ready | pending | failed | disabled`, the image URL, and an error code.
+
+**Mock provider:** the mock in `vision.ts` answers after 1.2 s with status `disabled`, and follows the test-mode scenarios. `MOCKS.virtual_try_on` does the same.
+
+**Configuration:**
+- `TRYON_PROVIDER=<name>`
+- `ALLOW_BILLABLE_IMAGES=true` on the server
+- `VITE_TRYON_ADAPTER=http` and `VITE_ALLOW_BILLABLE_IMAGES=true` on the build
+
+**Error handling:**
+- Time limit 45 s.
+- `invalid_image` says why the photo can't be used and does not retry blindly.
+- A timeout offers Send again.
+- Decline, Retake and Delete are always available (e2e P3-4a to P3-4f, TRY1 to TRY7).
+
+**Frontend components:** `src/a/screens/moment/TryOn.tsx` (the 14-step flow), `Capture.tsx` (camera or upload), `PhotoConsent.tsx`, `src/core/tryon.ts` (request, reducer).
+
+**Backend changes needed:**
+- Write a provider module.
+- Decide where the person's photo is processed and how long it is kept. The policy `TRY_ON_SERVER` already words this.
+- Get a legal review of the disclosure.
+
+**Tests:** `tryon.test.ts`, e2e suite 4.
+
+**Remaining dependencies:**
+- Approval and a provider.
+- Legal sign-off.
+- A check on real phones with a real camera.
+- Try-on quality has not been validated.
+
+## 4. Colour analysis
+
+**Service:** `face_colour_analysis`.
+
+**Provider interface:** `ColourAnalysisAdapter` (`vision.ts`), reached through `serviceColourAdapter`.
+
+**Request schema:** `{ image: ImageRef }`, where `ImageRef` is the ref, width, height, and the consent version `face_colour`.
+
+**Response schema:** `{ undertone: cool | warm | neutral, contrast: high | medium | low, source: "sample" | "model" }`.
+
+**Mock provider:** `mockColourAnalysis` returns a fixed example marked `sample`, so the screen says "Example".
+
+**Configuration:**
+- `AI_PROVIDER_FACE_COLOUR_ANALYSIS=<name>`
+- `ALLOW_BILLABLE_AI=true`
+- `VITE_AI_PROVIDERS=face_colour_analysis`
+
+**Error handling:**
+- Time limit 15 s.
+- An unreadable photo offers Retake or Skip colours (e2e S7, S7b).
+- The customer can always correct the result, and the correction is kept apart from the estimate.
+
+**Frontend components:** `src/a/screens/dna/DnaSteps.tsx` (DnaFace), `DnaResult.tsx`, `StyleProfileView.tsx`, `src/core/styleProfile.ts`.
+
+**Backend changes needed:** a provider module, and the processing location and retention for face photos. The policy says the photo stays in the tab today.
+
+**Tests:** `phase2-privacy.test.ts`, `ai-services.test.ts`, e2e suite 5.
+
+**Remaining dependencies:**
+- Approval and a provider.
+- Legal sign-off for face photos.
+- Colour accuracy has not been validated.
+
+## 5. Body and fit analysis
+
+**Service:** `body_fit_analysis`.
+
+**Provider interface:** the service contract only (`DEFINITIONS.body_fit_analysis`). There is no page adapter yet.
+
+**Request schema:** `{ preferredFit?: SLIM | REGULAR | RELAXED, image?: ImageRef }`. A full-length photo is not collected today; policy `body_fit` is `not_collected`.
+
+**Response schema:** `{ recommendedFit, source: "self_reported" | "model", notes[] }`.
+
+**Mock provider:** `MOCKS.body_fit_analysis` returns what the customer said, marked `self_reported`.
+
+**Configuration:**
+- `AI_PROVIDER_BODY_FIT_ANALYSIS=<name>`
+- `ALLOW_BILLABLE_AI=true`
+- `VITE_AI_PROVIDERS=body_fit_analysis`
+- Set `IMAGE_POLICIES.body_fit.status` to `collecting` once a photo is asked for.
+
+**Error handling:** time limit 15 s. If no reading is possible, the customer's own answer stands.
+
+**Frontend components:** `DnaSteps.tsx` (DnaFit asks Slim, Regular or Relaxed).
+
+**Backend changes needed:**
+- A provider module.
+- A photo step in Style DNA with its own consent (the copy is in `images.ts`).
+- A bridge adapter, like `serviceColourAdapter`.
+
+**Tests:** `ai-services.test.ts` (fit contract), e2e P3-5a (fit answer saved).
+
+**Remaining dependencies:** approval, a provider, and a product decision on asking for a full-length photo. Accuracy has not been validated.
+
+## 6. Wardrobe recognition
+
+**Service:** `garment_recognition`.
+
+**Provider interface:** `GarmentRecognitionAdapter` (`vision.ts`), reached through `serviceGarmentAdapter`.
+
+**Request schema:** `{ image: ImageRef (consent wardrobe_garment), slotHint? }`.
+
+**Response schema:** `{ slot, category, colour?, source: "customer" | "model" }`.
+
+**Mock provider:** `mockGarmentRecognition` reads nothing. `MOCKS.garment_recognition` returns the slot the customer chose, marked `customer`.
+
+**Configuration:**
+- `AI_PROVIDER_GARMENT_RECOGNITION=<name>`
+- `ALLOW_BILLABLE_AI=true`
+- `VITE_AI_PROVIDERS=garment_recognition`
+
+**Error handling:**
+- Time limit 15 s.
+- On any failure the customer's own type, name and colour stand, and the piece is still added.
+
+**Frontend components:**
+- `src/a/screens/Wardrobe.tsx` (new in Phase 4). It calls `imageServices().recogniseGarment` after a photo is checked, and fills in the type and colour only when the source is `model` and the customer left them empty. The wording "I don't read pieces from photos yet" should change when a model is connected.
+- `src/a/screens/moment/You.tsx` (Make it yours).
+
+**Backend changes needed:** a provider module. Decide whether wardrobe photos may be kept beyond the tab; today they are kept by name, type and colour only.
+
+**Tests:** `phase4.test.ts` (wardrobe records), `ai-services.test.ts`, e2e suite 6 (P3-6a to P3-6c, P4-6d to P4-6f).
+
+**Remaining dependencies:** approval and a provider. Recognition accuracy has not been validated.
+
+## 7. Retailer product matching
+
+**Services:** `product_matching`, plus `inventory_pricing` for stock and price.
+
+**Provider interface:** `RetailerAdapter` (`src/core/retail.ts`), reached through `serviceRetailer` for inventory. Matching is a service contract only; products come with the styling response today.
+
+**Request schema:**
+- Matching: `{ garments: [{ garmentId, slot, name }], budget, currency, country? }`
+- Inventory: `{ products: [{ productId, retailerId }] }`
+
+**Response schema:**
+- Matching: `{ matches: [{ garmentId, products: ProductRef[] }] }`
+- Inventory: `{ items: InventoryItem[] }`, each with price status, availability, sizes, `checkedAt`, and freshness `live | cached | example`.
+
+**Mock provider:**
+- `createMockRetailer` (`retail.ts`): example prices, unknown stock, the sold-out scenario.
+- `MOCKS.product_matching` and `MOCKS.inventory_pricing`.
+
+**Configuration:**
+- `AI_PROVIDER_PRODUCT_MATCHING=<name>` and `AI_PROVIDER_INVENTORY_PRICING=<name>`
+- `VITE_AI_PROVIDERS=product_matching,inventory_pricing`
+- Retailer feed keys go in the server's environment.
+
+**Error handling:**
+- Time limits 10 s and 8 s.
+- A failed check leaves the pieces as they were.
+- A price only replaces another when it says how sure it is.
+- A link must be https.
+- No purchase is ever made in the app (e2e suite 8).
+
+**Frontend components:** `PiecesSheet.tsx` (Check out), `PieceRow.tsx`, `src/a/lib/selection.ts`, `LookDetails.tsx`.
+
+**Backend changes needed:**
+- Retailer feed provider modules.
+- Affiliate or checkout routes.
+- Server storage for prices if caching is wanted.
+
+**Tests:** `phase2-service.test.ts`, `ai-services.test.ts`, e2e suite 8, S10.
+
+**Remaining dependencies:**
+- Retailer agreements and feeds.
+- Approval.
+- A real payment or affiliate route.

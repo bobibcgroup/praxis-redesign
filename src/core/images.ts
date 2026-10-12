@@ -228,6 +228,7 @@ export function deleteImages(category: ImageCategory, tab: () => Storage | undef
   if (category === "wardrobe_garment") {
     const item = readJson<{ image?: string | null }>(store, key);
     if (item) writeJson(store, key, { ...item, image: null });
+    writeJson(store, "praxis_wardrobe_photos", null);
     return;
   }
   writeJson(store, key, null);

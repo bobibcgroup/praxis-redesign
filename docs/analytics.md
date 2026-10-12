@@ -10,7 +10,7 @@ Deliverable E of the spec (section 23): the event dictionary, with each event's 
 | Validation guard | Implemented, hand written | `src/core/analytics.ts:122` to `src/core/analytics.ts:151` |
 | Recording function `track()` | Implemented | `src/core/analytics.ts:192` |
 | Sink in this browser (`localStorage`, newest 1000 events) | Implemented, the only sink registered | `src/core/analytics.ts:155` to `src/core/analytics.ts:172` |
-| Internal report at `/internal/analytics` | Implemented, reads this browser's events only | `src/a/screens/Internal.tsx:29` |
+| Internal report at `/internal/analytics` | Implemented, reads this browser's events only; development builds only (`VITE_INTERNAL_PAGE=true`), hidden in the live build | `src/a/screens/Internal.tsx:29` |
 | An analytics service that collects events from every visitor | **Not built.** There is no endpoint, server, collector, warehouse or third party SDK in the code | none |
 
 **Future integration.** An approved analytics service plugs in as another sink: an object implementing `AnalyticsSink` (`src/core/analytics.ts:116`) passed to `addSink()` (`src/core/analytics.ts:175`). Nothing calls `addSink` in the app today; the only sink is `localSink`, added at module load (`src/core/analytics.ts:172`). The transport, endpoint, batching, authentication and consent banner for such a service are decisions still to be made.

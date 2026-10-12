@@ -28,7 +28,10 @@ export interface WardrobeItemRef {
   slot: Slot;
   /** What the customer called it, or the sample's name. */
   label: string;
-  source: "sample" | "upload";
+  /** sample: an example piece. upload: the customer's own, with a photo. described: their own, by name only. */
+  source: "sample" | "upload" | "described";
+  /** The colour, in the customer's words, when they gave one. */
+  colour?: string;
 }
 
 /** What feedback so far says, for an engine that can use it. The mock adapter does not. */

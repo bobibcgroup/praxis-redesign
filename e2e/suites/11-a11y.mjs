@@ -129,6 +129,14 @@ export default async function (H) {
       await p.goto(`${BASE}/dna/fit?mode=light`);
       await p.waitForTimeout(700);
       await run("Style DNA question");
+      await p.goto(`${BASE}/wardrobe?mode=light`);
+      await p.waitForTimeout(600);
+      await button(p, "Add a piece").click();
+      await run("wardrobe, adding");
+      await p.getByRole("region", { name: "Add a piece" }).getByRole("radio", { name: "Shoes" }).click();
+      await p.getByRole("region", { name: "Add a piece" }).getByRole("button", { name: "Add to my wardrobe" }).click();
+      await p.waitForTimeout(400);
+      await run("wardrobe");
       await p.goto(`${BASE}/?mode=dark`);
       await p.waitForTimeout(900);
       await run("home, dark");
@@ -140,7 +148,7 @@ export default async function (H) {
   }
 
   await scenario("P3-11d", "Images are described; decorative ones are hidden; every field has a label", "desktop", async (p) => {
-    const pages = [["home", `${BASE}/?mode=light`], ["question", `${BASE}/moment/venue?mode=light&occasion=DINNER`], ["Style DNA", `${BASE}/dna/inspiration?mode=light`], ["your data", `${BASE}/data?mode=light`]];
+    const pages = [["home", `${BASE}/?mode=light`], ["question", `${BASE}/moment/venue?mode=light&occasion=DINNER`], ["Style DNA", `${BASE}/dna/inspiration?mode=light`], ["your data", `${BASE}/data?mode=light`], ["wardrobe", `${BASE}/wardrobe?mode=light`]];
     for (const [label, url] of pages) {
       await p.goto(url);
       await p.waitForTimeout(800);

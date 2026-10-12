@@ -5,6 +5,7 @@
  */
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { track } from "../../core/analytics";
+import { reportError } from "../../core/monitoring";
 
 interface Props {
   /** Where "Back to home" goes. */
@@ -27,6 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, _info: ErrorInfo) {
     track("page_failed", { kind: error?.name || "Error" });
+    reportError(error, "page");
   }
 
   componentDidUpdate(prev: Props) {

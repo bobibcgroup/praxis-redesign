@@ -63,7 +63,12 @@ export function TopBar({ spine, back = null }: TopBarProps) {
         <nav aria-label="Praxis" className="a-desktop items-center">
           <Link to={href("looks", { hero: null })} className="a-control a-tertiary a-signin gap-2">
             <Bookmark size={15} strokeWidth={1.5} aria-hidden="true" />
-            Saved looks
+            {/* Below 1280 px the bookmark alone stands for Saved looks, so the bar clears the step names. */}
+            <span className="sr-only xl:not-sr-only">Saved looks</span>
+          </Link>
+          <span className="a-bar-rule" aria-hidden="true" />
+          <Link to={href("wardrobe", { hero: null })} className="a-control a-tertiary a-signin">
+            Wardrobe
           </Link>
           <span className="a-bar-rule" aria-hidden="true" />
           <Link
@@ -172,6 +177,7 @@ function Menu({ open, onClose, returnTo }: { open: boolean; onClose: () => void;
   const items = [
     { label: "Start a new look", to: href("", FRESH) },
     { label: "Saved looks", to: href("looks", { hero: null }) },
+    { label: "Your wardrobe", to: href("wardrobe", { hero: null }) },
     { label: "Style DNA", to: store.dna ? href("dna", { hero: null }) : href("", { ...FRESH, gate: "dna" }) },
   ];
 

@@ -21,6 +21,7 @@ import { gzipSync } from "node:zlib";
 import { countryForIp, geoReady, loadGeo } from "./geo.mjs";
 import { handleTryOn } from "./tryon.mjs";
 import { handleAi } from "./ai.mjs";
+import { handleClientError, health, logError, RELEASE } from "./monitor.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
 const PORT = Number(process.env.PORT ?? 3000);
@@ -121,7 +122,7 @@ function file(req, res, path, stat) {
   createReadStream(path).pipe(res);
 }
 
-export const server = createServer((req, res) => {
+function route(req, res) {
   /* The try-on plug-in point (server/tryon.mjs); answers "disabled" until a provider is set up. */
   if (req.url?.split("?")[0] === "/api/tryon") {
     if (req.method !== "POST") {
@@ -141,6 +142,15 @@ export const server = createServer((req, res) => {
     void handleAi(req, res, ai[1]);
     return;
   }
+  /* Errors from the page, logged without personal details (server/monitor.mjs). */
+  if (req.url?.split("?")[0] === "/api/client-error") {
+    if (req.method !== "POST") {
+      res.writeHead(405, { Allow: "POST" });
+      return res.end();
+    }
+    void handleClientError(req, res).catch(() => res.headersSent || (res.writeHead(400), res.end()));
+    return;
+  }
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.writeHead(405, { Allow: "GET, HEAD" });
     return res.end();
@@ -151,6 +161,9 @@ export const server = createServer((req, res) => {
   } catch {
     res.writeHead(400);
     return res.end();
+  }
+  if (pathname === "/api/health") {
+    return send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "no-store" }, JSON.stringify(health()));
   }
   if (pathname === "/api/country") {
     const body = JSON.stringify({ ...resolveCountry(req), ready: geoReady() });
@@ -171,9 +184,26 @@ export const server = createServer((req, res) => {
     return res.end("Not found");
   }
   page(req, res);
+}
+
+export const server = createServer((req, res) => {
+  try {
+    route(req, res);
+  } catch (err) {
+    logError("server_error", { name: err?.name ?? "Error", path: (req.url ?? "").split("?")[0].slice(0, 120) });
+    if (!res.headersSent) res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Something went wrong.");
+  }
 });
 
-server.listen(PORT, () => console.log(`Praxis on :${PORT}`));
+process.on("uncaughtException", (err) => {
+  // Logged, then the process ends so Railway starts a clean one.
+  logError("server_error", { name: err?.name ?? "Error", where: "uncaught" });
+  process.exit(1);
+});
+process.on("unhandledRejection", (err) => logError("server_error", { name: err?.name ?? "Error", where: "unhandled_rejection" }));
+
+server.listen(PORT, () => console.log(`Praxis ${RELEASE.version} (${RELEASE.commit}) on :${PORT}`));
 loadGeo().then(
   (n) => console.log(`Country tables ready (${n.v4} IPv4, ${n.v6} IPv6 ranges)`),
   (err) => console.error("Country tables failed to load; every visitor gets the default photos.", err),

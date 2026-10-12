@@ -25,6 +25,7 @@ Journeys:
 - **Style DNA**: face (with the photo notice first), fit, lifestyle, up to two inspiration presets, the colour analysis, and a result that marks each part as an estimate, a confirmed answer or the customer's correction, with "Not quite right?" to change any of it or retake the photo (see Style DNA profile). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
 - **Style DNA**: the saved Style DNA, change it, retake the photo, start again, your data on this device, sign out, light or dark.
+- **Wardrobe** (`/wardrobe`, in the menu and the desktop bar): the pieces the customer owns, by type, name and colour, with an optional photo kept in the tab only. Add, correct, remove (with Undo), and use a piece in the looks; Make it yours on the results offers these pieces first. Each account sees only its own. Nothing is read from a photo yet (`garment_recognition`).
 - **Your data on this device** (`/data`): what is kept in this browser, deleting a photo, and deleting everything.
 
 Full concept spec: `docs/CONCEPT-A.md`.
@@ -40,7 +41,8 @@ Mounted at `/`. Step routes:
 /moment/build  /moment/results  /moment/tryon
 /looks  /looks/:id
 /dna  /dna/face  /dna/fit  /dna/lifestyle  /dna/inspiration  /dna/build  /dna/result
-/internal/analytics                 events recorded in this browser (not linked from the app)
+/wardrobe  /data
+/internal/analytics                 events and test mode; only in `npm run dev` or a build with VITE_INTERNAL_PAGE=true
 ```
 
 Answers travel in search params so reload restores any step: `occasion, venue, time, vibe, spend, face, item, hero, done, mode`; DNA: `face, fit, life, taste`. The gate popup uses `?gate=tryon|dna|signin`; saving needs no gate.
@@ -62,7 +64,8 @@ Browser storage (prototype only, replace with real persistence):
 | `praxis_country` | the country chosen in the home's Location picker, two letters only; absent means automatic |
 | `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the tab only (sessionStorage); never in localStorage, analytics or saved looks |
 | `praxis_image_consent` | which photo notices were agreed to, with the wording version and time (`src/core/images.ts`) |
-| `praxis_wardrobe` | pieces the customer owns, by name and type only, no photo (`src/core/data.ts`) |
+| `praxis_wardrobe` | pieces the customer owns, by name, type and colour, no photo (`src/core/data.ts`) |
+| `praxis_wardrobe_photos` | photos of wardrobe pieces for the tab only (sessionStorage), the newest 8 |
 | `praxis_selections` | which look was chosen for each recommendation, 90 days (`src/core/data.ts`) |
 | `praxis_dna_draft` | the Style DNA being built, before it is saved (sessionStorage, `src/a/lib/dnaDraft.ts`) |
 | `praxis_sim` | the test mode scenario for this tab (sessionStorage, `src/core/sim.ts`) |
@@ -96,7 +99,7 @@ Garments are either `retail` (a `ProductRef` with price, price status and stock)
 
 ## Test mode
 
-`/internal/analytics` has a Test mode row: fast, slow, timeout, API failure, partial, empty, invalid image and unavailable products (`src/core/sim.ts`). It lasts for the tab only, shows a "Test mode" strip on every screen, and marks every event `testMode` so the measures leave them out. Invalid image applies to the Style DNA colour analysis; unavailable products marks the shoes sold out.
+`/internal/analytics` (in `npm run dev`, or a build made with `VITE_INTERNAL_PAGE=true`; never in the live build) has a Test mode row: fast, slow, timeout, API failure, partial, empty, invalid image and unavailable products (`src/core/sim.ts`). It lasts for the tab only, shows a "Test mode" strip on every screen, and marks every event `testMode` so the measures leave them out. Invalid image applies to the Style DNA colour analysis; unavailable products marks the shoes sold out.
 
 ## Photos and privacy
 
@@ -158,7 +161,7 @@ Motion is `motion/react` only, transform and opacity only, and every animation r
 
 ## Documentation
 
-`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos), `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/TRY-ON.md`.
+`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos), `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/AI-HANDOVER.md` (each future AI integration: interface, schemas, mock, settings, errors, screens, backend work, tests, dependencies), `docs/TRY-ON.md`, `docs/RELEASE.md` (release notes, deploying, environment, monitoring, rollback).
 
 ## Structure
 
@@ -199,6 +202,10 @@ Time of day offers sunrise and sunset only where they fit the occasion (`timesFo
 - `html, body` clip sideways overflow and do not bounce past their edges (`src/index.css`).
 - Text fields are 16 px; anything smaller makes iOS zoom the page on focus.
 - Sheets, the gate, the menu and the full-screen look hold the page still while open (`src/a/lib/scrollLock.ts`); their own content scrolls with `overscroll-behavior: contain`.
+
+## Monitoring and smoke tests
+
+Errors that reach a customer are sent to `POST /api/client-error` (name, where, path and app stack frames; never the message) and written as one JSON line to the server log with server errors (`server/monitor.mjs`). `GET /api/health` gives the version, commit and that no AI provider is on. `node tools/smoke.mjs <url>` checks a deployed site without changing anything; `.github/workflows/smoke.yml` runs it after each Railway deploy. See `docs/RELEASE.md`.
 
 ## Known gaps
 

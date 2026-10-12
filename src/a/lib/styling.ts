@@ -14,7 +14,7 @@ import { processingReducer, resubmit, SLOW_AFTER_MS, type ProcessingEvent, type 
 import { buildStylingRequest, completeInputs, inputKeyFor, wardrobeRef, type MomentInputs } from "../../core/request";
 import { requestHistory, stylingService } from "../../core/service";
 import { profileRef, summarize, type StyleProfile } from "../../core/styleProfile";
-import { useJourney } from "./journeyContext";
+import { useJourney, type OwnedItem } from "./journeyContext";
 
 export interface StylingSpec {
   inputs: MomentInputs;
@@ -22,6 +22,15 @@ export interface StylingSpec {
   styleProfileId?: string;
   styleProfile?: StyleProfile;
   inputKey: string;
+}
+
+/** The piece the customer owns, as the request names it: the wardrobe's own id when it came from there. */
+function ownedRef(item: OwnedItem): WardrobeItemRef {
+  const ref = wardrobeRef(item.slot, item.name, item.image ? "upload" : "sample", item.image ? shortHash(item.image) : "");
+  if (item.wardrobeItemId) ref.wardrobeItemId = item.wardrobeItemId;
+  if (item.source) ref.source = item.source;
+  if (item.colour) ref.colour = item.colour;
+  return ref;
 }
 
 /** Everything the customer has told Praxis for this moment, or null while a question is open. */
@@ -33,7 +42,7 @@ export function useStylingSpec(): StylingSpec | null {
     if (!inputs) return null;
     const wardrobe =
       answers.item && ownedItem && ownedItem.slot === answers.item
-        ? [wardrobeRef(ownedItem.slot, ownedItem.name, ownedItem.image ? "upload" : "sample", ownedItem.image ? shortHash(ownedItem.image) : "")]
+        ? [ownedRef(ownedItem)]
         : [];
     const styleProfileId = dna ? profileRef(dna) : undefined;
     return { inputs, wardrobe, styleProfileId, styleProfile: dna ?? undefined, inputKey: inputKeyFor(inputs, wardrobe, styleProfileId) };

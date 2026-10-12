@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { track } from "../../core/analytics";
-import { deleteLocalData, wardrobeEntries } from "../../core/data";
+import { deleteLocalData, wardrobeEntries, wardrobePhoto } from "../../core/data";
 import { feedbackStore } from "../../core/feedback";
 import { visibleTo } from "../../core/account";
 import { anonymousId, resetIdentityCache } from "../../core/identity";
@@ -12,6 +12,7 @@ import { deleteImages, withdrawConsent } from "../../core/images";
 import { requestHistory } from "../../core/service";
 import { readTryOnPhoto, writeTryOnPhoto } from "../../core/tryon";
 import { useJourney } from "../lib/journeyContext";
+import { Link } from "react-router-dom";
 import { PrimaryButton, TextButton } from "../ui/controls";
 import { TopBar } from "../ui/TopBar";
 
@@ -39,6 +40,7 @@ export function YourData() {
   const wardrobe = wardrobeEntries().filter((e) => mine(e.owner));
   const feedback = feedbackStore.all().filter((r) => mine(r));
   const history = requestHistory.all().filter((e) => mine(e.request));
+  const [hasPiecePhotos, setHasPiecePhotos] = useState(() => wardrobe.some((e) => wardrobePhoto(e.wardrobeItemId)));
 
   const deletePhoto = (which: "face" | "item" | "tryon") => {
     if (which === "tryon") {
@@ -49,9 +51,10 @@ export function YourData() {
       setFaceImage(null);
       deleteImages("face_colour");
       track("photo_deleted", { category: "face_colour" });
-    } else if (ownedItem) {
-      setOwnedItem({ ...ownedItem, image: null });
+    } else {
+      if (ownedItem) setOwnedItem({ ...ownedItem, image: null });
       deleteImages("wardrobe_garment");
+      setHasPiecePhotos(false);
       track("photo_deleted", { category: "wardrobe_garment" });
     }
   };
@@ -79,7 +82,11 @@ export function YourData() {
         <div role="list">
           <Line label="Saved looks" value={store.looks.length ? plural(store.looks.length, "look", "looks") : "None"} />
           <Line label="Style DNA" value={store.dna ? "Saved, without your photo" : "None"} />
-          <Line label="Pieces you own" value={wardrobe.length ? `${plural(wardrobe.length, "piece", "pieces")}, by name only` : "None"} />
+          <Line
+            label="Pieces you own"
+            value={wardrobe.length ? `${plural(wardrobe.length, "piece", "pieces")}, by name, type and colour` : "None"}
+            action={wardrobe.length ? <Link to={href("wardrobe")} aria-label="Open your wardrobe" className="a-control a-tertiary">Open</Link> : undefined}
+          />
           <Line label="Your feedback on looks" value={feedback.length ? plural(feedback.length, "note", "notes") : "None"} />
           <Line label="Looks you asked for" value={history.length ? `The last ${plural(history.length, "request", "requests")}, kept for 90 days` : "None"} />
           <Line
@@ -93,9 +100,9 @@ export function YourData() {
             action={tryOnPhoto ? <TextButton onClick={() => deletePhoto("tryon")}>Delete</TextButton> : undefined}
           />
           <Line
-            label="Photo of your piece"
-            value={ownedItem?.image ? "In this tab" : "None"}
-            action={ownedItem?.image ? <TextButton onClick={() => deletePhoto("item")}>Delete</TextButton> : undefined}
+            label="Photos of your pieces"
+            value={ownedItem?.image || hasPiecePhotos ? "In this tab" : "None"}
+            action={ownedItem?.image || hasPiecePhotos ? <TextButton onClick={() => deletePhoto("item")}>Delete</TextButton> : undefined}
           />
         </div>
 

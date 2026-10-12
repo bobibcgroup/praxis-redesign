@@ -142,6 +142,16 @@ export default async function (H) {
       await look("style-dna");
       await p.goto(`${BASE}/data?mode=light`);
       await look("your-data");
+      await p.goto(`${BASE}/wardrobe?mode=light`);
+      await p.waitForTimeout(500);
+      await button(p, "Add a piece").click();
+      await look("wardrobe-adding");
+      const form = p.getByRole("region", { name: "Add a piece" });
+      await form.getByRole("radio", { name: "Top" }).click();
+      await form.getByLabel("What you call it").fill("Navy linen overshirt with patch pockets");
+      await form.getByLabel("Colour (optional)").fill("Navy");
+      await form.getByRole("button", { name: "Add to my wardrobe" }).click();
+      await look("wardrobe");
       if (touch) {
         await p.goto(`${BASE}/?mode=light`);
         await p.getByRole("button", { name: "Menu" }).click();

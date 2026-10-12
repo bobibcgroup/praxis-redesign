@@ -66,13 +66,13 @@ async function provider() {
   return loaded.module;
 }
 
-export function readBody(req) {
+export function readBody(req, max = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
     req.on("data", (c) => {
       size += c.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > max) {
         reject(Object.assign(new Error("too large"), { code: "too_large" }));
         req.destroy();
         return;
