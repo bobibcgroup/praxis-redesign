@@ -29,10 +29,11 @@ const KEEP_MS = 30 * 60 * 1000;
 
 /** The kind of piece, from how the store files and names it. Null for anything Praxis doesn't style. */
 const KINDS = [
-  ["shoes", /\b(footwear|boots?|shoes?|sneakers?|trainers?|loafers?|derbys?|oxfords?|chukkas?|sandals?|mules?)\b/],
+  // "Oxford" and "derby" name shirts as often as shoes, so they count as shoes only beside "shoe".
+  ["shoes", /\b(footwear|boots?|shoes?|sneakers?|trainers?|loafers?|chukkas?|sandals?|mules?|(oxford|derby) shoes?)\b/],
   ["bottom", /\b(pants?|trousers?|chinos?|jeans?|denim|shorts?|joggers?|slacks)\b/],
   ["extras", /\b(belts?|hats?|caps?|beanies?|scarf|scarves|bags?|totes?|socks?|wallets?|sunglasses|ties?)\b/],
-  ["top", /\b(outerwear|shirts?|tees?|t-shirts?|polos?|henleys?|sweaters?|knits?|knitwear|cardigans?|crews?|crewnecks?|hoodies?|sweatshirts?|jackets?|overshirts?|blazers?|coats?|parkas?|vests?|gilets?|tops?|turtlenecks?|quarter zips?)\b/],
+  ["top", /\b(outerwear|oxfords?|shirts?|tees?|t-shirts?|polos?|henleys?|sweaters?|knits?|knitwear|cardigans?|crews?|crewnecks?|hoodies?|sweatshirts?|jackets?|overshirts?|blazers?|coats?|parkas?|vests?|gilets?|tops?|turtlenecks?|quarter zips?)\b/],
 ];
 const SKIP = /\b(gift ?cards?|women'?s?|womens|kids?|sample sale|e-?gift|insurance|shipping protection)\b/;
 
@@ -93,7 +94,8 @@ export function score(garment, product, slot) {
   for (const c of want) if (have.has(c)) s += 5;
   const w = words(text);
   for (const x of words(garment.name)) if (w.has(x) || w.has(x.replace(/s$/, ""))) s += 3;
-  if ((product.variants ?? []).some((v) => v.available)) s += 2;
+  // A sold out piece can't be bought, so stock outweighs a colour match.
+  if ((product.variants ?? []).some((v) => v.available)) s += 6;
   return s;
 }
 

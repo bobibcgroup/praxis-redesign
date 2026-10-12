@@ -18,6 +18,7 @@ const STORE_PRODUCTS = [
   { id: 2, handle: "black-crew", title: "The Merino Crew in Black", product_type: "Sweaters", tags: [], options: [{ name: "Size" }], variants: [variant(21, "M", "98.00", true)], images: [] },
   { id: 3, handle: "grey-chino", title: "The Democratic Chino in Grey", product_type: "Pants", tags: [], options: [{ name: "Size" }], variants: [variant(31, "32", "128.00", true)], images: [] },
   { id: 4, handle: "suede-boot", title: "The Ranch Boot in Brown Suede", product_type: "Footwear", tags: ["boots"], options: [{ name: "Size" }], variants: [variant(41, "10", "298.00", false)], images: [] },
+  { id: 6, handle: "jack-oxford", title: "The Jack in Marsh Check Oxford", product_type: "", tags: [], options: [{ name: "Size" }], variants: [variant(61, "M", "128.00", true)], images: [] },
   { id: 5, handle: "gift-card", title: "Gift Card", product_type: "Gift Card", tags: [], options: [], variants: [variant(51, "Default Title", "50.00", true)], images: [] },
 ];
 const store = vi.fn(async (url: string) => (url.includes("/products.json") ? json(200, { products: url.includes("page=1") ? STORE_PRODUCTS : [] }) : json(200, { name: "Test Tailors" })));
@@ -40,7 +41,7 @@ describe("the store feed on the server", () => {
   });
 
   it("files the store's pieces by kind and leaves out what Praxis doesn't style", () => {
-    expect(STORE_PRODUCTS.map((p) => feed.slotOf(p))).toEqual(["top", "top", "bottom", "shoes", null]);
+    expect(STORE_PRODUCTS.map((p) => feed.slotOf(p))).toEqual(["top", "top", "bottom", "shoes", "top", null]);
   });
 
   it("matches each piece to the same kind and colour, in stock first, with real sizes and a link", async () => {
