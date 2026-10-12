@@ -90,6 +90,15 @@ await step("ai", async () => {
   check(t.status === "disabled", "try-on plug-in point makes nothing");
   const live = await (await get("/api/ai")).json();
   check(Array.isArray(live.live) && live.live.every((s) => s.billable === false), `only free AI answers (${live.live?.map((s) => s.provider).join(", ") || "none"})`);
+  if (live.live?.some((s) => s.service === "styling_explanation")) {
+    // The free writer is on: one look, in words only, and its answer must keep the voice rules.
+    const look = { outfitId: "smoke-look", role: "SHARPER", title: "Navy evening", pieces: [{ slot: "top", name: "Navy merino knit" }, { slot: "outer", name: "Charcoal wool blazer" }, { slot: "bottom", name: "Grey flannel trousers" }, { slot: "shoes", name: "Dark brown suede loafers" }] };
+    const request = { occasion: "DINNER", venue: { label: "Restaurant" }, timeOfDay: "NIGHT", preferredVibe: "SHARP", budget: { band: "ELEVATED" } };
+    const words = await (await post("/api/ai/styling_explanation", { ...envelope, requestId: "smoke-words", service: "styling_explanation", payload: { request, outfitId: look.outfitId, looks: [look] } })).json();
+    const line = words.result?.looks?.[0];
+    check(words.status === "succeeded" && !!line?.summary && !!line?.note, `the free writer answers (${words.status}${words.error ? `, ${words.error.message}` : ""})`);
+    if (line) console.log(`      line: ${line.summary}\n      note: ${line.note}`);
+  }
 });
 
 await step("monitoring", async () => {
