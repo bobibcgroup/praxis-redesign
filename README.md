@@ -158,7 +158,7 @@ Motion is `motion/react` only, transform and opacity only, and every animation r
 
 ## Documentation
 
-`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos).
+`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos), `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/TRY-ON.md`.
 
 ## Structure
 

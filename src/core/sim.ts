@@ -15,6 +15,8 @@ export const SIM_SCENARIOS = {
   empty: "No looks",
   invalid_image: "Photo can’t be read",
   unavailable_products: "Some pieces sold out",
+  validation_error: "Answer fails validation",
+  retry_success: "Fails once, then works",
 } as const;
 
 export type SimScenario = keyof typeof SIM_SCENARIOS;

@@ -165,7 +165,7 @@ export interface Visualization {
   createdAt?: string;
 }
 
-export type FactorKind = "occasion" | "venue" | "time" | "style" | "budget" | "body" | "colour" | "wardrobe" | "weather";
+export type FactorKind = "occasion" | "venue" | "time" | "style" | "budget" | "body" | "colour" | "wardrobe" | "weather" | "style_dna" | "feedback";
 
 export interface RecommendationFactor {
   factor: FactorKind;

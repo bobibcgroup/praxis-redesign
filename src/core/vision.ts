@@ -6,6 +6,7 @@
  * request is made, whatever the screens show. Today every adapter is a free mock.
  */
 import { httpTryOn } from "./adapters/tryonHttp";
+import { isLive, serviceColourAdapter, serviceGarmentAdapter } from "./ai/bridge";
 import { ALLOW_BILLABLE_IMAGES, TRYON_ADAPTER } from "./config";
 import type { Slot } from "./contracts";
 import { newId } from "./ids";
@@ -204,8 +205,8 @@ export function imageServices(
   } = {},
   allowed: boolean = ALLOW_BILLABLE_IMAGES,
 ) {
-  const colour = adapters.colour ?? mockColourAnalysis;
-  const garment = adapters.garment ?? mockGarmentRecognition;
+  const colour = adapters.colour ?? (isLive("face_colour_analysis") ? serviceColourAdapter() : mockColourAnalysis);
+  const garment = adapters.garment ?? (isLive("garment_recognition") ? serviceGarmentAdapter() : mockGarmentRecognition);
   const visualization = adapters.visualization ?? mockVisualization;
   const tryOn = adapters.tryOn ?? tryOnAdapterInUse();
   return {

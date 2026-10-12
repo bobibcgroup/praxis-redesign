@@ -4,6 +4,7 @@
  * the pair in the request history. Swapping the adapter changes nothing above this file.
  */
 import { createMockAdapter } from "./adapters/mock";
+import { isLive, serviceRecommendationAdapter, serviceRetailer } from "./ai/bridge";
 import { RECOMMENDATION_ADAPTER } from "./config";
 import type { StylingRequest, StylingResponse } from "./contracts";
 import { local, readJson, writeJson } from "./ids";
@@ -79,6 +80,8 @@ export function createStylingService(adapter: RecommendationAdapter, history: Re
  * off it passes everything straight through.
  */
 export function withSimulation(adapter: RecommendationAdapter, scenario: () => SimScenario | null = simScenario): RecommendationAdapter {
+  /** Inputs already failed once in the "fails once, then works" scenario. */
+  const failedOnce = new Set<string>();
   return {
     id: adapter.id,
     version: adapter.version,
@@ -87,6 +90,12 @@ export function withSimulation(adapter: RecommendationAdapter, scenario: () => S
       if (s === "slow") await wait(SIM_SLOW_MS, options.signal);
       if (s === "timeout") await never(options.signal);
       if (s === "failure") throw new Error("Simulated service error");
+      if (s === "retry_success" && !failedOnce.has(request.inputKey)) {
+        failedOnce.add(request.inputKey);
+        throw new Error("Simulated first failure");
+      }
+      // An answer that does not match the contract: the validator must turn it into a clean failure.
+      if (s === "validation_error") return { recommendationId: 42, outfits: "not a list" };
       const raw = await adapter.recommend(request, options);
       if ((s === "partial" || s === "empty") && raw && typeof raw === "object" && Array.isArray((raw as { outfits?: unknown }).outfits)) {
         const outfits = (raw as { outfits: unknown[] }).outfits;
@@ -161,8 +170,10 @@ let service: StylingService | null = null;
 export function stylingService(): StylingService {
   if (!service) {
     if (RECOMMENDATION_ADAPTER !== "mock" && typeof console !== "undefined") console.warn(`Unknown recommendation adapter "${RECOMMENDATION_ADAPTER}"; using the mock.`);
-    service = createStylingService(withSimulation(createMockAdapter()), requestHistory, {
-      retailer: createMockRetailer((productId) => simScenario() === "unavailable_products" && productId.endsWith("_shoes")),
+    // A service listed in VITE_AI_PROVIDERS answers through src/core/ai (the server holds its keys).
+    const adapter = isLive("styling_recommendation") ? serviceRecommendationAdapter() : createMockAdapter();
+    service = createStylingService(withSimulation(adapter), requestHistory, {
+      retailer: isLive("inventory_pricing") ? serviceRetailer() : createMockRetailer((productId) => simScenario() === "unavailable_products" && productId.endsWith("_shoes")),
       timeoutMs: () => (simScenario() === "timeout" ? SIM_TIMEOUT_MS : TIMEOUT_MS),
     });
   }

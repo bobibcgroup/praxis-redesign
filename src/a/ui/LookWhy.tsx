@@ -7,7 +7,7 @@ import { useId, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { RecommendationFactor } from "../../core/contracts";
 
-const ORDER: RecommendationFactor["factor"][] = ["occasion", "venue", "time", "style", "budget", "wardrobe", "colour", "body", "weather"];
+const ORDER: RecommendationFactor["factor"][] = ["occasion", "venue", "time", "style", "budget", "wardrobe", "style_dna", "feedback", "colour", "body", "weather"];
 
 export function LookWhy({ factors, lookId }: { factors: RecommendationFactor[]; lookId: string }) {
   const [open, setOpen] = useState(false);

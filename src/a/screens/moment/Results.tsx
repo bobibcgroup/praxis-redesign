@@ -191,7 +191,9 @@ export function Results() {
   const premium = user?.premium ?? false;
   /* Pieces the client unticked. The print stays the stylist's reference, and says so. */
   const left = hero ? hero.pieces.filter((p) => !p.owned && !soldOut(p) && !selection.isChosen(p.id)).length : 0;
-  const isPick = index === 0;
+  /* My pick is the look the engine ranked first, wherever it sits in the gallery. */
+  const top = looks.reduce<(typeof looks)[number] | null>((best, l) => (l.rank !== undefined && (best?.rank === undefined || l.rank < best.rank) ? l : best), null);
+  const isPick = top ? hero.id === top.id : index === 0;
   const eyebrow = isPick ? `My pick ${forOccasion(answers.occasion)}` : `${ROLE_LABEL[hero.role]} ${forOccasion(answers.occasion)}`;
   /* Opened from someone's shared link: show their looks and invite this visitor to get their own. */
   const fresh = href("", FRESH);
@@ -231,7 +233,7 @@ export function Results() {
                 />
                 <span className="a-zoom-cue" aria-hidden="true">
                   <Search size={16} strokeWidth={1.5} />
-                  <span className="a-zoom-cue-text a-transition">View details</span>
+                  <span className="a-zoom-cue-text a-transition">View larger</span>
                 </span>
                 {looks.length > 1 ? (
                   <div className="a-look-nav">

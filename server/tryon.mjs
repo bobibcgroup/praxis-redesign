@@ -66,7 +66,7 @@ async function provider() {
   return loaded.module;
 }
 
-function readBody(req) {
+export function readBody(req) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];

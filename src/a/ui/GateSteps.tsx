@@ -18,7 +18,7 @@ export type PremiumFeature = "style_dna" | "tryon";
 
 const DNA_GETS = [
   "Looks shaped around you, not only the occasion",
-  "Your colours, read from a photo",
+  "Your colours, kept with your profile",
   "Your fit and taste, remembered",
   "One profile you can review and change",
   "Your own pieces, worked into your looks",

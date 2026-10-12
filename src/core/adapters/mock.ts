@@ -14,6 +14,13 @@
  * - The time of day must match the outfit's day or night tag (+1, or -1 when it does not).
  * - The budget favours outfits tagged for that spend (+1); every example price is drawn from the band.
  * - A piece the customer owns replaces that slot in every look. The photo still shows the original.
+ * - Style DNA: the customer's tastes and week lean towards a tier (+1). Fit and colours are passed
+ *   on in the explanation but cannot change a photographed outfit.
+ * - Feedback: a look marked More like this is favoured (+2); a look marked Not for me drops to the
+ *   end (-6); "too formal" or "too casual" twice or more moves away from the sharper or relaxed tier (-1).
+ * - Budget is a limit, not a hint: example prices are drawn inside the band, and a look whose example
+ *   total would leave the band is not offered. When an owned piece takes a slot, the total can fall
+ *   under the band, and the explanation says why.
  */
 import { OUTFITS, type OutfitEntry, type TierType } from "../../lib/outfitLibrary";
 import type { BudgetType, LocationType, TimeType } from "../../types/praxis";
@@ -71,6 +78,34 @@ interface Scored {
   place: boolean;
   time: boolean;
   bothTimes: boolean;
+  /** Style DNA leaned towards this look's tier. */
+  dna: boolean;
+  liked: boolean;
+  rejected: boolean;
+  /** Feedback reasons moved away from this tier. */
+  steered: boolean;
+}
+
+/** Which tier each Style DNA taste and week leans towards. */
+const TASTE_TIER: Record<string, TierType> = {
+  "quiet-luxury": "SAFEST",
+  "classic-tailored": "SHARPER",
+  "modern-minimal": "SAFEST",
+  "smart-casual": "RELAXED",
+  "elevated-street": "SHARPER",
+  "relaxed-weekend": "RELAXED",
+};
+const WEEK_TIER: Record<string, TierType> = { OFFICE: "SHARPER", SOCIAL: "SHARPER", CASUAL: "RELAXED", MIXED: "SAFEST" };
+
+/** The tier the Style DNA leans to, when its tastes and week agree on one. */
+export function dnaTier(profile: StylingRequest["styleProfile"]): TierType | null {
+  if (!profile) return null;
+  const votes = new Map<TierType, number>();
+  for (const t of profile.tastes) if (TASTE_TIER[t]) votes.set(TASTE_TIER[t], (votes.get(TASTE_TIER[t]) ?? 0) + 1);
+  if (profile.week && WEEK_TIER[profile.week.value]) votes.set(WEEK_TIER[profile.week.value], (votes.get(WEEK_TIER[profile.week.value]) ?? 0) + 1);
+  const sorted = [...votes.entries()].sort((a, b) => b[1] - a[1] || TIER_ORDER.indexOf(a[0]) - TIER_ORDER.indexOf(b[0]));
+  if (!sorted.length || (sorted[1] && sorted[1][1] === sorted[0][1])) return null;
+  return sorted[0][0];
 }
 
 function score(entry: OutfitEntry, req: StylingRequest): Scored {
@@ -80,8 +115,13 @@ function score(entry: OutfitEntry, req: StylingRequest): Scored {
   const nudged = (formality === "casual" && entry.tier === "RELAXED") || (formality === "formal" && entry.tier === "SHARPER");
   const time = entry.time.includes(TIME_TAG[req.timeOfDay]);
   const budget = BUDGET_TAGS[req.budget.band].some((tag) => entry.budget.includes(tag));
-  const total = (feel ? 4 : 0) + (place ? 2 : 0) + (nudged ? 1 : 0) + (time ? 1 : -1) + (budget ? 1 : 0);
-  return { entry, score: total, feel, place, time, bothTimes: entry.time.includes("DAY") && entry.time.includes("NIGHT") };
+  const dna = dnaTier(req.styleProfile) === entry.tier;
+  const prefs = req.preferences;
+  const liked = Boolean(prefs?.likedOutfitIds.includes(entry.id));
+  const rejected = Boolean(prefs?.rejectedOutfitIds.includes(entry.id));
+  const steered = (entry.tier === "SHARPER" && (prefs?.reasonCounts.too_formal ?? 0) >= 2) || (entry.tier === "RELAXED" && (prefs?.reasonCounts.too_casual ?? 0) >= 2);
+  const total = (feel ? 4 : 0) + (place ? 2 : 0) + (nudged ? 1 : 0) + (time ? 1 : -1) + (budget ? 1 : 0) + (dna ? 1 : 0) + (liked ? 2 : 0) + (rejected ? -6 : 0) + (steered ? -1 : 0);
+  return { entry, score: total, feel, place, time, bothTimes: entry.time.includes("DAY") && entry.time.includes("NIGHT"), dna, liked, rejected, steered };
 }
 
 /* ------------------------------------------------------- the sample pieces */
@@ -207,7 +247,14 @@ function label<T extends string>(list: readonly { id: T; label: string }[], id: 
   return list.find((o) => o.id === id)?.label ?? id;
 }
 
-function explain(s: Scored, req: StylingRequest): OutfitRecommendation["explanation"] {
+function budgetInfluence(req: StylingRequest, total: number): string {
+  if (req.budget.band === "OPEN") return "Example prices, with no limit set";
+  const min = req.budget.minimum;
+  if (min !== undefined && total < min && req.wardrobeItems.length) return "Under your budget, because one piece is already yours";
+  return "Example prices inside your budget";
+}
+
+function explain(s: Scored, req: StylingRequest, total: number): OutfitRecommendation["explanation"] {
   const at = VENUE_AT[req.venue.type] ?? "";
   const context = `for ${OCCASION_PHRASE[req.occasion]} ${at} ${TIME_AT[req.timeOfDay]}`.replace(/\s+/g, " ").trim();
   const lead = s.feel ? `${FEEL_WORD[req.preferredVibe]}, as you asked, ${context}.` : `${ALTERNATIVE[s.entry.tier]} ${context}.`;
@@ -231,8 +278,20 @@ function explain(s: Scored, req: StylingRequest): OutfitRecommendation["explanat
     {
       factor: "budget",
       value: label(SPEND, req.budget.band),
-      influence: req.budget.band === "OPEN" ? "Example prices, with no limit set" : "Example prices inside your budget",
+      influence: budgetInfluence(req, total),
     },
+    ...(req.styleProfile
+      ? [
+          {
+            factor: "style_dna" as const,
+            value: "Your Style DNA",
+            influence: s.dna ? "Close to the taste in your Style DNA" : dnaTier(req.styleProfile) ? "A step away from your usual taste, for this occasion" : "Your Style DNA was read; it doesn’t lean either way here",
+          },
+        ]
+      : []),
+    ...(s.liked ? [{ factor: "feedback" as const, value: "More like this", influence: "You liked this look before" }] : []),
+    ...(s.rejected ? [{ factor: "feedback" as const, value: "Not for me", influence: "You passed on this look before, so it comes last" }] : []),
+    ...(s.steered ? [{ factor: "feedback" as const, value: "Your notes", influence: "Placed lower, after your notes on formality" }] : []),
     ...req.wardrobeItems.map((w): RecommendationFactor => ({ factor: "wardrobe", value: w.label, influence: "Kept in the look. The photo shows a similar piece." })),
   ];
   return { summary: [lead, ...caveats].join(" "), contributingFactors: factors, source: "mock_rules" };
@@ -246,15 +305,18 @@ export function mockRecommend(req: StylingRequest): StylingResponse {
     .map((entry) => score(entry, req))
     .sort((a, b) => b.score - a.score || TIER_ORDER.indexOf(a.entry.tier) - TIER_ORDER.indexOf(b.entry.tier));
 
-  const outfits = ranked.map((s, i): OutfitRecommendation => {
+  const outfits = ranked.flatMap((s): OutfitRecommendation[] => {
     const pieces = garments(s.entry, req);
-    return {
+    const total = pieces.reduce((sum, g) => sum + (g.source === "retail" ? g.product.price : 0), 0);
+    // Budget is a limit: a look whose example total leaves the band is not offered.
+    if (req.budget.maximum !== undefined && total > req.budget.maximum) return [];
+    return [{
       outfitId: s.entry.id,
-      rank: i + 1,
+      rank: 0,
       role: ROLE_FOR_TIER[s.entry.tier],
       title: s.entry.title,
       rationale: RATIONALE[s.entry.id] ?? s.entry.reason,
-      explanation: explain(s, req),
+      explanation: explain(s, req, total),
       garments: pieces,
       visualization: {
         imageId: `img_${s.entry.id}`,
@@ -268,9 +330,9 @@ export function mockRecommend(req: StylingRequest): StylingResponse {
         width: 1024,
         height: 1024,
       },
-      pricing: { total: pieces.reduce((sum, g) => sum + (g.source === "retail" ? g.product.price : 0), 0), currency: "USD", status: "example" },
-    };
-  });
+      pricing: { total, currency: "USD", status: "example" },
+    }];
+  }).map((o, i) => ({ ...o, rank: i + 1 }));
 
   return {
     recommendationId: `rec_${req.requestId.replace(/^req_/, "")}`,

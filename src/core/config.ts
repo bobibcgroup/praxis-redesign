@@ -51,3 +51,15 @@ export function premiumPrice(): string {
 export function premiumAmount(): string {
   return `$${PREMIUM.amount}`;
 }
+
+/**
+ * AI services answered by a live provider instead of the mock, as a comma list of service names
+ * (src/core/ai/envelope.ts ServiceName), such as "face_colour_analysis,product_matching". Empty by
+ * default: every service is the free mock. A listed service posts to this app's server
+ * (POST /api/ai/<service>, server/ai.mjs), which holds the provider keys; a paid one also needs
+ * VITE_ALLOW_BILLABLE_IMAGES=true here and ALLOW_BILLABLE_AI=true on the server.
+ */
+export const AI_PROVIDERS: readonly string[] = (env("VITE_AI_PROVIDERS") ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);

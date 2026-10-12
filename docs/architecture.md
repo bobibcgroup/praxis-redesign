@@ -323,6 +323,8 @@ Step by step:
 
 ## Where real integrations plug in
 
+Since Phase 2 every AI service also has a contract, a mock and a server plug-in point in `src/core/ai` (`docs/AI-SERVICES.md`). Listing a service in `VITE_AI_PROVIDERS` routes the adapter below through it.
+
 | Integration | Interface in code | Selected or registered at | Exists today |
 |---|---|---|---|
 | Recommendation engine (Gemini or other) | `RecommendationAdapter`, `src/core/service.ts:15` | `stylingService()`, `service.ts:151`; `VITE_RECOMMENDATION_ADAPTER`, `config.ts:21` | No, mock only |

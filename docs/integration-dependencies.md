@@ -19,6 +19,8 @@ Related documents: `docs/architecture.md` (diagram and "Where real integrations 
 | Legal approval of privacy disclosures | `IMAGE_POLICIES` (`src/core/images.ts:45`) and `disclosure()` (`src/core/images.ts:109`) | `consentVersion` per photo kind | Wording written, not approved |
 | Server-side persistence and accounts | `RequestHistory` (`src/core/service.ts:110`), `FeedbackStore` (`src/core/feedback.ts:36`), `useLabStore` (`src/shared/store.ts:95`), `AnalyticsSink` (`src/core/analytics.ts:116`) | None | Everything lives in this browser's `localStorage` and `sessionStorage` |
 
+Phase 2 added one service layer for all nine AI services, with contracts, mocks and a server plug-in point: see `docs/AI-SERVICES.md`. The sections below still describe what each integration must supply.
+
 ## Configuration that exists today
 
 | Name | Where read | Values | Effect |
@@ -27,7 +29,9 @@ Related documents: `docs/architecture.md` (diagram and "Where real integrations 
 | `VITE_ALLOW_BILLABLE_IMAGES` | `src/core/config.ts:27` | `true` or anything else (off) | `guardBillable` (`src/core/vision.ts:157`) refuses any adapter with `billable: true` while off. No billable adapter exists yet. |
 | `__APP_VERSION__` | `vite.config.ts` (`define`), `src/core/config.ts:9` | `package.json` version | Stamped on every analytics event. |
 | `PREMIUM` | `src/core/config.ts:30` | Constant: `Premium`, 9, `USD`, `month` | The name and price shown in the gate. Not an environment value. |
-| Test mode | `src/core/sim.ts:9`, set from `/internal/analytics` | `fast`, `slow`, `timeout`, `failure`, `partial`, `empty`, `invalid_image`, `unavailable_products` | Per tab (`praxis_sim` in `sessionStorage`). Wraps whatever adapter is configured (`withSimulation`, `src/core/service.ts:81`). |
+| `VITE_AI_PROVIDERS` | `src/core/config.ts` | comma list of service names; empty (default) | A listed service answers through `src/core/ai` and this app's server (`POST /api/ai/<service>`); see `docs/AI-SERVICES.md`. |
+| `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | `server/ai.mjs` (server environment) | provider module name; `true` | Which provider module answers a service, and whether a paid one may run. Unset: every service answers `disabled`. |
+| Test mode | `src/core/sim.ts:9`, set from `/internal/analytics` | `fast`, `slow`, `timeout`, `failure`, `partial`, `empty`, `invalid_image`, `unavailable_products`, `validation_error`, `retry_success` | Per tab (`praxis_sim` in `sessionStorage`). Wraps whatever adapter is configured (`withSimulation`, `src/core/service.ts:81`). |
 
 Two facts that apply to every integration below:
 

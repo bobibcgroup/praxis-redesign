@@ -53,7 +53,7 @@ export function LookDetails({ look, eyebrow, compact = false, selection, caption
             <span className="a-label">
               Total, {count} {count === 1 ? "piece" : "pieces"}
             </span>
-            <span className="a-mono">{count === 0 ? "$0" : money(selection.total)}</span>
+            <span className="a-mono">{money(count === 0 ? 0 : selection.total)}</span>
           </div>
           {count === 0 && buyable ? (
             <p id={CHECKOUT_REASON_ID} className="mt-2 text-[13px] leading-5 text-[var(--muted)]" aria-live="polite">

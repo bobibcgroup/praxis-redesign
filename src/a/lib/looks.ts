@@ -77,8 +77,9 @@ export function canvasImage(answers: Answers): string | null {
   return answers.occasion ? moodImage(answers.occasion, answers.vibe) : null;
 }
 
+/** A price or a total. A piece the client owns says "Yours" at the call site, never through a price. */
 export function money(n: number): string {
-  return n === 0 ? "Owned" : `$${n.toLocaleString("en-US")}`;
+  return `$${n.toLocaleString("en-US")}`;
 }
 
 export const ROLE_LABEL: Record<OutfitRole, string> = { classic: "Classic", sharper: "Sharper", relaxed: "Relaxed" };

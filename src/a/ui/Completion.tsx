@@ -28,8 +28,8 @@ function SyncOffer() {
   if (!show) return null;
   return (
     <div className="mt-6 border-t border-[var(--rule)] pt-5">
-      <p className="text-[15px] leading-6">Keep your looks on every device.</p>
-      <p className="text-[15px] leading-6 text-[var(--muted)]">Sign in to sync your collection.</p>
+      <p className="text-[15px] leading-6">Keep your looks under your name.</p>
+      <p className="text-[15px] leading-6 text-[var(--muted)]">Sign in and they stay with your account on this device.</p>
       <div className="mt-3 flex items-center gap-2">
         <QuietButton onClick={() => openGate("signin", "sync_offer")}>Sign in</QuietButton>
         <TextButton

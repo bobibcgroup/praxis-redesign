@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { countryForIp, geoReady, loadGeo } from "./geo.mjs";
 import { handleTryOn } from "./tryon.mjs";
+import { handleAi } from "./ai.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
 const PORT = Number(process.env.PORT ?? 3000);
@@ -128,6 +129,16 @@ export const server = createServer((req, res) => {
       return res.end();
     }
     void handleTryOn(req, res);
+    return;
+  }
+  /* Every AI service's plug-in point (server/ai.mjs); each answers "disabled" until its provider is set up. */
+  const ai = /^\/api\/ai\/([a-z_]+)$/.exec(req.url?.split("?")[0] ?? "");
+  if (ai) {
+    if (req.method !== "POST") {
+      res.writeHead(405, { Allow: "POST" });
+      return res.end();
+    }
+    void handleAi(req, res, ai[1]);
     return;
   }
   if (req.method !== "GET" && req.method !== "HEAD") {

@@ -335,7 +335,50 @@ for (const device of ["desktop", "phone"]) {
     },
     { sim: "unavailable_products" },
   );
+
+  await scenario(
+    "P2A",
+    "A service that fails once: Try again gets the looks",
+    device,
+    async (p, shot) => {
+      await answer(p, A);
+      await p.waitForSelector("text=couldn’t put your looks together this time", { timeout: 15000 });
+      check(await button(p, "Try again").count(), "Try again offered after the first failure");
+      await shot("first-failure");
+      await button(p, "Try again").click();
+      await p.waitForURL(/moment\/results/, { timeout: 15000 });
+      check((await history(p)).some((e) => e.response.status === "completed"), "the second try answers");
+    },
+    { sim: "retry_success" },
+  );
+
+  await scenario(
+    "P2B",
+    "An answer that breaks the contract becomes a clean failure",
+    device,
+    async (p, shot) => {
+      await answer(p, A);
+      await p.waitForSelector("text=couldn’t put your looks together this time", { timeout: 15000 });
+      const t = await body(p);
+      check(!/undefined|NaN|\[object/.test(t), "nothing broken is shown");
+      check(await button(p, "Change my answers").count(), "Change my answers offered");
+      await shot("invalid");
+    },
+    { sim: "validation_error" },
+  );
 }
+
+await scenario("P2C", "A full journey with try-on makes no call to an AI, image or retailer service (fonts only)", "desktop", async (p) => {
+  const calls = [];
+  p.on("request", (r) => {
+    const u = new URL(r.url());
+    if (u.pathname.startsWith("/api/ai") || u.pathname.startsWith("/api/tryon") || !["127.0.0.1", "localhost", "fonts.googleapis.com", "fonts.gstatic.com"].includes(u.hostname)) calls.push(r.method() + " " + u.host + u.pathname);
+  });
+  await toResults(p, A);
+  await p.goto(p.url().replace("moment/results", "moment/tryon"));
+  await p.waitForTimeout(1500);
+  check(calls.length === 0, `no outside or AI calls (${calls.slice(0, 3).join(", ") || "none"})`);
+}, { premium: true });
 
 await scenario("S11", "Phone: the whole journey, swipe, enlarge, back and save", "phone", async (p, shot) => {
   await toResults(p, A);
