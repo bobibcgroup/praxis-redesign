@@ -3,12 +3,13 @@
  * "New moment" link once the journey has begun, and the monogram that opens
  * the overlay menu. No persistent navigation.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, Bookmark, Menu as MenuIcon, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { track } from "../../core/analytics";
 import { FRESH, useJourney } from "../lib/journeyContext";
+import { trapTab } from "../lib/focusTrap";
 import { useScrollLock } from "../lib/scrollLock";
 import { TextButton } from "./controls";
 
@@ -31,6 +32,12 @@ export function TopBar({ spine, back = null }: TopBarProps) {
   const { href, user, openGate, store } = useJourney();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
+  /* The button that opened the menu, so focus can go back to it on close. */
+  const opener = useRef<HTMLElement | null>(null);
+  const openMenu = (e: { currentTarget: HTMLElement }) => {
+    opener.current = e.currentTarget;
+    setMenu(true);
+  };
 
   return (
     <header className="relative z-10 flex h-14 items-center justify-between pl-2 pr-2 lg:h-20 lg:pl-10 lg:pr-8">
@@ -69,7 +76,7 @@ export function TopBar({ spine, back = null }: TopBarProps) {
           <span className="a-bar-rule" aria-hidden="true" />
         </nav>
         {user ? (
-          <button type="button" onClick={() => setMenu(true)} aria-label={`${user.name}, open menu`} className="a-desktop mr-1 items-center justify-center" style={{ width: 44, height: 44 }}>
+          <button type="button" onClick={openMenu} aria-label={`${user.name}, open menu`} className="a-desktop mr-1 items-center justify-center" style={{ width: 44, height: 44 }}>
             <span className="a-avatar" aria-hidden="true">
               {user.name.charAt(0)}
             </span>
@@ -83,14 +90,14 @@ export function TopBar({ spine, back = null }: TopBarProps) {
           type="button"
           aria-label="Menu"
           aria-expanded={menu}
-          onClick={() => setMenu(true)}
+          onClick={openMenu}
           className="flex h-11 w-11 shrink-0 items-center justify-center text-[var(--text)] transition-colors duration-300 hover:text-[var(--muted)] lg:hidden"
         >
           <MenuIcon size={22} strokeWidth={1.25} />
         </button>
       </div>
 
-      <Menu open={menu} onClose={() => setMenu(false)} />
+      <Menu open={menu} onClose={() => setMenu(false)} returnTo={opener} />
     </header>
   );
 }
@@ -143,18 +150,24 @@ export function PhoneSpine({ steps }: { steps: SpineStep[] }) {
   );
 }
 
-function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
+function Menu({ open, onClose, returnTo }: { open: boolean; onClose: () => void; returnTo: { current: HTMLElement | null } }) {
   const { href, store, reduced, user, signOut, openGate } = useJourney();
   useScrollLock(open);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      else trapTab(e, panelRef.current);
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      // Focus goes back to the menu button, unless a link in the menu moved to another page.
+      if (returnTo.current?.isConnected) returnTo.current.focus();
+    };
+  }, [open, onClose, returnTo]);
 
   const items = [
     { label: "Start a new look", to: href("", FRESH) },
@@ -166,6 +179,7 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
     <AnimatePresence>
       {open && (
         <motion.div
+          ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-label="Menu"

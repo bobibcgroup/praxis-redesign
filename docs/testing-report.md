@@ -6,11 +6,33 @@ Deliverable G of the master spec. Three layers of tests cover the app. All of th
 | --- | --- | --- | --- |
 | Unit | `npm test` | `src/core`: request building, validation of adapter answers, the mock adapter, the service with timeouts, cancel and the retailer lookup, processing states, feedback, accounts and migration, identity, analytics guards, photo policies and checks, consent, Style DNA layers, retention and deletion | 204 tests in 13 files, all pass (2026-10-12) |
 | Type and build | `npm run build` | strict TypeScript and the production bundle | passes |
-| Scenarios | `npm run build && npm run e2e` | the twelve scenarios of spec section 22 in Chromium, on desktop (1440 x 900) and phone (390 x 844), plus accessibility (axe, WCAG 2.1 A and AA), 44px targets, sideways scroll and load | 107 of 107 runs pass (2026-10-12) |
+| Scenarios | `npm run build && npm run e2e` | thirteen suites (below) in Chromium on desktop (1440 x 900) and phone (390 x 844), seven viewports from 375 x 812 to 1920 x 1080, axe (WCAG 2.1 A and AA), 44px targets, sideways scroll and load | 174 of 174 runs, 1648 of 1648 checks pass, twice in a row (2026-10-12) |
 
-`npm run e2e` starts `vite preview` itself (or uses `BASE_URL`), needs a Chromium that Playwright can find (`PLAYWRIGHT_BROWSERS_PATH`, or `CHROMIUM_PATH`), writes `e2e/results/report.md`, `report.json` and screenshots, and exits non-zero on any failure. Scenarios that need a misbehaving service use test mode (`src/core/sim.ts`), set per tab, so nothing in the app changes for them.
+`npm run e2e` starts the app's own server (`server/index.mjs`) itself (or uses `BASE_URL`), needs a Chromium that Playwright can find (`PLAYWRIGHT_BROWSERS_PATH`, or `CHROMIUM_PATH`), writes `e2e/results/report.md`, `report.json` and screenshots, and exits non-zero on any failure. `SUITE=4 npm run e2e` runs one suite (or `SUITE=4,11`); `ONLY=TRY1,P3-4a npm run e2e` runs single scenarios. Scenarios that need a misbehaving service use test mode (`src/core/sim.ts`), set per tab, so nothing in the app changes for them.
 
-## Scenarios
+## The thirteen suites (Phase 3)
+
+Each suite is a file in `e2e/suites/` (`01-home.mjs` to `13-analytics.mjs`), loaded by `e2e/scenarios.mjs`. Older scenarios belong to the suite they cover (S1 to suite 2, TRY to suite 4 and so on), so the report's per-suite table counts every run.
+
+| # | Suite | What it covers |
+| --- | --- | --- |
+| 1 | Homepage and occasion selection | five occasion cards, each routes to the right first question; country photos by lookup, by manual choice and the fallback |
+| 2 | Style a moment | every answer and the owned piece reach the request; browser Back keeps answers; incomplete or invalid answers never send; every occasion gives valid looks |
+| 3 | Outfit results | switching by thumbnail, swipe and keys updates title, photo, pieces and total; unticking lowers the total; empty selection blocks Check out with the reason; viewer zoom and Escape; Restyle; nothing stale |
+| 4 | See it on me | explanation, privacy, consent and decline, camera (fake device) and upload, text file and broken JPEG refused, preview, retake, close and reopen, the right outfit sent, timeout then retry, unreadable photo, honest label, photo kept to the tab |
+| 5 | Style DNA | intro, sign in, preview payment with no charge, the four steps, profile, corrections, saved per account, used in the next request, consent for an own photo |
+| 6 | Digital wardrobe | an uploaded piece is classified as the customer says, invalid files refused, changing the piece, owned never priced, deleting everything from Your data |
+| 7 | Saved looks and accounts | guest save, reload, reopen, remove and undo, migration on sign in, shared link opened elsewhere, separation between accounts |
+| 8 | Retailer and checkout preparation | sizes, stock, sold out, the Check out total, external link only when a retailer gives one (https only), no purchase is ever made |
+| 9 | Failure and recovery | slow, timeout, empty, partial, failure, invalid answer, offline, expired sign in, cancel; answers kept every time |
+| 10 | Responsiveness | 375 x 812, 390 x 844, 430 x 932, 768 x 1024, 1024 x 768, 1440 x 900, 1920 x 1080: nothing sideways, off screen, covered or clipped, 44px targets, readable text |
+| 11 | Accessibility | full keyboard journey, focus kept inside dialogs and returned on close, Escape, axe on more states and in dark mode, alt text and labels, reduced motion |
+| 12 | AI integration contracts | the contract unit tests per service; the server plug-in points answer not connected and refuse bad requests; no key or provider address in the page; a whole session sends nothing to an AI service |
+| 13 | Analytics | every required event once, with event id, time, anonymous id, account id and version, and no email, photo or Style DNA values |
+
+Defects the suites found and that were fixed in Phase 3: browser Back lost an answer (P3-2b); a non-https retailer link got a Buy button (P3-8c); sheets and the phone menu let focus leave the dialog, and the menu did not return focus (P3-11b); a sheet's scrolling body was not reachable by keyboard (P3-11c).
+
+## Scenarios (spec section 22)
 
 | # | Scenario | How it is checked | Status |
 | --- | --- | --- | --- |
@@ -42,60 +64,32 @@ Nothing is blocked. Scenarios 5 and 10 test the previews of sign-in and the reta
 
 ## Last run
 
-Last run against a local production build (`vite preview`) on 2026-10-11 07:54 UTC. 30 of 30 runs passed.
+2026-10-12 09:00 UTC, against a local production build, Chromium (Playwright 1.56.1): 174 of 174 runs passed, 1648 of 1648 checks, none skipped. The run before it (08:34 UTC) gave the same result. Every check is listed in `e2e/results/report.md`.
 
-| Scenario | Device | Result | Checks |
-| --- | --- | --- | --- |
-| S1 First-time visitor gets three looks | desktop | passed | 4/4 |
-| S2 Different venue and time give a different request and looks | desktop | passed | 3/3 |
-| S3 Rejecting a look as too formal stores feedback against it | desktop | passed | 3/3 |
-| S4 A guest's saved look survives a refresh | desktop | passed | 3/3 |
-| S5 Signing in moves a guest's saved look to the account | desktop | passed | 3/3 |
-| S6 A corrected Style DNA colour is kept | desktop | passed | 4/4 |
-| S7 An unreadable photo gets a way forward | desktop | passed | 4/4 |
-| S7b A photo the analysis cannot read offers a retake or skipping colours | desktop | passed | 3/3 |
-| S8 A slow answer, then a timeout, can be recovered | desktop | passed | 7/7 |
-| S9 Two looks only: the page works and says so | desktop | passed | 3/3 |
-| S10 A sold-out piece never leads to a purchase | desktop | passed | 5/5 |
-| S1 First-time visitor gets three looks | phone | passed | 4/4 |
-| S2 Different venue and time give a different request and looks | phone | passed | 3/3 |
-| S3 Rejecting a look as too formal stores feedback against it | phone | passed | 3/3 |
-| S4 A guest's saved look survives a refresh | phone | passed | 3/3 |
-| S5 Signing in moves a guest's saved look to the account | phone | passed | 3/3 |
-| S6 A corrected Style DNA colour is kept | phone | passed | 4/4 |
-| S7 An unreadable photo gets a way forward | phone | passed | 4/4 |
-| S7b A photo the analysis cannot read offers a retake or skipping colours | phone | passed | 3/3 |
-| S8 A slow answer, then a timeout, can be recovered | phone | passed | 7/7 |
-| S9 Two looks only: the page works and says so | phone | passed | 3/3 |
-| S10 A sold-out piece never leads to a purchase | phone | passed | 5/5 |
-| S11 Phone: the whole journey, swipe, enlarge, back and save | phone | passed | 7/7 |
-| S12 Analytics: once each, stable ids, real actions only | desktop | passed | 8/8 |
-| A11Y No serious or critical accessibility problems (axe) | desktop | passed | 7/7 |
-| LAYOUT Controls are at least 44px and nothing scrolls sideways | desktop | passed | 8/8 |
-| A11Y No serious or critical accessibility problems (axe) | phone | passed | 7/7 |
-| LAYOUT Controls are at least 44px and nothing scrolls sideways | phone | passed | 8/8 |
-| PERF Home loads quickly | desktop | passed | 2/2 |
-| PERF Home loads quickly | phone | passed | 2/2 |
+| Suite | Runs | Checks |
+| --- | --- | --- |
+| 1 Homepage and occasion selection | 34 | 270 |
+| 2 Style a moment | 16 | 89 |
+| 3 Outfit results | 21 | 116 |
+| 4 See it on me | 17 | 124 |
+| 5 Style DNA | 13 | 59 |
+| 6 Digital wardrobe | 4 | 23 |
+| 7 Saved looks and accounts | 24 | 77 |
+| 8 Retailer and checkout preparation | 6 | 35 |
+| 9 Failure and recovery | 13 | 43 |
+| 10 Responsiveness | 10 | 557 |
+| 11 Accessibility | 9 | 97 |
+| 12 AI integration contracts | 5 | 123 |
+| 13 Analytics | 2 | 35 |
 
-### Failed checks
+Load: desktop largest paint 196 ms; phone (throttled to 150 ms, 1.6 Mbit/s) 2448 ms; no layout shift.
 
-None.
-
-### Load
-
-| Device | Largest paint | DOM ready | Load | Layout shift | Transferred |
-| --- | --- | --- | --- | --- | --- |
-| desktop | 200 ms | 50 ms | 50 ms | 0 | 2596 KB |
-| phone | 2332 ms | 1135 ms | 1135 ms | 0 | 280 KB |
-
-The desktop load includes the home demo film (about 2.3 MB, both cuts are compressed). The phone run uses a throttled connection (150 ms, 1.6 Mbit/s) and loads the phone cut lazily.
-
-## Fixed during Phase 3
+## Fixed during the master spec Phase 3
 
 - Colour contrast: the Style DNA section on the home page and the upcoming steps in the top bar were below 4.5:1; both now pass.
 - List markup: the look thumbnails and the Your data list now use valid list semantics for screen readers.
 
 ## Not covered
 
-- Real devices and Safari: the suite runs in Chromium only. iOS Safari behaviour (toolbar, scroll locking) was checked by hand earlier, see README "Phones and iOS Safari".
+- Real devices and Safari: the suite runs in Chromium only. A real camera, HEIC photos from an iPhone and iOS Safari need a check on a real phone; the camera tests use Chromium's fake camera, which proves the page's handling, not a device's camera. iOS Safari behaviour (toolbar, scroll locking) was checked by hand earlier, see README "Phones and iOS Safari".
 - The deployed site: the Railway address is not reachable from the build machine, so the suite runs against a local production build of the same commit.

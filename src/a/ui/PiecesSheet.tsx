@@ -25,7 +25,8 @@ type Link = { url: string; route: "retailer_site" | "affiliate" };
 
 function linkOf(p: Piece): Link | null {
   const r = p.purchase;
-  return r && (r.kind === "retailer_site" || r.kind === "affiliate") ? { url: r.url, route: r.kind } : null;
+  // Only an https link out is ever followed, wherever the piece came from (a feed, or a saved look on this device).
+  return r && (r.kind === "retailer_site" || r.kind === "affiliate") && /^https:\/\//i.test(r.url) ? { url: r.url, route: r.kind } : null;
 }
 
 function stockLine(p: Piece, size: string | undefined): string {

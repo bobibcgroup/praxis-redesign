@@ -2,6 +2,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
+import { trapTab } from "../lib/focusTrap";
 import { useScrollLock } from "../lib/scrollLock";
 
 interface SheetProps {
@@ -26,6 +27,7 @@ export function Sheet({ open, onClose, label, children, footer }: SheetProps) {
     first?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
+      else trapTab(e, panelRef.current);
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -74,7 +76,10 @@ export function Sheet({ open, onClose, label, children, footer }: SheetProps) {
                 <X size={20} strokeWidth={1.5} />
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 lg:px-8 lg:py-6">{children}</div>
+            {/* Focusable so a keyboard can scroll it when it holds more than fits. */}
+            <div tabIndex={0} role="region" aria-label={label} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 outline-none focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--text)] lg:px-8 lg:py-6">
+              {children}
+            </div>
             {footer ? <div className="shrink-0 border-t border-[var(--rule)] px-5 pb-[max(16px,env(safe-area-inset-bottom))] pt-4 lg:px-8 lg:pb-8">{footer}</div> : null}
           </motion.div>
         </div>

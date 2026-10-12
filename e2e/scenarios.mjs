@@ -1,5 +1,5 @@
 /**
- * The twelve scenarios from the master spec (section 22), plus accessibility, phone layout and load
+ * The end-to-end suite: the twelve scenarios from the master spec (section 22), plus accessibility, phone layout and load
  * checks, run in Chromium against a built copy of the app. Repeatable: every scenario starts in a fresh
  * browser profile.
  *
@@ -9,9 +9,15 @@
  * BASE_URL is set. Needs a Chromium that Playwright can find
  * (PLAYWRIGHT_BROWSERS_PATH, or CHROMIUM_PATH for a specific binary). Writes e2e/results/report.md and
  * report.json, with screenshots, and exits non-zero if anything fails.
+ *
+ * Every run belongs to one of the thirteen suites of the Phase 3 test plan (SUITES below). The
+ * scenarios in this file came first; the suites in e2e/suites add to them, one file per suite.
+ *
+ *   ONLY=S1,UX3 npm run e2e      just those scenarios
+ *   SUITE=4,9 npm run e2e        just those suites
  */
 import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -56,12 +62,52 @@ function check(cond, what) {
 /** ONLY=S1,UX3 runs just those scenarios. */
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 
+export const SUITES = {
+  1: "Homepage and occasion selection",
+  2: "Style a moment",
+  3: "Outfit results",
+  4: "See it on me",
+  5: "Style DNA",
+  6: "Digital wardrobe",
+  7: "Saved looks and accounts",
+  8: "Retailer and checkout preparation",
+  9: "Failure and recovery",
+  10: "Responsiveness",
+  11: "Accessibility",
+  12: "AI integration contracts",
+  13: "Analytics",
+};
+/** The suite of each scenario written before the suites existed. */
+const LEGACY_SUITE = {
+  S1: 2, S2: 2, UX1: 2, UX4: 2, PARAMS1: 2,
+  S3: 3, S11: 3, UX2: 3, UX3: 3, UX5: 3, UX7: 3, UX10: 3,
+  S6: 5, S7: 5, S7b: 5, ISO2: 5,
+  S4: 7, S5: 7, ISO1: 7, ISO3: 7, TABS1: 7, SAVE2: 7, UX6: 7, UX8: 7, DATA1: 7, FULL1: 7,
+  S10: 8,
+  S8: 9, S9: 9, P2A: 9, P2B: 9,
+  LAYOUT: 10, UX9: 10,
+  A11Y: 11,
+  P2C: 12,
+  S12: 13,
+  NAV: 1, PERF: 1,
+};
+function suiteOf(id) {
+  if (LEGACY_SUITE[id]) return LEGACY_SUITE[id];
+  if (id.startsWith("GEO")) return 1;
+  if (id.startsWith("TRY")) return 4;
+  const n = Number(/^P3-(\d+)/.exec(id)?.[1]);
+  return n || 0;
+}
+/** SUITE=4,9 runs just those suites. */
+const ONLY_SUITES = process.env.SUITE ? new Set(process.env.SUITE.split(",").map(Number)) : null;
+const wanted = (id) => (!ONLY || ONLY.has(id)) && (!ONLY_SUITES || ONLY_SUITES.has(suiteOf(id)));
+
 /** A signed-in Premium customer from the first page, for scenarios that start inside Style DNA or try-on. */
 const PREMIUM_USER = { id: "user_e2e", name: "Sam", email: "sam@example.com", premium: true };
 
-async function scenario(id, title, device, fn, { sim, ip, locale, missingFiles, premium, viewport } = {}) {
-  if (ONLY && !ONLY.has(id)) return;
-  const ctx = await browser.newContext({ ...(viewport ?? (device === "phone" ? PHONE : DESKTOP)), reducedMotion: "no-preference", ...(locale ? { locale } : {}) });
+async function scenario(id, title, device, fn, { sim, ip, locale, missingFiles, premium, viewport, reducedMotion, contextOptions, seed } = {}) {
+  if (!wanted(id)) return;
+  const ctx = await browser.newContext({ ...(viewport ?? (device === "phone" ? PHONE : DESKTOP)), reducedMotion: reducedMotion ?? "no-preference", ...(locale ? { locale } : {}), ...(contextOptions ?? {}) });
   if (premium)
     await ctx.addInitScript((u) => {
       if (localStorage.getItem("praxis_e2e_seeded")) return;
@@ -72,8 +118,15 @@ async function scenario(id, title, device, fn, { sim, ip, locale, missingFiles, 
   /* The visitor's address, as Railway's proxy passes it on; only on requests to our own server. */
   if (ip) await ctx.route(`${BASE}/**`, (r) => r.continue({ headers: { ...r.request().headers(), "x-forwarded-for": ip } }));
   if (sim) await ctx.addInitScript((s) => sessionStorage.setItem("praxis_sim", s), sim);
+  /* Fixture data written before the first page loads, once per scenario. */
+  if (seed)
+    await ctx.addInitScript((entries) => {
+      if (localStorage.getItem("praxis_e2e_fixture")) return;
+      localStorage.setItem("praxis_e2e_fixture", "1");
+      for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
+    }, seed);
   const page = await ctx.newPage();
-  current = { id, title, device, checks: [], errors: [], status: "passed" };
+  current = { id, title, device, suite: suiteOf(id), checks: [], errors: [], status: "passed" };
   page.on("pageerror", (e) => current.errors.push(e.message));
   page.on("console", (m) => {
     /* Scenarios about missing photos expect the browser to log the failed file. */
@@ -1245,7 +1298,7 @@ await scenario(
 );
 
 /* A real camera, faked by Chromium: the photo is taken from the live preview. */
-if (!ONLY || ONLY.has("TRY7")) {
+if (wanted("TRY7")) {
   const camBrowser = await chromium.launch({
     ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
     args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"],
@@ -1258,7 +1311,7 @@ if (!ONLY || ONLY.has("TRY7")) {
     localStorage.setItem("praxis_lab_a_premium", JSON.stringify({ [u.id]: true }));
   }, PREMIUM_USER);
   const p = await ctx.newPage();
-  current = { id: "TRY7", title: "The camera opens, shows a live preview, and the photo taken goes to the preview", device: "phone", checks: [], errors: [], status: "passed" };
+  current = { id: "TRY7", title: "The camera opens, shows a live preview, and the photo taken goes to the preview (Chromium's fake camera, not a physical one)", device: "phone", suite: 4, checks: [], errors: [], status: "passed" };
   p.on("pageerror", (e) => current.errors.push(e.message));
   try {
     await openTryOn(p);
@@ -1284,20 +1337,43 @@ if (!ONLY || ONLY.has("TRY7")) {
   await camBrowser.close();
 }
 
+/* ------------------------------------------------------------ suites */
+
+/* Everything a suite needs from the harness. Suites live in e2e/suites, one file per suite. */
+const H = { BASE, OUT, AXE, DESKTOP, PHONE, SIZES, PREMIUM_USER, A, B, browser, chromium, scenario, check, body, button, events, history, lab, answer, toResults, photoFile, openTryOn, step, menuClick, signInWith, results, get current() { return current; }, set current(v) { current = v; } };
+for (const file of readdirSync(join(here, "suites")).filter((f) => /^\d+-.*\.mjs$/.test(f)).sort()) {
+  const suite = await import(join(here, "suites", file));
+  await suite.default(H);
+}
+
 /* ------------------------------------------------------------ report */
 
 await browser.close();
 server?.kill();
 
 const passed = results.filter((r) => r.status === "passed").length;
+const checks = results.flatMap((r) => r.checks);
+const bySuite = Object.entries(SUITES).map(([n, name]) => {
+  const rs = results.filter((r) => r.suite === Number(n));
+  const cs = rs.flatMap((r) => r.checks);
+  return `| ${n} | ${name} | ${rs.length} | ${rs.filter((r) => r.status === "passed").length} | ${rs.filter((r) => r.status !== "passed").length} | ${cs.filter((c) => c.ok).length}/${cs.length} |`;
+});
 const lines = [
   "# Scenario test report",
   "",
-  `Run against ${BASE} on ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC. ${passed} of ${results.length} runs passed.`,
+  `Run against ${BASE} on ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC in Chromium (Playwright ${(await import("playwright-core/package.json", { with: { type: "json" } })).default.version}). ${passed} of ${results.length} runs passed; ${checks.filter((c) => c.ok).length} of ${checks.length} checks passed.`,
+  "",
+  "| Suite | Name | Runs | Passed | Failed | Checks |",
+  "| --- | --- | --- | --- | --- | --- |",
+  ...bySuite,
   "",
   "| Scenario | Device | Result | Checks |",
   "| --- | --- | --- | --- |",
   ...results.map((r) => `| ${r.id} ${r.title} | ${r.device} | ${r.status} | ${r.checks.filter((c) => c.ok).length}/${r.checks.length} |`),
+  "",
+  "## Every check",
+  "",
+  ...results.flatMap((r) => [`### ${r.id} ${r.title} (${r.device})`, "", ...r.checks.map((c) => `- ${c.ok ? "pass" : "FAIL"}: ${c.what}`), ""]),
   "",
   "## Failed checks",
   "",

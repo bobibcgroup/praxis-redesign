@@ -84,6 +84,8 @@ export function Question({ step }: { step: string }) {
   useEffect(() => {
     if (!pending) return;
     const t = setTimeout(() => {
+      // Keep the answer on this page's own entry first, so the browser's Back shows it chosen.
+      if (def.key !== "occasion") go(`moment/${def.key === "vibe" ? "feel" : def.key}`, { [def.key]: pending }, { replace: true });
       const next = firstMissing({ ...answers, [def.key]: pending });
       if (next) go(next, { [def.key]: pending, hero: null });
       else go("moment/build", { [def.key]: pending, hero: null, restyle: null });

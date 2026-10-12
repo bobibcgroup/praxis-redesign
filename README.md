@@ -154,7 +154,7 @@ Motion is `motion/react` only, transform and opacity only, and every animation r
 
 ## Tests
 
-`npm test` runs the unit tests in `src/core/__tests__`. `npm run build && npm run e2e` runs the twelve customer scenarios, accessibility, layout and load checks in Chromium on desktop and phone (`e2e/scenarios.mjs`); results go to `e2e/results`. See `docs/testing-report.md`.
+`npm test` runs the unit tests in `src/core/__tests__`. `npm run build && npm run e2e` runs thirteen suites (`e2e/suites`, loaded by `e2e/scenarios.mjs`) in Chromium on desktop, phone and seven viewports; results go to `e2e/results`. `SUITE=4 npm run e2e` runs one suite, `ONLY=TRY1 npm run e2e` one scenario. See `docs/testing-report.md`.
 
 ## Documentation
 
