@@ -3,7 +3,8 @@
  * time on the left, a living print on the right. Every step is a route.
  * Champagne and mocha palettes, element system Hairline, light and dark.
  */
-import { Navigate, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import "./a.css";
 import "./a-layout.css";
 import { useConceptFonts } from "../shared/fonts";
@@ -20,6 +21,7 @@ import { TryOn } from "./screens/moment/TryOn";
 import { You, YouFace, YouItem } from "./screens/moment/You";
 import { DnaBuild, DnaHome, DnaResult } from "./screens/dna/DnaResult";
 import { DnaFace, DnaFit, DnaInspiration, DnaLifestyle } from "./screens/dna/DnaSteps";
+import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { Gate } from "./ui/Gate";
 import { TestModeTag } from "./ui/TestModeTag";
 
@@ -30,38 +32,59 @@ function Fallback() {
   return <Navigate to={href("")} replace />;
 }
 
+/**
+ * Style DNA is Premium. Someone with Premium, or with a Style DNA already saved (to look over or
+ * delete), goes in; anyone else typing the address lands on home with the Style DNA introduction open.
+ */
+function DnaOnly({ children }: { children: ReactNode }) {
+  const { href, user, store } = useJourney();
+  if (user?.premium || store.dna) return <>{children}</>;
+  return <Navigate to={href("", { gate: "dna" })} replace />;
+}
+
+/** Try-on is Premium: without it, the address leads back to the looks with the try-on introduction open. */
+function TryOnOnly({ children }: { children: ReactNode }) {
+  const { href, user, answers } = useJourney();
+  if (!answers.spend) return <Navigate to={href("", { gate: null })} replace />;
+  if (user?.premium) return <>{children}</>;
+  return <Navigate to={href("moment/results", { gate: "tryon" })} replace />;
+}
+
 function Shell() {
-  const { mode } = useJourney();
+  const { mode, href } = useJourney();
+  const { pathname } = useLocation();
   return (
     <div data-lab data-concept="a" data-mode={mode} className="min-h-[100dvh]">
-      <Routes>
-        <Route index element={<Home />} />
-        <Route path="moment" element={<Fallback />} />
-        {/* The occasion is chosen on home; old links to the occasion question land there with their answers. */}
-        <Route path="moment/occasion" element={<Fallback />} />
-        <Route path="moment/venue" element={<Question key="venue" step="venue" />} />
-        <Route path="moment/time" element={<Question key="time" step="time" />} />
-        <Route path="moment/feel" element={<Question key="feel" step="feel" />} />
-        <Route path="moment/spend" element={<Question key="spend" step="spend" />} />
-        <Route path="moment/you" element={<You />} />
-        <Route path="moment/you/face" element={<YouFace />} />
-        <Route path="moment/you/item" element={<YouItem />} />
-        <Route path="moment/build" element={<Build />} />
-        <Route path="moment/results" element={<Results />} />
-        <Route path="moment/tryon" element={<TryOn />} />
-        <Route path="looks" element={<Looks />} />
-        <Route path="looks/:id" element={<LookDetail />} />
-        <Route path="dna" element={<DnaHome />} />
-        <Route path="dna/face" element={<DnaFace />} />
-        <Route path="dna/fit" element={<DnaFit />} />
-        <Route path="dna/lifestyle" element={<DnaLifestyle />} />
-        <Route path="dna/inspiration" element={<DnaInspiration />} />
-        <Route path="dna/build" element={<DnaBuild />} />
-        <Route path="dna/result" element={<DnaResult />} />
-        <Route path="data" element={<YourData />} />
-        <Route path="internal/analytics" element={<InternalAnalytics />} />
-        <Route path="*" element={<Fallback />} />
-      </Routes>
+      <ErrorBoundary home={href("")} resetKey={pathname}>
+        <Routes>
+          <Route index element={<Home />} />
+          <Route path="moment" element={<Fallback />} />
+          {/* The occasion is chosen on home; old links to the occasion question land there with their answers. */}
+          <Route path="moment/occasion" element={<Fallback />} />
+          <Route path="moment/venue" element={<Question key="venue" step="venue" />} />
+          <Route path="moment/time" element={<Question key="time" step="time" />} />
+          <Route path="moment/feel" element={<Question key="feel" step="feel" />} />
+          <Route path="moment/spend" element={<Question key="spend" step="spend" />} />
+          <Route path="moment/you" element={<You />} />
+          <Route path="moment/you/face" element={<YouFace />} />
+          <Route path="moment/you/item" element={<YouItem />} />
+          <Route path="moment/build" element={<Build />} />
+          <Route path="moment/results" element={<Results />} />
+          <Route path="moment/tryon" element={<TryOnOnly><TryOn /></TryOnOnly>} />
+          <Route path="looks" element={<Looks />} />
+          <Route path="looks/:id" element={<LookDetail />} />
+          <Route path="dna" element={<DnaOnly><DnaHome /></DnaOnly>} />
+          <Route path="dna/face" element={<DnaOnly><DnaFace /></DnaOnly>} />
+          <Route path="dna/fit" element={<DnaOnly><DnaFit /></DnaOnly>} />
+          <Route path="dna/lifestyle" element={<DnaOnly><DnaLifestyle /></DnaOnly>} />
+          <Route path="dna/inspiration" element={<DnaOnly><DnaInspiration /></DnaOnly>} />
+          <Route path="dna/build" element={<DnaOnly><DnaBuild /></DnaOnly>} />
+          <Route path="dna/result" element={<DnaOnly><DnaResult /></DnaOnly>} />
+          <Route path="data" element={<YourData />} />
+          <Route path="internal/analytics" element={<InternalAnalytics />} />
+          <Route path="*" element={<Fallback />} />
+        </Routes>
+      </ErrorBoundary>
       <Gate />
       <TestModeTag />
     </div>

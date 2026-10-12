@@ -21,11 +21,17 @@ describe("photo policies", () => {
     }
   });
 
-  it("asks for a face or wardrobe photo, and no body or try-on photo while those are not offered", () => {
+  it("asks for a face, wardrobe or try-on photo, and no body photo while fit analysis is not offered", () => {
     expect(IMAGE_POLICIES.face_colour.status).toBe("collecting");
     expect(IMAGE_POLICIES.wardrobe_garment.status).toBe("collecting");
+    expect(IMAGE_POLICIES.try_on.status).toBe("collecting");
     expect(IMAGE_POLICIES.body_fit.status).toBe("not_collected");
-    expect(IMAGE_POLICIES.try_on.status).toBe("not_collected");
+  });
+
+  it("keeps the try-on photo on the device while no engine is connected, and says so", () => {
+    expect(IMAGE_POLICIES.try_on.leavesDevice).toBe(false);
+    expect(IMAGE_POLICIES.try_on.retention.where).toBe("this_tab");
+    expect(disclosure("try_on").use).toMatch(/isn’t switched on/);
   });
 
   it("checks the file before reading it and the picture after", () => {
@@ -86,9 +92,9 @@ describe("image services", () => {
     expect(r.undertone?.source).toBe("sample");
   });
 
-  it("generates no try-on while try-on photos are not collected", async () => {
+  it("makes no try-on picture without consent to the current try-on wording", async () => {
     const r = await imageServices({}, true).tryOn({ outfitId: "o", garmentIds: ["g"], person: input });
-    expect(r).toMatchObject({ status: "disabled", kind: "try_on", outfitId: "o", sourceGarmentIds: ["g"], retention: { deletable: true } });
+    expect(r).toMatchObject({ status: "failed", kind: "try_on", outfitId: "o", sourceGarmentIds: ["g"], error: { code: "consent_missing" } });
   });
 });
 

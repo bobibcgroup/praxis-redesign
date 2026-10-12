@@ -26,6 +26,14 @@ export const RECOMMENDATION_ADAPTER: string = env("VITE_RECOMMENDATION_ADAPTER")
  */
 export const ALLOW_BILLABLE_IMAGES: boolean = env("VITE_ALLOW_BILLABLE_IMAGES") === "true";
 
+/**
+ * Which try-on adapter makes the picture. "mock" (the default) makes none and says so. "http" sends the
+ * photo and the look to this app's own server (POST /api/tryon), which hands it to the provider set up
+ * there; provider keys live only on the server. The http adapter is billable, so it also needs
+ * VITE_ALLOW_BILLABLE_IMAGES=true, and the server needs its own switch (see server/tryon.mjs).
+ */
+export const TRYON_ADAPTER: "mock" | "http" = env("VITE_TRYON_ADAPTER") === "http" ? "http" : "mock";
+
 /** The one subscription. Style DNA is the experience; Premium is the subscription it belongs to. */
 export const PREMIUM = {
   name: "Premium",

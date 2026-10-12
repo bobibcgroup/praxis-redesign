@@ -57,6 +57,15 @@ function useTrackedSelection(selection: PieceSelection, outfitId: string | null,
   );
 }
 
+/** Said when a save could not be written: storage is full or blocked in this browser. */
+export function SaveFailed() {
+  return (
+    <p role="alert" className="w-full text-[13px] leading-5 text-[var(--error)]">
+      I couldn’t save this look. This browser’s storage is full or switched off; free some space or allow site data, then try again.
+    </p>
+  );
+}
+
 export function Results() {
   const { answers, params, href, go, store, reduced, user } = useJourney();
   const gated = useGated();
@@ -67,6 +76,7 @@ export function Results() {
   const [viewer, setViewer] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [restyling, setRestyling] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   /** Which way the last move went (+1 to the next look), so the photo glides in from that side. */
   const [dir, setDir] = useState(0);
   const hero = resolved?.hero ?? null;
@@ -77,8 +87,15 @@ export function Results() {
 
   const save = useCallback(() => {
     if (!hero || !response) return;
-    store.saveLook(hero, label, { owner: { anonymousSessionId: anonymousId(), userId: user?.id }, recommendationId: response.recommendationId, requestId: response.requestId, inputKey: response.inputKey });
-    track("look_saved", { recommendationId: response.recommendationId, outfitId: hero.id, signedIn: Boolean(user) });
+    const result = store.saveLook(hero, label, { owner: { anonymousSessionId: anonymousId(), userId: user?.id }, recommendationId: response.recommendationId, requestId: response.requestId, inputKey: response.inputKey });
+    // Nothing is said to be saved unless it was written.
+    if (!result.ok) {
+      setSaveFailed(true);
+      track("look_save_failed", { recommendationId: response.recommendationId, outfitId: hero.id });
+      return;
+    }
+    setSaveFailed(false);
+    if (!result.existing) track("look_saved", { recommendationId: response.recommendationId, outfitId: hero.id, signedIn: Boolean(user) });
     go("moment/results", { done: "saved" }, { replace: true });
   }, [hero, response, label, store, user, go]);
   const openBuy = useCallback(() => {
@@ -132,7 +149,15 @@ export function Results() {
   }, [response, resolved, shared]);
 
   if (!answers.spend || !spec) return <Navigate to={href("")} replace />;
-  if (loading) return null;
+  if (loading) {
+    return (
+      <Stage spine={momentSpine("looks", answers, href)} back={href("moment/spend")} band="looks" canvas={<Frame image={null} alt="" reduced={reduced} />}>
+        <p role="status" className="a-display">
+          Bringing your looks back.
+        </p>
+      </Stage>
+    );
+  }
   if (!response || !resolved || !hero) {
     return (
       <Stage spine={momentSpine("looks", answers, href)} back={href("moment/spend")} band="looks" canvas={<Frame image={null} alt="" reduced={reduced} />}
@@ -255,6 +280,7 @@ export function Results() {
                 Restyle
                 <span className="hint">Change an answer</span>
               </TextButton>
+              {saveFailed ? <SaveFailed /> : null}
             </div>
           )
         }

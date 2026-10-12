@@ -5,11 +5,12 @@
  * whether billable adapters may run at all: when it is off, the registry refuses the call before any
  * request is made, whatever the screens show. Today every adapter is a free mock.
  */
-import { ALLOW_BILLABLE_IMAGES } from "./config";
+import { httpTryOn } from "./adapters/tryonHttp";
+import { ALLOW_BILLABLE_IMAGES, TRYON_ADAPTER } from "./config";
 import type { Slot } from "./contracts";
 import { newId } from "./ids";
 import { IMAGE_POLICIES, type ImageCategory, type ImageProblem } from "./images";
-import { simScenario, wait } from "./sim";
+import { SIM_SLOW_MS, simScenario, wait } from "./sim";
 
 /** A photo the customer gave, as the services see it: a reference, never inlined into analytics. */
 export interface ImageInput {
@@ -51,7 +52,10 @@ export interface GeneratedImage {
   sourceGarmentIds: string[];
   provider: string;
   modelVersion: string;
+  /** ready: a picture exists. disabled: no engine is connected, so none was made. */
   status: "ready" | "pending" | "failed" | "disabled";
+  /** Why it failed, when it did: the provider's code, never the photo. */
+  error?: { code: string; message: string; retryable: boolean };
   width?: number;
   height?: number;
   /** Where the image is kept: a URL or a storage key. */
@@ -77,7 +81,15 @@ export interface OutfitVisualizationAdapter extends Adapter {
   visualize(outfit: { outfitId: string; garmentIds: string[] }, options?: { signal?: AbortSignal }): Promise<GeneratedImage>;
 }
 export interface TryOnAdapter extends Adapter {
-  tryOn(input: { outfitId: string; garmentIds: string[]; person: ImageInput }, options?: { signal?: AbortSignal }): Promise<GeneratedImage>;
+  tryOn(input: TryOnInput, options?: { signal?: AbortSignal }): Promise<GeneratedImage>;
+}
+
+export interface TryOnInput {
+  /** The try-on request this belongs to (src/core/tryon.ts), so the provider's answer can be traced. */
+  requestId?: string;
+  outfitId: string;
+  garmentIds: string[];
+  person: ImageInput;
 }
 
 /* -------------------------------------------------------------- mocks */
@@ -111,7 +123,7 @@ export const mockGarmentRecognition: GarmentRecognitionAdapter = {
   },
 };
 
-function notGenerated(outfitId: string, garmentIds: string[], kind: GeneratedImage["kind"], provider: string): GeneratedImage {
+export function notGenerated(outfitId: string, garmentIds: string[], kind: GeneratedImage["kind"], provider: string): GeneratedImage {
   return {
     imageId: newId("img"),
     outfitId,
@@ -135,16 +147,37 @@ export const mockVisualization: OutfitVisualizationAdapter = {
   },
 };
 
+/** How long the stand-in try-on takes to answer: long enough to see the working state, and the same every time. */
+export const MOCK_TRY_ON_MS = 1200;
+
+/**
+ * The stand-in try-on. It takes the request, checks it, waits a fixed time and answers that no picture
+ * was made, because no engine is connected. It never returns a picture: making one that looked like
+ * the customer would be a fake. Test mode makes it slow, time out, fail, refuse the photo, or fail
+ * once and then work.
+ */
 export const mockTryOn: TryOnAdapter = {
   id: "mock-try-on",
-  version: "1.0.0",
+  version: "1.1.0",
   billable: false,
-  async tryOn(input) {
-    return notGenerated(input.outfitId, input.garmentIds, "try_on", "mock-try-on");
+  async tryOn(input, options) {
+    const sim = simScenario();
+    if (sim === "timeout") await wait(60_000, options?.signal);
+    await wait(sim === "slow" ? SIM_SLOW_MS : MOCK_TRY_ON_MS, options?.signal);
+    const base = notGenerated(input.outfitId, input.garmentIds, "try_on", "mock-try-on");
+    if (sim === "failure") return { ...base, status: "failed", error: { code: "service_error", message: "The try-on service did not answer.", retryable: true } };
+    if (sim === "invalid_image") return { ...base, status: "failed", error: { code: "person_not_found", message: "No person could be found in the photo.", retryable: false } };
+    if (!input.person.ref || input.person.category !== "try_on") return { ...base, status: "failed", error: { code: "invalid_request", message: "The request has no try-on photo.", retryable: false } };
+    return base;
   },
 };
 
 /* ----------------------------------------------------------- registry */
+
+/** The try-on adapter this build uses (VITE_TRYON_ADAPTER): the stand-in unless a real engine is set up. */
+export function tryOnAdapterInUse(): TryOnAdapter {
+  return TRYON_ADAPTER === "http" ? httpTryOn : mockTryOn;
+}
 
 export class BillableCallBlocked extends Error {
   constructor(adapter: string) {
@@ -174,7 +207,7 @@ export function imageServices(
   const colour = adapters.colour ?? mockColourAnalysis;
   const garment = adapters.garment ?? mockGarmentRecognition;
   const visualization = adapters.visualization ?? mockVisualization;
-  const tryOn = adapters.tryOn ?? mockTryOn;
+  const tryOn = adapters.tryOn ?? tryOnAdapterInUse();
   return {
     async analyseColour(image: ImageInput, options?: { signal?: AbortSignal }): Promise<ColourAnalysis> {
       if (image.consentVersion !== IMAGE_POLICIES.face_colour.consentVersion) return { status: "failed" };
@@ -201,8 +234,11 @@ export function imageServices(
       }
       return visualization.visualize(outfit, options);
     },
-    async tryOn(input: { outfitId: string; garmentIds: string[]; person: ImageInput }, options?: { signal?: AbortSignal }): Promise<GeneratedImage> {
+    async tryOn(input: TryOnInput, options?: { signal?: AbortSignal }): Promise<GeneratedImage> {
       if (IMAGE_POLICIES.try_on.status !== "collecting") return notGenerated(input.outfitId, input.garmentIds, "try_on", tryOn.id);
+      if (input.person.consentVersion !== IMAGE_POLICIES.try_on.consentVersion) {
+        return { ...notGenerated(input.outfitId, input.garmentIds, "try_on", tryOn.id), status: "failed", error: { code: "consent_missing", message: "Consent for this photo is missing or out of date.", retryable: false } };
+      }
       try {
         guardBillable(tryOn, allowed);
       } catch {

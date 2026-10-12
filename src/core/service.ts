@@ -110,7 +110,8 @@ export interface HistoryEntry {
 export interface RequestHistory {
   record(request: StylingRequest, response: StylingResponse): void;
   /** The newest answer for these exact inputs, if it succeeded. */
-  latest(inputKey: string): HistoryEntry | null;
+  /** The latest answer worth showing for these inputs, made for this person only (never another account's). */
+  latest(inputKey: string, owner?: RequestOwner): HistoryEntry | null;
   byRecommendation(recommendationId: string): HistoryEntry | null;
   all(): HistoryEntry[];
   clear(): void;
@@ -119,6 +120,15 @@ export interface RequestHistory {
 const HISTORY_KEY = "praxis_styling_history";
 /** Enough to come back to recent looks; old entries fall away. */
 const HISTORY_LIMIT = 20;
+
+export interface RequestOwner {
+  anonymousSessionId: string;
+  userId?: string;
+}
+
+function madeFor(request: StylingRequest, owner: RequestOwner): boolean {
+  return owner.userId ? request.userId === owner.userId : !request.userId && request.anonymousSessionId === owner.anonymousSessionId;
+}
 
 export function createRequestHistory(storage: () => Storage | undefined = local): RequestHistory {
   let memory: HistoryEntry[] | null = null;
@@ -132,8 +142,8 @@ export function createRequestHistory(storage: () => Storage | undefined = local)
       const rest = read().filter((e) => e.request.requestId !== request.requestId);
       write([{ request, response }, ...rest].slice(0, HISTORY_LIMIT));
     },
-    latest(inputKey) {
-      return read().find((e) => e.request.inputKey === inputKey && e.response.status !== "failed") ?? null;
+    latest(inputKey, owner) {
+      return read().find((e) => e.request.inputKey === inputKey && e.response.status !== "failed" && (!owner || madeFor(e.request, owner))) ?? null;
     },
     byRecommendation(id) {
       return read().find((e) => e.response.recommendationId === id) ?? null;

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Apple, Check, Lock } from "lucide-react";
 import { premiumAmount, premiumPrice, PREMIUM } from "../../core/config";
 import type { SignInMethod } from "../lib/journeyContext";
+import { isEmail } from "../lib/user";
 import { Field, PrimaryButton, QuietButton, TextButton } from "./controls";
 
 const SIGNIN_MS = 900;
@@ -92,9 +93,9 @@ export function TryOnIntro({ image, title, onStart, onLater }: { image: string |
             <figcaption className="a-label mt-2 text-[var(--muted)]">On a model</figcaption>
           </figure>
         ) : null}
-        <p className="text-[15px] leading-6">When try-on is ready, I’ll show this look on a photo of you, so you can judge the fit and the colours before you buy.</p>
+        <p className="text-[15px] leading-6">Add one photo of you and I’ll show this look on it, so you can judge the fit and the colours before you buy.</p>
       </div>
-      <p className="text-[13px] leading-5 text-[var(--muted)]">Try-on is in preview. Until it is ready you’ll see the look on a model, never a picture made to look like you.</p>
+      <p className="text-[13px] leading-5 text-[var(--muted)]">Try-on isn’t switched on yet. You can add your photo and send it; I’ll tell you plainly that no picture was made, never show one made to look like you.</p>
       <IntroFoot onStart={onStart} onLater={onLater} start="Continue" />
     </div>
   );
@@ -111,11 +112,17 @@ interface SignInProps {
 export function SignInStep({ reason, onSignedIn }: SignInProps) {
   const [busy, setBusy] = useState<SignInMethod | null>(null);
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const start = (way: SignInMethod) => {
     if (busy) return;
+    if (way === "email" && !isEmail(email)) {
+      setEmailError(email.trim() ? "That address looks incomplete. Check it and try again." : "Enter your email to continue.");
+      return;
+    }
+    setEmailError(null);
     setBusy(way);
-    window.setTimeout(() => onSignedIn(way === "email" ? email.trim() || undefined : undefined, way), SIGNIN_MS);
+    window.setTimeout(() => onSignedIn(way === "email" ? email.trim() : undefined, way), SIGNIN_MS);
   };
 
   const label = (way: SignInMethod, text: string) => (busy === way ? "Signing you in" : text);
@@ -136,13 +143,31 @@ export function SignInStep({ reason, onSignedIn }: SignInProps) {
         </button>
       </div>
       <form
+        noValidate
         className="flex flex-col gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           start("email");
         }}
       >
-        <Field id="gate-email" label="Email" value={email} onChange={setEmail} placeholder="you@example.com" type="email" inputMode="email" autoComplete="email" />
+        <Field
+          id="gate-email"
+          label="Email"
+          value={email}
+          onChange={(v) => {
+            setEmail(v);
+            setEmailError(null);
+          }}
+          placeholder="you@example.com"
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+        />
+        {emailError ? (
+          <p role="alert" className="text-[13px] leading-5 text-[var(--error)]">
+            {emailError}
+          </p>
+        ) : null}
         <QuietButton type="submit" className="w-full" disabled={busy !== null} aria-busy={busy === "email"}>
           {label("email", "Continue with email")}
         </QuietButton>
@@ -234,10 +259,10 @@ export function PremiumCard({ busy, onPay }: { busy: "apple" | "card" | null; on
         or pay with card
         <span className="h-px flex-1 bg-[var(--rule)]" aria-hidden="true" />
       </p>
-      <Field id="gate-card" label="Card number" value={card} onChange={(v) => setCard(groups(v))} placeholder="4242 4242 4242 4242" inputMode="numeric" autoComplete="cc-number" />
+      <Field id="gate-card" label="Card number" value={card} onChange={(v) => setCard(groups(v))} placeholder="4242 4242 4242 4242" inputMode="numeric" autoComplete="off" />
       <div className="flex gap-3">
-        <Field id="gate-exp" label="Expiry" value={exp} onChange={(v) => setExp(expiry(v))} placeholder="MM / YY" inputMode="numeric" autoComplete="cc-exp" />
-        <Field id="gate-cvc" label="CVC" value={cvc} onChange={(v) => setCvc(v.replace(/\D/g, "").slice(0, 4))} placeholder="123" inputMode="numeric" autoComplete="cc-csc" />
+        <Field id="gate-exp" label="Expiry" value={exp} onChange={(v) => setExp(expiry(v))} placeholder="MM / YY" inputMode="numeric" autoComplete="off" />
+        <Field id="gate-cvc" label="CVC" value={cvc} onChange={(v) => setCvc(v.replace(/\D/g, "").slice(0, 4))} placeholder="123" inputMode="numeric" autoComplete="off" />
       </div>
       {error ? (
         <p role="alert" className="text-[13px] leading-5 text-[var(--error)]">

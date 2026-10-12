@@ -6,9 +6,11 @@ import { useState } from "react";
 import { track } from "../../core/analytics";
 import { deleteLocalData, wardrobeEntries } from "../../core/data";
 import { feedbackStore } from "../../core/feedback";
-import { resetIdentityCache } from "../../core/identity";
+import { visibleTo } from "../../core/account";
+import { anonymousId, resetIdentityCache } from "../../core/identity";
 import { deleteImages, withdrawConsent } from "../../core/images";
 import { requestHistory } from "../../core/service";
+import { readTryOnPhoto, writeTryOnPhoto } from "../../core/tryon";
 import { useJourney } from "../lib/journeyContext";
 import { PrimaryButton, TextButton } from "../ui/controls";
 import { TopBar } from "../ui/TopBar";
@@ -28,12 +30,22 @@ function Line({ label, value, action }: { label: string; value: string; action?:
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function YourData() {
-  const { href, store, faceImage, setFaceImage, ownedItem, setOwnedItem, base } = useJourney();
+  const { href, store, faceImage, setFaceImage, ownedItem, setOwnedItem, base, user } = useJourney();
   const [confirming, setConfirming] = useState(false);
-  const wardrobe = wardrobeEntries();
+  const [tryOnPhoto, setTryOnPhoto] = useState(() => readTryOnPhoto());
+  // Only what belongs to the person here is counted; another account's records stay out of view.
+  const anon = anonymousId();
+  const mine = (owner: { anonymousSessionId: string; userId?: string }) => visibleTo({ owner }, user?.id, anon);
+  const wardrobe = wardrobeEntries().filter((e) => mine(e.owner));
+  const feedback = feedbackStore.all().filter((r) => mine(r));
+  const history = requestHistory.all().filter((e) => mine(e.request));
 
-  const deletePhoto = (which: "face" | "item") => {
-    if (which === "face") {
+  const deletePhoto = (which: "face" | "item" | "tryon") => {
+    if (which === "tryon") {
+      writeTryOnPhoto(null);
+      setTryOnPhoto(null);
+      track("photo_deleted", { category: "try_on" });
+    } else if (which === "face") {
       setFaceImage(null);
       deleteImages("face_colour");
       track("photo_deleted", { category: "face_colour" });
@@ -47,6 +59,7 @@ export function YourData() {
   const deleteAll = () => {
     withdrawConsent("face_colour");
     withdrawConsent("wardrobe_garment");
+    withdrawConsent("try_on");
     deleteLocalData();
     resetIdentityCache();
     // The first event of a clean slate, under a new anonymous id.
@@ -67,12 +80,17 @@ export function YourData() {
           <Line label="Saved looks" value={store.looks.length ? plural(store.looks.length, "look", "looks") : "None"} />
           <Line label="Style DNA" value={store.dna ? "Saved, without your photo" : "None"} />
           <Line label="Pieces you own" value={wardrobe.length ? `${plural(wardrobe.length, "piece", "pieces")}, by name only` : "None"} />
-          <Line label="Your feedback on looks" value={feedbackStore.all().length ? plural(feedbackStore.all().length, "note", "notes") : "None"} />
-          <Line label="Looks you asked for" value={requestHistory.all().length ? `The last ${plural(requestHistory.all().length, "request", "requests")}, kept for 90 days` : "None"} />
+          <Line label="Your feedback on looks" value={feedback.length ? plural(feedback.length, "note", "notes") : "None"} />
+          <Line label="Looks you asked for" value={history.length ? `The last ${plural(history.length, "request", "requests")}, kept for 90 days` : "None"} />
           <Line
             label="Your Style DNA photo"
             value={faceImage ? "In this tab" : "None"}
             action={faceImage ? <TextButton onClick={() => deletePhoto("face")}>Delete</TextButton> : undefined}
+          />
+          <Line
+            label="Your See it on me photo"
+            value={tryOnPhoto ? "In this tab" : "None"}
+            action={tryOnPhoto ? <TextButton onClick={() => deletePhoto("tryon")}>Delete</TextButton> : undefined}
           />
           <Line
             label="Photo of your piece"

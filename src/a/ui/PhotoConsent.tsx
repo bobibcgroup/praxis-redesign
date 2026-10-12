@@ -61,6 +61,9 @@ export async function rejectImage(dataUrl: string, category: ImageCategory): Pro
   return problem;
 }
 
-export function problemText(problem: ImageProblem): string {
+/** What went wrong with a photo. The colour wording is for the face photo; other kinds get their own. */
+export function problemText(problem: ImageProblem, category: ImageCategory = "face_colour"): string {
+  if (category === "try_on" && problem === "too_dark") return "That photo is too dark for me to see you clearly. Try again in good light.";
+  if (category === "try_on" && problem === "too_bright") return "That photo is too bright for me to see you clearly. Try again out of direct sun.";
   return PROBLEM_COPY[problem];
 }

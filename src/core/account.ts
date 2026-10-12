@@ -19,10 +19,24 @@ export interface OwnedLook {
   dedupeKey: string;
 }
 
-/** Whether a saved look shows for this person: their account's, or a guest's on this device. */
-export function visibleTo(look: { owner?: Owner }, userId: string | undefined): boolean {
-  const owner = look.owner?.userId;
-  return owner === undefined || owner === userId;
+/**
+ * Whether a saved record shows for this person. An account's records show only to that account. A
+ * guest's records show only to the same guest (the same anonymous id), so after someone signs out the
+ * next person on this device starts clean. A record from an early build with no owner at all shows to
+ * whoever is here, and is claimed by the first account to sign in.
+ */
+export function visibleTo(record: { owner?: Owner }, userId: string | undefined, anonymousSessionId?: string): boolean {
+  const owner = record.owner;
+  if (!owner) return true;
+  if (owner.userId) return owner.userId === userId;
+  if (userId) return false;
+  return anonymousSessionId === undefined || !owner.anonymousSessionId || owner.anonymousSessionId === anonymousSessionId;
+}
+
+/** Whether a guest record belongs to this guest, so signing in may move it onto the account. */
+function claimable(owner: Owner | undefined, anonymousSessionId: string): boolean {
+  if (owner?.userId) return false;
+  return !owner?.anonymousSessionId || owner.anonymousSessionId === anonymousSessionId;
 }
 
 export interface LookMigration<T> {
@@ -36,7 +50,7 @@ export interface LookMigration<T> {
 export function migrateLooks<T extends OwnedLook>(looks: readonly T[], userId: string, anonymousSessionId: string): LookMigration<T> {
   let moved = 0;
   const claimed = looks.map((l) => {
-    if (l.owner?.userId) return l;
+    if (!claimable(l.owner, anonymousSessionId)) return l;
     moved += 1;
     return { ...l, owner: { anonymousSessionId: l.owner?.anonymousSessionId ?? anonymousSessionId, userId } };
   });

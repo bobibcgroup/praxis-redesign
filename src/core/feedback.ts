@@ -37,11 +37,21 @@ export interface FeedbackStore {
   all(): OutfitFeedback[];
   record(input: FeedbackInput, now?: Date): OutfitFeedback;
   /** The latest word on one look in one recommendation, which is what the screen shows. */
-  latestFor(recommendationId: string, outfitId: string): OutfitFeedback | null;
+  latestFor(recommendationId: string, outfitId: string, owner?: FeedbackOwner): OutfitFeedback | null;
   /** Takes back the latest word on a look ("Undo"). */
   withdraw(eventId: string): void;
   replaceAll(records: OutfitFeedback[]): boolean;
   subscribe(listener: Listener): () => void;
+}
+
+export interface FeedbackOwner {
+  anonymousSessionId: string;
+  userId?: string;
+}
+
+/** Signed in: this account's words only. A guest: this browser's words that belong to no account. */
+function ownedBy(r: OutfitFeedback, owner: FeedbackOwner): boolean {
+  return owner.userId ? r.userId === owner.userId : !r.userId && r.anonymousSessionId === owner.anonymousSessionId;
 }
 
 export function createFeedbackStore(storage: () => Storage | undefined = local): FeedbackStore {
@@ -64,8 +74,8 @@ export function createFeedbackStore(storage: () => Storage | undefined = local):
       write([entry, ...read()].slice(0, LIMIT));
       return entry;
     },
-    latestFor(recommendationId, outfitId) {
-      return read().find((f) => f.recommendationId === recommendationId && f.outfitId === outfitId) ?? null;
+    latestFor(recommendationId, outfitId, owner) {
+      return read().find((f) => f.recommendationId === recommendationId && f.outfitId === outfitId && (!owner || ownedBy(f, owner))) ?? null;
     },
     withdraw(eventId) {
       write(read().filter((f) => f.eventId !== eventId));
@@ -84,9 +94,8 @@ export const feedbackStore = createFeedbackStore();
  * What the feedback adds up to, for the engine. The newest word on each look wins, so a look first
  * rejected and later liked counts as liked.
  */
-export function preferenceSnapshot(records: readonly OutfitFeedback[], owner: { anonymousSessionId: string; userId?: string }): PreferenceSnapshot {
-  // Signed in: this account's words only. A guest: this browser's words that belong to no account.
-  const mine = records.filter((r) => (owner.userId ? r.userId === owner.userId : !r.userId && r.anonymousSessionId === owner.anonymousSessionId));
+export function preferenceSnapshot(records: readonly OutfitFeedback[], owner: FeedbackOwner): PreferenceSnapshot {
+  const mine = records.filter((r) => ownedBy(r, owner));
   const latest = new Map<string, OutfitFeedback>();
   // Records are stored newest first.
   for (const r of mine) if (!latest.has(r.outfitId)) latest.set(r.outfitId, r);

@@ -145,32 +145,17 @@ Two facts that apply to every integration below:
 
 ## 3. Virtual try-on
 
-### What exists today
-
-- `TryOnAdapter` (`src/core/vision.ts:79`): `tryOn({ outfitId, garmentIds, person: ImageInput })` returns a `GeneratedImage` of kind `try_on`.
-- `mockTryOn` (`src/core/vision.ts:138`) returns `status: "disabled"`.
-- `imageServices().tryOn` (`src/core/vision.ts:204`) returns a not-generated record while `IMAGE_POLICIES.try_on.status` is `not_collected` (`src/core/images.ts:103`), and again while billable calls are off.
-- No storage key for a try-on photo: `IMAGE_KEYS.try_on` is `null` (`src/core/images.ts:191`).
-- The page: `src/a/screens/moment/TryOn.tsx` shows the chosen look on a model, captioned "On a model, not you. Try-on is in preview." (`TryOn.tsx:67`), with Check out and Save. It asks for no photo.
-- The entry: "See it on me" in the results runs `gated("tryon", ...)` (`src/a/screens/moment/Results.tsx:171`), which opens the Premium gate (section 5).
+The full journey, the request contract, the stand-in service and the plug-in point are built and
+documented in docs/TRY-ON.md. Status: mock functional, integration ready.
 
 ### What the integration must supply
 
-1. A try-on provider behind a server, as in section 2.
-2. A `TryOnAdapter` with `billable: true`.
-3. A capture step for the person photo, its policy switched to `status: "collecting"` with real processing, retention and deletion wording, and a storage key in `IMAGE_KEYS`.
-4. A server-side entitlement check (section 5) before the try-on call runs.
-5. Product images for each garment that the provider can use; today the pieces have no `imageUrl`.
-
-### Config
-
-- `VITE_ALLOW_BILLABLE_IMAGES=true` and `IMAGE_POLICIES.try_on.status = "collecting"`. Both are needed; either alone does nothing.
-
-### What the UI already handles
-
-- The gate introduction for try-on (`TryOnIntro`, `src/a/ui/GateSteps.tsx:84`) and the page itself say it is a preview and show a model, never a picture made to look like the customer.
-- The photo notice component (`src/a/ui/PhotoConsent.tsx`) is driven by the policy, so the try-on notice will follow `IMAGE_POLICIES.try_on` once it is filled.
-- Not handled yet: a try-on capture step, and loading, failed and ready states for a generated try-on image on `TryOn.tsx`.
+1. A provider module in `server/providers/<name>.mjs` (shape in `server/providers/README.md`).
+2. `TRYON_PROVIDER`, `ALLOW_BILLABLE_IMAGES=true` on the server; `VITE_TRYON_ADAPTER=http`,
+   `VITE_ALLOW_BILLABLE_IMAGES=true` in the build. All four are off by default.
+3. A server-side entitlement check (section 5) in `server/tryon.mjs` before the provider runs.
+4. Product images for each garment that the provider can use; today the pieces have no `imageUrl`.
+5. Legal review of the `TRY_ON_SERVER` consent wording in `src/core/images.ts`.
 
 ### Tests to add
 

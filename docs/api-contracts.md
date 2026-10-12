@@ -360,7 +360,7 @@ export interface Inferred<T> { value: T; source: "sample" | "model"; adapter: st
 | Colour analysis | `ColourAnalysisAdapter.analyse` (`src/core/vision.ts:70`) | `ImageInput` with `category: "face_colour"` | `ColourAnalysis` | `mock-colour`: always `cool` / `high`, `source: "sample"` (`src/core/vision.ts:86`) |
 | Garment recognition | `GarmentRecognitionAdapter.recognise` (`src/core/vision.ts:73`) | `ImageInput` | `GarmentAnalysis` | `mock-garment`: `{ status: "completed" }` with no fields; the customer names the piece (`src/core/vision.ts:104`) |
 | Outfit visualization | `OutfitVisualizationAdapter.visualize` (`src/core/vision.ts:76`) | `{ outfitId, garmentIds }` | `GeneratedImage` | `mock-visualization`: `status: "disabled"`, nothing generated (`src/core/vision.ts:129`) |
-| Virtual try-on | `TryOnAdapter.tryOn` (`src/core/vision.ts:79`) | `{ outfitId, garmentIds, person: ImageInput }` | `GeneratedImage` | `mock-try-on`: `status: "disabled"` (`src/core/vision.ts:138`) |
+| Virtual try-on | `TryOnAdapter.tryOn` (`src/core/vision.ts`), called only through `runTryOn` (`src/core/tryon.ts`) | `TryOnRequest` (no photo) plus `{ requestId, outfitId, garmentIds, person: ImageInput }` | `GeneratedImage`, read into a `TryOnOutcome` | `mock-try-on`: `status: "disabled"` after 1.2 s, never a picture; `http-try-on`: posts to `POST /api/tryon` (docs/TRY-ON.md) |
 
 ```ts
 // src/core/vision.ts:32
@@ -399,7 +399,7 @@ export interface GeneratedImage {
 Extra gates in `imageServices()`:
 
 * `analyseColour` returns `failed` without calling the adapter when `consentVersion` does not match the current face policy (`src/core/vision.ts:180`).
-* `tryOn` returns a disabled image while `IMAGE_POLICIES.try_on.status` is `not_collected`, which it is today (`src/core/vision.ts:205`, `src/core/images.ts:103`).
+* `tryOn` refuses a photo without the current try-on consent (`error.code: "consent_missing"`) and any billable adapter while paid image calls are off; see docs/TRY-ON.md for the outcomes.
 
 Notes for the integrator:
 

@@ -13,7 +13,13 @@ import { migrateFeedback } from "../../core/account";
 import { track } from "../../core/analytics";
 import { migrateWardrobe, pruneExpired, wardrobeEntries, writeWardrobe } from "../../core/data";
 import { feedbackStore } from "../../core/feedback";
-import { anonymousId, noteVisit } from "../../core/identity";
+import { anonymousId, noteVisit, rotateAnonymousId } from "../../core/identity";
+import { session } from "../../core/ids";
+import { withdrawConsent, type ImageCategory } from "../../core/images";
+import { PROVIDER_ADDRESS } from "./user";
+
+/** What a tab holds for the person using it, cleared at sign out. */
+const SIGN_OUT_TAB_KEYS = ["praxis_lab_a_face", "praxis_lab_a_item", "praxis_dna_draft", "praxis_lab_a_removed", "praxis_tryon_photo", "praxis_tryon_request"];
 
 export function JourneyProvider({ children }: { children: ReactNode }) {
   const base = useResolvedPath("").pathname.replace(/\/$/, "");
@@ -21,7 +27,7 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const reduced = useReducedMotion() ?? false;
   const { mode, setMode } = useMode();
-  const { user, signIn: userSignIn, signOut, grantPremium } = useUser();
+  const { user, signIn: userSignIn, signOut: userSignOut, grantPremium } = useUser();
   const store = useLabStore("a", user?.id);
   const { migrateToAccount } = store;
 
@@ -36,7 +42,9 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(
     (email: string | undefined, how: { method: SignInMethod; surface: SignInSurface }) => {
-      const account = userSignIn(email);
+      const address = how.method === "email" ? email : PROVIDER_ADDRESS[how.method];
+      if (!address) return;
+      const account = userSignIn(address);
       track("signin_completed", how);
       const anon = anonymousId();
       // Looks first; feedback only once they are safely on the account. A failed write changes nothing.
@@ -54,14 +62,34 @@ export function JourneyProvider({ children }: { children: ReactNode }) {
     },
     [userSignIn, migrateToAccount],
   );
-  const { pathname } = useLocation();
-  const gateActions = useRef<Partial<Record<GateKind, () => void>>>({});
-
   const [faceImage, setFace] = useState<string | null>(() => readSession<string>(FACE_KEY));
   const [ownedItem, setItem] = useState<OwnedItem | null>(() => readSession<OwnedItem>(ITEM_KEY));
 
   useEffect(() => writeSession(FACE_KEY, faceImage), [faceImage]);
   useEffect(() => writeSession(ITEM_KEY, ownedItem), [ownedItem]);
+
+  /**
+   * Signing out leaves this device as a new guest's: a new anonymous id, so nothing saved before shows;
+   * the photos and the unsaved Style DNA in this tab are deleted; photo consent is asked again. What the
+   * account saved stays on the device, hidden, for when it signs in again.
+   */
+  const signOut = useCallback(() => {
+    rotateAnonymousId();
+    setFace(null);
+    setItem(null);
+    for (const key of SIGN_OUT_TAB_KEYS) {
+      try {
+        session()?.removeItem(key);
+      } catch {
+        // Nothing to remove.
+      }
+    }
+    for (const category of ["face_colour", "wardrobe_garment", "try_on", "body_fit"] as ImageCategory[]) withdrawConsent(category);
+    userSignOut();
+    track("signed_out", {});
+  }, [userSignOut]);
+  const { pathname } = useLocation();
+  const gateActions = useRef<Partial<Record<GateKind, () => void>>>({});
 
   const answers = useMemo(() => parseAnswers(params), [params]);
 

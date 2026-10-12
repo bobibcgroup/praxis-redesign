@@ -39,7 +39,7 @@ export function LookFeedback({ look, response }: Props) {
   const { user, answers, go } = useJourney();
   const latest = useSyncExternalStore(
     feedbackStore.subscribe,
-    () => feedbackStore.latestFor(response.recommendationId, look.id),
+    () => feedbackStore.latestFor(response.recommendationId, look.id, { anonymousSessionId: anonymousId(), userId: user?.id }),
     () => null,
   );
   const [asking, setAsking] = useState(false);

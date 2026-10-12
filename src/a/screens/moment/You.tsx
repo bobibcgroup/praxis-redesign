@@ -30,10 +30,7 @@ export function You() {
   return <Navigate to={href("moment/results")} replace />;
 }
 
-/**
- * Try-on used to ask for a face photo here. While try-on is in preview no photo is needed, so none is
- * asked for; old links go to the preview.
- */
+/** Try-on used to ask for a face photo here; it now asks on its own page, so old links go there. */
 export function YouFace() {
   const { href } = useJourney();
   return <Navigate to={href("moment/tryon")} replace />;

@@ -34,6 +34,18 @@ export function anonymousId(): string {
   return record().id;
 }
 
+/**
+ * Starts a new anonymous id, at sign out, so whoever uses this device next is a new guest: nothing
+ * the previous person saved as a guest or signed in shows to them.
+ */
+export function rotateAnonymousId(): string {
+  const now = new Date().toISOString();
+  const prev = record();
+  cached = { id: newId("anon"), firstSeenAt: now, lastSeenAt: now, visits: prev.visits };
+  writeJson(local(), ANON_KEY, cached);
+  return cached.id;
+}
+
 export interface Visit {
   /** True when this browser has been here before, in an earlier visit. */
   returning: boolean;

@@ -11,6 +11,7 @@
  * The final consent and privacy wording must be approved by legal counsel before real personal-image
  * processing goes live.
  */
+import { TRYON_ADAPTER } from "./config";
 import { readJson, session, local, writeJson } from "./ids";
 
 export type ImageCategory = "face_colour" | "body_fit" | "wardrobe_garment" | "try_on";
@@ -38,9 +39,46 @@ export interface ImagePolicy {
   status: "collecting" | "not_collected";
   /** The analysis adapter that would read it (see vision.ts). */
   adapter: string;
+  /** Where it goes, when the general wording does not fit. */
+  leaves?: string;
 }
 
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"] as const;
+
+/**
+ * Try-on while no engine is connected: the photo is checked and shown back, the request is made to
+ * the stand-in service, and nothing leaves the device. The wording says exactly that.
+ */
+const TRY_ON_ON_DEVICE: ImagePolicy = {
+  category: "try_on",
+  why: "A photo of you, standing, from the knees up, is what I’ll use to show a look on you.",
+  use: "Try-on isn’t switched on yet, so I don’t make a picture from it. I check it, show it back to you, and keep it ready for when try-on opens.",
+  processing: "none",
+  leavesDevice: false,
+  retention: { where: "this_tab" },
+  deletion: "It’s deleted when you close this tab, straight away with Retake, or from Your data on this device.",
+  consentVersion: "tryon-device-2026-10-11",
+  accepts: PHOTO_TYPES,
+  maxBytes: 15 * 1024 * 1024,
+  minEdge: 480,
+  status: "collecting",
+  adapter: "virtual-try-on",
+};
+
+/**
+ * Try-on with an engine connected through Praxis's server. Asked again (a new consent version) because
+ * the photo now leaves the device. The final wording needs legal review before this goes live.
+ */
+const TRY_ON_SERVER: ImagePolicy = {
+  ...TRY_ON_ON_DEVICE,
+  use: "I send it, with the look you chose, to make one picture of you wearing it. It isn’t used for anything else.",
+  processing: "server",
+  leavesDevice: true,
+  retention: { where: "server", maxDays: 1 },
+  deletion: "The copy sent is deleted once the picture is made, within a day at most. The copy in this tab goes when you close it, with Retake, or from Your data on this device.",
+  consentVersion: "tryon-server-2026-10-11",
+  leaves: "It is sent to Praxis, and from there to the try-on service that makes the picture.",
+};
 
 export const IMAGE_POLICIES: Record<ImageCategory, ImagePolicy> = {
   face_colour: {
@@ -88,21 +126,7 @@ export const IMAGE_POLICIES: Record<ImageCategory, ImagePolicy> = {
     status: "collecting",
     adapter: "garment-recognition",
   },
-  try_on: {
-    category: "try_on",
-    why: "A photo of you would let me show a look on you.",
-    use: "Try-on is in preview, so no photo is asked for. Looks are shown on a model.",
-    processing: "none",
-    leavesDevice: false,
-    retention: { where: "this_tab" },
-    deletion: "Nothing is kept.",
-    consentVersion: "tryon-2026-10-11",
-    accepts: PHOTO_TYPES,
-    maxBytes: 15 * 1024 * 1024,
-    minEdge: 480,
-    status: "not_collected",
-    adapter: "virtual-try-on",
-  },
+  try_on: TRYON_ADAPTER === "http" ? TRY_ON_SERVER : TRY_ON_ON_DEVICE,
 };
 
 /** The plain facts the customer reads before giving a photo, from the policy itself. */
@@ -111,8 +135,13 @@ export function disclosure(category: ImageCategory): { why: string; use: string;
   return {
     why: p.why,
     use: p.use,
-    leaves: p.leavesDevice ? "It is sent to Praxis to be analysed." : "It stays on this device. Nothing is uploaded.",
-    kept: p.retention.where === "this_tab" ? "Kept in this browser tab only." : p.retention.where === "this_device" ? "Kept on this device." : `Kept on Praxis servers${p.retention.maxDays ? ` for up to ${p.retention.maxDays} days` : ""}.`,
+    leaves: p.leaves ?? (p.leavesDevice ? "It is sent to Praxis to be analysed." : "It stays on this device. Nothing is uploaded."),
+    kept:
+      p.retention.where === "this_tab"
+        ? "Kept in this browser tab only."
+        : p.retention.where === "this_device"
+          ? "Kept on this device."
+          : `Kept on Praxis servers${p.retention.maxDays ? ` for up to ${p.retention.maxDays === 1 ? "a day" : `${p.retention.maxDays} days`}` : ""}.`,
     deletion: p.deletion,
   };
 }
@@ -188,7 +217,7 @@ export const IMAGE_KEYS: Record<ImageCategory, string | null> = {
   face_colour: "praxis_lab_a_face",
   body_fit: null,
   wardrobe_garment: "praxis_lab_a_item",
-  try_on: null,
+  try_on: "praxis_tryon_photo",
 };
 
 /** Deletes every stored photo of this kind. Wardrobe entries keep their name; only the photo goes. */

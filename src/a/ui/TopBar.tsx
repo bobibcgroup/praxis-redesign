@@ -211,7 +211,13 @@ function Menu({ open, onClose }: { open: boolean; onClose: () => void }) {
                     {user.name}
                     <span className="ml-2 text-[13px] text-[var(--muted)]">{user.premium ? "Premium" : user.email}</span>
                   </span>
-                  <TextButton onClick={signOut} className="ml-auto">
+                  <TextButton
+                    onClick={() => {
+                      signOut();
+                      onClose();
+                    }}
+                    className="ml-auto"
+                  >
                     Sign out
                   </TextButton>
                 </>

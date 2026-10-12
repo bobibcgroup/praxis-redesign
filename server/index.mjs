@@ -9,6 +9,9 @@
  * looked up and dropped; it is never logged or stored. The page is personal, so it is sent
  * `private, no-cache` and no shared cache can hand one country's page to another. Static files are
  * the same for everyone and cache hard.
+ *
+ * It also answers POST /api/tryon, the plug-in point for a real try-on engine (server/tryon.mjs). With
+ * no provider set up, the default, it answers that no engine is connected and calls nothing.
  */
 import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
@@ -16,6 +19,7 @@ import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { countryForIp, geoReady, loadGeo } from "./geo.mjs";
+import { handleTryOn } from "./tryon.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
 const PORT = Number(process.env.PORT ?? 3000);
@@ -117,6 +121,15 @@ function file(req, res, path, stat) {
 }
 
 export const server = createServer((req, res) => {
+  /* The try-on plug-in point (server/tryon.mjs); answers "disabled" until a provider is set up. */
+  if (req.url?.split("?")[0] === "/api/tryon") {
+    if (req.method !== "POST") {
+      res.writeHead(405, { Allow: "POST" });
+      return res.end();
+    }
+    void handleTryOn(req, res);
+    return;
+  }
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.writeHead(405, { Allow: "GET, HEAD" });
     return res.end();

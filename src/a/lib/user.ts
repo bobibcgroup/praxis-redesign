@@ -1,9 +1,11 @@
 /**
  * The account preview. Sign-in and Premium are persisted in localStorage;
- * no network, no real payment or identity provider.
+ * no network, no real payment or identity provider. Premium belongs to an account, not to the
+ * device: signing out and in as someone else never carries it over.
  */
 import { useCallback, useState } from "react";
 import { userIdFor } from "../../core/identity";
+import { local, readJson, writeJson } from "../../core/ids";
 
 export interface LabUser {
   /** Stable account id, used to own saved looks and feedback. */
@@ -22,7 +24,36 @@ export type GateKind = "tryon" | "dna" | "signin";
 export type GateStep = "intro" | "signin" | "premium";
 
 const KEY = "praxis_lab_a_user";
-const DEFAULT_EMAIL = "bob@praxis.app";
+const PREMIUM_KEY = "praxis_lab_a_premium";
+
+/**
+ * The stand-in Apple and Google sign-ins have no real identity behind them, so each gets its own
+ * fixed address on this device: they are two different accounts, never one shared one.
+ */
+export const PROVIDER_ADDRESS = { apple: "apple-account@praxis.app", google: "google-account@praxis.app" } as const;
+const PROVIDER_NAME: Record<string, string> = { [PROVIDER_ADDRESS.apple]: "Apple account", [PROVIDER_ADDRESS.google]: "Google account" };
+
+/** A display name from an address: tarek.hassoun@... becomes Tarek. */
+export function nameFrom(email: string): string {
+  const known = PROVIDER_NAME[email.toLowerCase()];
+  if (known) return known;
+  const first = email.split("@")[0].split(/[._+\-\d]/).find(Boolean) ?? "";
+  return first ? first.charAt(0).toUpperCase() + first.slice(1).toLowerCase() : "You";
+}
+
+/** Whether a typed address is complete enough to sign in with. */
+export function isEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function premiumFor(id: string): boolean {
+  return readJson<Record<string, boolean>>(local(), PREMIUM_KEY)?.[id] === true;
+}
+
+function setPremium(id: string): boolean {
+  const all = readJson<Record<string, boolean>>(local(), PREMIUM_KEY) ?? {};
+  return writeJson(local(), PREMIUM_KEY, { ...all, [id]: true });
+}
 
 function read(): LabUser | null {
   try {
@@ -30,9 +61,10 @@ function read(): LabUser | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<LabUser> & { plus?: boolean };
     if (typeof parsed.name !== "string" || typeof parsed.email !== "string") return null;
-    // Earlier builds called the subscription Plus.
-    const premium = parsed.premium === true || parsed.plus === true;
-    return { id: typeof parsed.id === "string" ? parsed.id : userIdFor(parsed.email), name: parsed.name, email: parsed.email, premium };
+    const id = typeof parsed.id === "string" ? parsed.id : userIdFor(parsed.email);
+    // Earlier builds kept Premium (once called Plus) on the device record; it moves to the account.
+    if (parsed.premium === true || parsed.plus === true) setPremium(id);
+    return { id, name: parsed.name, email: parsed.email, premium: premiumFor(id) };
   } catch {
     return null;
   }
@@ -60,10 +92,11 @@ export function stepsFor(kind: GateKind, user: LabUser | null, options: { hasDna
 export function useUser() {
   const [user, setUser] = useState<LabUser | null>(() => read());
 
-  const signIn = useCallback((email?: string): LabUser => {
-    const prev = read();
-    const address = email || prev?.email || DEFAULT_EMAIL;
-    const next: LabUser = { id: userIdFor(address), name: "Bob", email: address, premium: prev?.premium ?? false };
+  /** Signs in with an address (the email form, or a provider's stand-in address). */
+  const signIn = useCallback((email: string): LabUser => {
+    const address = email.trim().toLowerCase();
+    const id = userIdFor(address);
+    const next: LabUser = { id, name: nameFrom(address), email: address, premium: premiumFor(id) };
     write(next);
     setUser(next);
     return next;
@@ -74,10 +107,12 @@ export function useUser() {
     setUser(null);
   }, []);
 
+  /** Premium for the signed-in account. Without an account there is nothing to give it to. */
   const grantPremium = useCallback(() => {
     const prev = read();
-    const address = prev?.email ?? DEFAULT_EMAIL;
-    const next: LabUser = { id: prev?.id ?? userIdFor(address), name: prev?.name ?? "Bob", email: address, premium: true };
+    if (!prev) return;
+    setPremium(prev.id);
+    const next: LabUser = { ...prev, premium: true };
     write(next);
     setUser(next);
   }, []);

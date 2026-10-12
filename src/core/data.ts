@@ -28,7 +28,9 @@ export interface StoreInfo {
 
 /** Every key Praxis writes, for the README, the internal page and deletion. */
 export const STORES: readonly StoreInfo[] = [
-  { key: "praxis_lab_a", where: "device", holds: "Saved looks and the Style DNA profile", personal: "preferences" },
+  { key: "praxis_lab_a", where: "device", holds: "Saved looks and Style DNA profiles, each with its owner (version 2)", personal: "preferences" },
+  { key: "praxis_lab_a_unreadable", where: "device", holds: "A copy of saved looks that could not be read, kept before they were written over", personal: "preferences" },
+  { key: "praxis_lab_a_premium", where: "device", holds: "Which stand-in accounts have Premium", personal: "none" },
   { key: "praxis_lab_a_user", where: "device", holds: "The stand-in account", personal: "preferences" },
   { key: "praxis_lab_a_accounts", where: "device", holds: "Stand-in account ids by address", personal: "preferences" },
   { key: "praxis_lab_a_mode", where: "device", holds: "Light or dark", personal: "none" },
@@ -46,6 +48,8 @@ export const STORES: readonly StoreInfo[] = [
   { key: "praxis_dna_draft", where: "tab", holds: "A Style DNA not saved yet (no photo)", personal: "preferences" },
   { key: "praxis_lab_a_removed", where: "tab", holds: "A look just removed, for Undo", personal: "preferences" },
   { key: "praxis_lab_a_item", where: "tab", holds: "The piece you own, with its photo", personal: "photo" },
+  { key: "praxis_tryon_photo", where: "tab", holds: "Your See it on me photo", personal: "photo" },
+  { key: "praxis_tryon_request", where: "tab", holds: "The last try-on request and its answer (no photo)", personal: "none" },
   { key: "praxis_visit", where: "tab", holds: "Whether this visit was counted", personal: "none" },
   { key: "praxis_events_once", where: "tab", holds: "Events already counted this visit", personal: "none" },
   { key: "praxis_sim", where: "tab", holds: "Test mode", personal: "none" },

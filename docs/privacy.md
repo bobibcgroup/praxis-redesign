@@ -4,7 +4,8 @@ How Praxis collects, processes, keeps and deletes personal photographs and the a
 
 ## The short version
 
-- Two kinds of photo can be given today: a face photo for Style DNA and a photo of a piece the customer owns. Body photos and try-on photos are not asked for anywhere.
+- Three kinds of photo can be given today: a face photo for Style DNA, a photo of a piece the customer owns, and a photo for See it on me. Body photos are not asked for anywhere. The try-on photo stays in the tab (`praxis_tryon_photo`) and is not sent anywhere while no try-on engine is connected (docs/TRY-ON.md).
+- On a shared device each person sees only their own saved looks, Style DNA, feedback and earlier answers. Signing out starts a new anonymous id, deletes the photos and the unsaved Style DNA in the tab, and asks for photo consent again; what the account saved stays on the device, hidden, until it signs in again.
 - A photo given today lives in the `sessionStorage` of the browser tab (`praxis_lab_a_face`, `praxis_lab_a_item`). It is never written to `localStorage`, never sent over the network, and is gone when the tab closes or when the customer deletes it.
 - No photo is analysed. The colour "analysis" is a mock that returns the same sample answer for every photo, labelled `source: "sample"` (`src/core/vision.ts:86`). The garment "recognition" mock reads nothing (`src/core/vision.ts:104`).
 - There is no server, no upload code, no database and no image provider in this repository. Every image adapter is a free mock. Billable adapters cannot run unless the build sets `VITE_ALLOW_BILLABLE_IMAGES=true` (`src/core/config.ts:27`), and no billable adapter exists.
@@ -120,16 +121,16 @@ Note on the policy wording: `use` says the photo is shown "beside your looks" (`
 
 | Aspect | Today |
 |---|---|
-| Policy | `src/core/images.ts:91` |
-| Status | `not_collected`. The try-on page shows the look on a model and says so. The old face route for try-on redirects to the preview without asking for a photo (`src/a/screens/moment/You.tsx:37`). |
-| Inputs | None today. |
-| Consent | None asked. Version `tryon-2026-10-11` reserved. |
-| Processing location | `none` |
-| Leaves device | No |
-| Retention | Nothing kept. `IMAGE_KEYS.try_on` is `null`. Saved looks from earlier builds that carried a stand-in try-on picture have it removed on read (`src/shared/store.ts:48`). |
-| Deletion | Nothing to delete. |
-| Error states | Would use the shared checks. `imageServices().tryOn` returns a `GeneratedImage` with `status: "disabled"` while the policy is `not_collected`, before any adapter or billing check (`src/core/vision.ts:205`). |
-| Adapter | `TryOnAdapter` (`src/core/vision.ts:79`), policy name `virtual-try-on`; mock `mockTryOn` returns `status: "disabled"`. A related `OutfitVisualizationAdapter` (`src/core/vision.ts:76`) generates no images either. |
+| Policy | `TRY_ON_ON_DEVICE` in `src/core/images.ts` (and `TRY_ON_SERVER` once an engine is connected) |
+| Status | `collecting`. See it on me asks for one photo after the explanation and consent (docs/TRY-ON.md). |
+| Inputs | Camera (front) or upload; JPEG, PNG, WebP, HEIC; under 15 MB; shorter edge at least 480 px; not too dark or bright. No sample. |
+| Consent | Asked before the camera or a file opens. Version `tryon-device-2026-10-11`; `tryon-server-2026-10-11` once the photo leaves the device, so everyone is asked again. Withdrawn at sign out and by Delete everything. |
+| Processing location | `none` today: the stand-in service receives the request in the page and makes no picture. With an engine: Praxis's server, then the provider. |
+| Leaves device | No, today. |
+| Retention | In the tab only (`sessionStorage` `praxis_tryon_photo`, at most 1280 px). The last request and answer, without the photo, in `praxis_tryon_request`. |
+| Deletion | Retake or Use another photo, Delete on `/data`, sign out, Delete everything, or closing the tab. |
+| Error states | Refused photos say why; camera problems are named; the service answers not connected, failed (with Try again when it can help), timed out or stopped. |
+| Adapter | `TryOnAdapter` (`src/core/vision.ts`): `mockTryOn` (default, makes no picture) or `httpTryOn` (posts to `server/tryon.mjs`). |
 
 ## Consent
 

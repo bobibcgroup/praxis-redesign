@@ -62,8 +62,13 @@ async function send(request: StylingRequest, signal?: AbortSignal): Promise<Styl
   if (response.error?.code === "cancelled") return response;
   if (response.status === "failed") track("processing_failed", { requestId: request.requestId, code: response.error?.code ?? "unknown" });
   else track("processing_completed", { requestId: request.requestId, recommendationId: response.recommendationId, status: response.status, outfits: response.outfits.length, durationMs: Math.round(performance.now() - started) });
-  lastAnswer.set(request.inputKey, response);
+  lastAnswer.set(cacheKey(request.inputKey, request.userId, request.anonymousSessionId), response);
   return response;
+}
+
+/** The tab's caches are kept per person as well as per inputs, so one account never sees another's answer. */
+function cacheKey(inputKey: string, userId: string | undefined, anon = anonymousId()): string {
+  return `${userId ?? anon}|${inputKey}`;
 }
 
 /** Requests in flight by input key, so a remount (or React's development double run) never sends twice. */
@@ -78,15 +83,16 @@ const lastAnswer = new Map<string, StylingResponse>();
 
 /** Sends a fresh request for these inputs, unless one for the same inputs is already on its way. */
 export function submitStyling(spec: StylingSpec, userId: string | undefined): Promise<StylingResponse> {
-  const pending = inflight.get(spec.inputKey);
+  const key = cacheKey(spec.inputKey, userId);
+  const pending = inflight.get(key);
   if (pending) return pending;
-  const run = send(requestFor(spec, userId)).finally(() => inflight.delete(spec.inputKey));
-  inflight.set(spec.inputKey, run);
+  const run = send(requestFor(spec, userId)).finally(() => inflight.delete(key));
+  inflight.set(key, run);
   return run;
 }
 
-function lastFailure(inputKey: string): StylingResponse | null {
-  const last = lastAnswer.get(inputKey);
+function lastFailure(inputKey: string, userId: string | undefined): StylingResponse | null {
+  const last = lastAnswer.get(cacheKey(inputKey, userId));
   return last?.status === "failed" ? last : null;
 }
 
@@ -96,22 +102,23 @@ function lastFailure(inputKey: string): StylingResponse | null {
  */
 export function useStylingResponse(spec: StylingSpec | null): { response: StylingResponse | null; loading: boolean } {
   const { user } = useJourney();
-  const known = spec ? (requestHistory.latest(spec.inputKey)?.response ?? lastFailure(spec.inputKey)) : null;
-  const [fetched, setFetched] = useState<StylingResponse | null>(null);
   const userId = user?.id;
+  const known = spec ? (requestHistory.latest(spec.inputKey, { anonymousSessionId: anonymousId(), userId })?.response ?? lastFailure(spec.inputKey, userId)) : null;
+  const [fetched, setFetched] = useState<{ response: StylingResponse; userId: string | undefined } | null>(null);
 
   useEffect(() => {
     if (!spec || known) return;
     let alive = true;
     void submitStyling(spec, userId).then((r) => {
-      if (alive) setFetched(r);
+      if (alive) setFetched({ response: r, userId });
     });
     return () => {
       alive = false;
     };
   }, [spec, known, userId]);
 
-  const response = known ?? (fetched && spec && fetched.inputKey === spec.inputKey ? fetched : null);
+  // A late answer for earlier inputs, or for the person signed in before, is never shown.
+  const response = known ?? (fetched && spec && fetched.response.inputKey === spec.inputKey && fetched.userId === userId ? fetched.response : null);
   return { response, loading: Boolean(spec) && !response };
 }
 

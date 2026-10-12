@@ -113,11 +113,17 @@ Saved looks, the Style DNA and the wardrobe have no age limit (`RETENTION.savedL
 The key is built as `praxis_lab_${concept}` (`src/shared/store.ts:35`), and the app uses concept `"a"` (`src/a/lib/journey.tsx:25`). Retention: until deleted.
 
 ```ts
-// src/shared/store.ts:27
+// src/shared/store.ts (version 2, written from 2026-10-12)
 interface LabState {
+  version: 2;
   looks: SavedLook[];
-  dna: StyleProfile | null;   // section 6.3; never holds a photo
+  profiles: { profile: StyleProfile; owner?: Owner }[];   // section 6.3; never holds a photo
 }
+// Version 1 was { looks, dna }. On read, a version 1 `dna` becomes one profile with no owner; the
+// first signed-in person on the device takes it (or the guest keeps it until they sign in). One
+// unreadable look is skipped; unreadable JSON is copied to praxis_lab_a_unreadable before any write.
+// Every change re-reads storage first, so two tabs never overwrite each other. Visibility:
+// visibleTo(owner, userId, anonymousSessionId) in src/core/account.ts.
 
 // src/shared/store.ts:12
 interface SavedLook {

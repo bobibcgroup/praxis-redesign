@@ -53,8 +53,22 @@ function check(cond, what) {
   current.checks.push({ ok: Boolean(cond), what });
 }
 
-async function scenario(id, title, device, fn, { sim, ip, locale, missingFiles } = {}) {
-  const ctx = await browser.newContext({ ...(device === "phone" ? PHONE : DESKTOP), reducedMotion: "no-preference", ...(locale ? { locale } : {}) });
+/** ONLY=S1,UX3 runs just those scenarios. */
+const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
+
+/** A signed-in Premium customer from the first page, for scenarios that start inside Style DNA or try-on. */
+const PREMIUM_USER = { id: "user_e2e", name: "Sam", email: "sam@example.com", premium: true };
+
+async function scenario(id, title, device, fn, { sim, ip, locale, missingFiles, premium, viewport } = {}) {
+  if (ONLY && !ONLY.has(id)) return;
+  const ctx = await browser.newContext({ ...(viewport ?? (device === "phone" ? PHONE : DESKTOP)), reducedMotion: "no-preference", ...(locale ? { locale } : {}) });
+  if (premium)
+    await ctx.addInitScript((u) => {
+      if (localStorage.getItem("praxis_e2e_seeded")) return;
+      localStorage.setItem("praxis_e2e_seeded", "1");
+      localStorage.setItem("praxis_lab_a_user", JSON.stringify(u));
+      localStorage.setItem("praxis_lab_a_premium", JSON.stringify({ [u.id]: true }));
+    }, PREMIUM_USER);
   /* The visitor's address, as Railway's proxy passes it on; only on requests to our own server. */
   if (ip) await ctx.route(`${BASE}/**`, (r) => r.continue({ headers: { ...r.request().headers(), "x-forwarded-for": ip } }));
   if (sim) await ctx.addInitScript((s) => sessionStorage.setItem("praxis_sim", s), sim);
@@ -197,14 +211,14 @@ for (const device of ["desktop", "phone"]) {
     await button(p, /Looks right|Save my Style DNA/).click();
     await p.waitForTimeout(800);
     await p.reload();
-    const dna = (await lab(p)).dna;
+    const dna = (await lab(p)).profiles?.[0]?.profile;
     check(dna?.undertone?.corrected?.value === "warm", "the correction is saved");
     check(dna?.undertone?.inferred?.value && dna.undertone.inferred.value !== "warm", "the estimate is kept apart from it");
     await p.goto(`${BASE}/dna?mode=light`);
     await p.waitForTimeout(600);
     check(/Your correction/.test(await body(p)) && /Warm/.test(await body(p)), "the Style DNA page shows the correction");
     await shot("dna");
-  });
+  }, { premium: true });
 
   await scenario("S7", "An unreadable photo gets a way forward", device, async (p, shot) => {
     const dark = await p.evaluate(async () => {
@@ -230,7 +244,7 @@ for (const device of ["desktop", "phone"]) {
     check((await p.getByRole("radio", { name: /Use a sample/ }).count()) > 0, "another photo or a sample can be chosen");
     check(!(await p.evaluate(() => Object.values(localStorage).some((v) => v.includes("data:image")))), "the photo is not stored");
     await shot("refused");
-  });
+  }, { premium: true });
 
   await scenario(
     "S7b",
@@ -257,7 +271,7 @@ for (const device of ["desktop", "phone"]) {
       check(/No colours yet/.test(await body(p)), "carries on without colours");
       await shot("skip");
     },
-    { sim: "invalid_image" },
+    { sim: "invalid_image", premium: true },
   );
 
   await scenario(
@@ -279,7 +293,7 @@ for (const device of ["desktop", "phone"]) {
       await p.evaluate(() => sessionStorage.setItem("praxis_sim", "fast"));
       await button(p, "Try again").click();
       await p.waitForURL(/moment\/results/, { timeout: 10000 });
-      check(true, "Try again reaches the looks");
+      check(/moment\/results/.test(p.url()) && (await history(p)).some((e) => e.response.status === "completed"), "Try again reaches the looks");
     },
     { sim: "timeout" },
   );
@@ -397,11 +411,11 @@ for (const device of ["desktop", "phone"]) {
     await shot("progress");
     await progress(p).getByRole("link", { name: "Budget" }).click();
     await p.waitForURL(/moment\/spend/);
-    check(true, "forward to Budget from Time");
+    check(/moment\/spend/.test(p.url()), "forward to Budget from Time");
     check(await p.getByRole("radio", { name: /\$300 to/ }).first().getAttribute("aria-checked") === "true", "the budget answer is still selected");
     await progress(p).getByRole("link", { name: "Place" }).click();
     await p.waitForURL(/moment\/venue/);
-    check(true, "back to Place from Budget");
+    check(/moment\/venue/.test(p.url()), "back to Place from Budget");
     await p.waitForTimeout(500);
     await p.getByRole("radio", { name: /Bar/ }).first().click();
     await p.waitForURL(/moment\/(build|results)/, { timeout: 8000 });
@@ -812,6 +826,419 @@ for (const device of ["desktop", "phone"]) {
     check(m.lcp <= budget, `largest paint ${m.lcp} ms (budget ${budget} ms${device === "phone" ? ", slow 4G" : ""})`);
     check(cls <= 0.1, `layout shift ${cls.toFixed(3)} (budget 0.1)`);
   });
+}
+
+
+/* ------------------------------------------------- Stage 1: a shared device */
+
+const SIZES = {
+  375: { viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+  390: PHONE,
+  430: { viewport: { width: 430, height: 932 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 },
+  768: { viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+};
+
+/** Opens the menu when the bar keeps its items there (phones), then clicks the named control. */
+async function menuClick(p, name) {
+  if (!(await p.getByRole("button", { name }).filter({ visible: true }).count()) && !(await p.getByRole("link", { name }).filter({ visible: true }).count())) {
+    await p.getByRole("button", { name: /Menu|open menu/ }).filter({ visible: true }).first().click();
+    await p.waitForTimeout(400);
+  }
+  const target = p.getByRole("button", { name }).filter({ visible: true });
+  if (await target.count()) await target.first().click();
+  else await p.getByRole("link", { name }).filter({ visible: true }).first().click();
+}
+
+async function signInWith(p, provider) {
+  await menuClick(p, /^Sign in$/);
+  await p.waitForTimeout(500);
+  await button(p, provider).click();
+  await p.waitForTimeout(1300);
+}
+
+for (const device of ["desktop", "phone"]) {
+  await scenario("ISO1", "After sign out, the next person sees none of the last person's looks or Style DNA", device, async (p, shot) => {
+    await toResults(p, A);
+    await signInWith(p, /Apple/);
+    await button(p, /^Save/).click();
+    await p.waitForTimeout(800);
+    check(((await lab(p)).looks ?? []).length === 1, "the Apple account saved a look");
+    await p.goto(`${BASE}/looks?mode=light`);
+    await p.waitForTimeout(600);
+    await menuClick(p, /Sign out/);
+    await p.waitForTimeout(800);
+    await p.goto(`${BASE}/looks?mode=light`);
+    await p.waitForTimeout(800);
+    const t = await body(p);
+    check(/No saved looks yet/.test(t), "a new guest sees no saved looks");
+    check(((await lab(p)).looks ?? []).length === 1, "the account's look is still kept on the device");
+    await signInWith(p, /Google/);
+    await p.goto(`${BASE}/looks?mode=light`);
+    await p.waitForTimeout(800);
+    check(/No saved looks yet/.test(await body(p)), "another account does not see it");
+    await shot("other-account");
+    await menuClick(p, /Sign out/);
+    await p.waitForTimeout(600);
+    await signInWith(p, /Apple/);
+    await p.goto(`${BASE}/looks?mode=light`);
+    await p.waitForTimeout(800);
+    check(!/No saved looks yet/.test(await body(p)), "the Apple account sees its look again");
+  });
+
+  await scenario("ISO2", "Premium belongs to the account that paid, not to the device", device, async (p) => {
+    await p.goto(`${BASE}/?mode=light`);
+    await p.waitForTimeout(500);
+    const premium = await p.evaluate(() => JSON.parse(localStorage.getItem("praxis_lab_a_premium") || "{}"));
+    const user = await p.evaluate(() => JSON.parse(localStorage.getItem("praxis_lab_a_user") || "null"));
+    check(user?.premium === true && premium[user.id] === true, "the seeded account has Premium");
+    await menuClick(p, /Sign out/);
+    await p.waitForTimeout(600);
+    await signInWith(p, /Google/);
+    const next = await p.evaluate(() => JSON.parse(localStorage.getItem("praxis_lab_a_user") || "null"));
+    check(next && next.email === "google-account@praxis.app" && next.premium === false, "a different account starts without Premium");
+    await p.goto(`${BASE}/dna/face?mode=light`);
+    await p.waitForTimeout(800);
+    check(new URL(p.url()).pathname === "/" && new URL(p.url()).searchParams.get("gate") === "dna", "Style DNA by address leads to its introduction");
+  }, { premium: true });
+
+  await scenario("ISO3", "Email sign in needs a real address", device, async (p) => {
+    await p.goto(`${BASE}/?mode=light`);
+    await menuClick(p, /^Sign in$/);
+    await p.waitForTimeout(500);
+    await button(p, /Continue with email/).click();
+    await p.waitForTimeout(300);
+    check(/Enter your email/.test(await body(p)), "an empty address is refused with a reason");
+    await p.locator("#gate-email").fill("sam@");
+    await button(p, /Continue with email/).click();
+    await p.waitForTimeout(300);
+    check(/looks incomplete/.test(await body(p)), "an incomplete address is refused");
+    await p.locator("#gate-email").fill("sam.lee@example.com");
+    await button(p, /Continue with email/).click();
+    await p.waitForTimeout(1300);
+    const u = await p.evaluate(() => JSON.parse(localStorage.getItem("praxis_lab_a_user") || "null"));
+    check(u?.email === "sam.lee@example.com" && u?.name === "Sam", "signed in with that address and its name");
+  });
+
+  await scenario("DATA1", "Deleting everything on Your data leaves nothing behind", device, async (p) => {
+    await toResults(p, A);
+    await button(p, /^Save/).click();
+    await p.waitForTimeout(800);
+    await p.goto(`${BASE}/data?mode=light`);
+    await p.waitForTimeout(600);
+    await button(p, /Delete everything/).click();
+    await p.waitForTimeout(400);
+    const confirm = p.getByRole("button", { name: /Delete everything|Yes, delete/ }).filter({ visible: true });
+    if (await confirm.count()) await confirm.last().click();
+    await p.waitForTimeout(1500);
+    const left = await p.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("praxis_") && !["praxis_anon", "praxis_events", "praxis_visit"].includes(k)));
+    check(!left.includes("praxis_lab_a") && !left.includes("praxis_styling_history") && !left.includes("praxis_feedback"), `saved looks, requests and feedback are gone (left: ${left.join(", ") || "none"})`);
+    check(!(await p.evaluate(() => Object.keys(sessionStorage).some((k) => k.includes("face") || k.includes("tryon")))), "no photos left in the tab");
+  });
+
+  await scenario("FULL1", "A save that cannot be written says so and shows nothing as saved", device, async (p, shot) => {
+    await p.addInitScript(() => {
+      const set = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (k, v) {
+        if (k === "praxis_lab_a") throw new DOMException("QuotaExceededError", "QuotaExceededError");
+        return set.call(this, k, v);
+      };
+    });
+    await toResults(p, A);
+    await button(p, /^Save/).click();
+    await p.waitForTimeout(600);
+    check(/couldn’t save this look/.test(await body(p)), "the customer is told the save failed");
+    check(!new URL(p.url()).searchParams.get("done"), "nothing says it was saved");
+    check((await events(p)).some((e) => e.eventName === "look_save_failed"), "the failure is recorded");
+    await shot("save-failed");
+  });
+
+  await scenario("TABS1", "Saving in two tabs keeps both looks", device, async (p) => {
+    await toResults(p, A);
+    const url = new URL(p.url());
+    const second = await p.context().newPage();
+    url.searchParams.set("hero", (await history(p))[0].response.outfits[1].outfitId);
+    await second.goto(url.toString());
+    await second.waitForTimeout(1200);
+    await button(p, /^Save/).click();
+    await p.waitForTimeout(600);
+    await button(second, /^Save/).click();
+    await second.waitForTimeout(600);
+    const looks = (await lab(p)).looks ?? [];
+    check(looks.length === 2, `both looks kept (${looks.length})`);
+    await p.goto(`${BASE}/looks?mode=light`);
+    await p.waitForTimeout(800);
+    check((await p.locator('a.a-rail-card').count()) >= 2, `the first tab lists both (${await p.locator('a.a-rail-card').count()})`);
+    await second.close();
+  });
+
+  await scenario("SAVE2", "Saving the same look twice keeps one copy", device, async (p) => {
+    await toResults(p, A);
+    await button(p, /^Save/).click();
+    await p.waitForTimeout(600);
+    await p.goto(p.url().replace(/([?&])done=saved&?/, "$1"));
+    await p.waitForTimeout(1000);
+    const save = p.getByRole("button", { name: /^Save$/ }).filter({ visible: true });
+    if (await save.count()) await save.first().click({ force: true });
+    await p.waitForTimeout(600);
+    check(((await lab(p)).looks ?? []).length === 1, "one copy");
+  });
+
+  await scenario("PARAMS1", "Broken or tampered addresses land somewhere useful, without errors", device, async (p) => {
+    for (const path of ["/moment/results?occasion=NOPE&venue=%3Cscript%3E", "/moment/tryon?occasion=DINNER&hero=nope", "/looks/does-not-exist", "/dna/result", "/moment/results?occasion=DINNER&venue=RESTAURANT&time=NIGHT&vibe=SHARP&spend=ELEVATED&hero=%22%3E%3Cimg"]) {
+      await p.goto(`${BASE}${path}`);
+      await p.waitForTimeout(1200);
+      const t = await body(p);
+      check(t.trim().length > 40 && !/Something went wrong on my side/.test(t), `${path.split("?")[0]} shows a working page`);
+    }
+  });
+}
+
+/* ------------------------------------------------- See it on me */
+
+/** A plain photo of the right size, drawn in the page, as a file to upload. */
+async function photoFile(p, { width = 720, height = 960, shade = "#9a8f80" } = {}) {
+  const b64 = await p.evaluate(
+    ({ width, height, shade }) => {
+      const c = document.createElement("canvas");
+      c.width = width;
+      c.height = height;
+      const g = c.getContext("2d");
+      g.fillStyle = shade;
+      g.fillRect(0, 0, width, height);
+      g.fillStyle = "#5b4a3a";
+      g.fillRect(width * 0.35, height * 0.15, width * 0.3, height * 0.75);
+      return c.toDataURL("image/jpeg", 0.9).split(",")[1];
+    },
+    { width, height, shade },
+  );
+  return { name: "me.jpg", mimeType: "image/jpeg", buffer: Buffer.from(b64, "base64") };
+}
+
+async function openTryOn(p) {
+  await toResults(p, A);
+  const hero = new URL(p.url()).searchParams.get("hero") ?? (await history(p))[0].response.outfits[0].outfitId;
+  await button(p, /See it on me/).click();
+  await p.waitForURL(/moment\/tryon/, { timeout: 8000 });
+  await p.waitForTimeout(500);
+  return hero;
+}
+
+const step = (p) => p.locator("[data-tryon-step]").getAttribute("data-tryon-step");
+
+for (const size of [375, 390, 430, 768]) {
+  const device = `phone-${size}`;
+  await scenario(
+    "TRY1",
+    "See it on me, start to finish, with an uploaded photo",
+    device,
+    async (p, shot) => {
+      const hero = await openTryOn(p);
+      check((await step(p)) === "explain", "starts with what try-on is");
+      check(/See this look on you/.test(await body(p)) && /isn’t switched on yet/.test(await body(p)), "says plainly that try-on is not switched on");
+      await shot("explain");
+      await button(p, "Continue").click();
+      await p.waitForTimeout(300);
+      check((await step(p)) === "consent", "asks for consent next");
+      const t = await body(p);
+      check(/stays on this device/i.test(t) && /Kept in this browser tab only/.test(t) && /Retake deletes|with Retake/.test(t), "says where the photo goes, how long it is kept and how to delete it");
+      await shot("consent");
+      await button(p, "I agree").click();
+      await p.waitForTimeout(300);
+      check((await step(p)) === "capture", "then the camera or an upload");
+      check(!/Use a sample/.test(await body(p)), "no sample stands in for the customer");
+      await shot("capture");
+      const chooser = p.waitForEvent("filechooser");
+      await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+      await (await chooser).setFiles(await photoFile(p));
+      await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "preview", null, { timeout: 8000 });
+      check(/Is this photo right/.test(await body(p)), "shows the photo back to keep or retake");
+      await shot("preview");
+      await button(p, "Use this photo").click();
+      await p.waitForTimeout(200);
+      check(/Sending your try-on/.test(await body(p)) && (await button(p, "Stop").count()) > 0, "a working state that can be stopped");
+      check(!/\d+\s?%/.test(await body(p)), "no made-up progress");
+      await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "result", null, { timeout: 8000 });
+      check(/Try-on isn’t switched on yet/.test(await body(p)) && /Nothing was made to look like you/.test(await body(p)), "the answer is honest");
+      await shot("result");
+      const record = await p.evaluate(() => JSON.parse(sessionStorage.getItem("praxis_tryon_request") || "null"));
+      check(record?.request?.outfitId === hero, `the request is for the look chosen (${record?.request?.outfitId} vs ${hero})`);
+      check(record?.request?.garmentIds?.length >= 3 && record.request.recommendationId && record.request.person.consentVersion, "the request names the pieces, the set and the consent");
+      check(record?.outcome?.status === "not_connected" && record.outcome.provider === "mock-try-on", "the stand-in service answered");
+      check(!JSON.stringify(record).includes("data:image"), "the request record holds no photo");
+      check(!(await p.evaluate(() => Object.values(localStorage).some((v) => v.includes("data:image")))), "no photo on the device");
+      check(!(await events(p)).some((e) => JSON.stringify(e).includes("data:image")), "no photo in analytics");
+      const names = (await events(p)).map((e) => e.eventName);
+      check(["tryon_opened", "tryon_photo_ready", "tryon_submitted", "tryon_answered"].every((n) => names.includes(n)), "each step is counted");
+      const overflow = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      check(!overflow, "nothing runs off the side");
+      await button(p, "Use another photo").click();
+      await p.waitForTimeout(300);
+      check((await step(p)) === "capture" && !(await p.evaluate(() => sessionStorage.getItem("praxis_tryon_photo"))), "Use another photo deletes the photo and asks again");
+      await p.getByRole("link", { name: "Back to your looks" }).filter({ visible: true }).first().click();
+      await p.waitForURL(/moment\/results/, { timeout: 5000 });
+      check(new URL(p.url()).searchParams.get("hero") === hero || !new URL(p.url()).searchParams.get("hero"), "back on the same look");
+    },
+    { premium: true, viewport: SIZES[size] },
+  );
+}
+
+await scenario(
+  "TRY2",
+  "A photo that fails the checks is refused with the reason, and a good one goes through",
+  "phone",
+  async (p, shot) => {
+    await openTryOn(p);
+    await button(p, "Continue").click();
+    await button(p, "I agree").click();
+    let chooser = p.waitForEvent("filechooser");
+    await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+    await (await chooser).setFiles(await photoFile(p, { shade: "#050505" }));
+    await p.waitForTimeout(1200);
+    check(/too dark for me to see you/.test(await body(p)), "a dark photo is refused, saying why");
+    chooser = p.waitForEvent("filechooser");
+    await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+    await (await chooser).setFiles(await photoFile(p, { width: 300, height: 400 }));
+    await p.waitForTimeout(1200);
+    check(/too small/.test(await body(p)), "a small photo is refused, saying why");
+    await shot("refused");
+    chooser = p.waitForEvent("filechooser");
+    await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+    await (await chooser).setFiles(await photoFile(p));
+    await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "preview", null, { timeout: 8000 });
+    check((await step(p)) === "preview", "a good photo reaches the preview");
+  },
+  { premium: true },
+);
+
+await scenario(
+  "TRY3",
+  "A failing try-on service offers Try again, a limited number of times",
+  "phone",
+  async (p, shot) => {
+    await openTryOn(p);
+    // Only the try-on fails; the looks were fetched before.
+    await p.evaluate(() => sessionStorage.setItem("praxis_sim", "failure"));
+    await button(p, "Continue").click();
+    await button(p, "I agree").click();
+    const chooser = p.waitForEvent("filechooser");
+    await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+    await (await chooser).setFiles(await photoFile(p));
+    await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "preview", null, { timeout: 8000 });
+    await button(p, "Use this photo").click();
+    await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "result", null, { timeout: 8000 });
+    check(/didn’t work this time/.test(await body(p)), "the failure is said plainly");
+    await shot("failed");
+    let tries = 1;
+    while ((await button(p, "Try again").count()) && tries < 6) {
+      await button(p, "Try again").click();
+      await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "result", null, { timeout: 8000 });
+      tries += 1;
+    }
+    check(tries === 3, `three tries in all (${tries})`);
+    check((await button(p, "Use another photo").count()) > 0, "another photo is still offered");
+    const ids = (await events(p)).filter((e) => e.eventName === "tryon_submitted").map((e) => e.properties?.requestId ?? e.props?.requestId);
+    check(new Set(ids).size === ids.length && ids.length === 3, "each try is a new request");
+  },
+  { premium: true },
+);
+
+await scenario(
+  "TRY4",
+  "A slow try-on says so and can be stopped and sent again",
+  "phone",
+  async (p, shot) => {
+    await openTryOn(p);
+    await button(p, "Continue").click();
+    await button(p, "I agree").click();
+    const chooser = p.waitForEvent("filechooser");
+    await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+    await (await chooser).setFiles(await photoFile(p));
+    await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "preview", null, { timeout: 8000 });
+    await button(p, "Use this photo").click();
+    await p.waitForTimeout(5600);
+    check(/taking longer than usual/.test(await body(p)), "says it is taking longer");
+    await shot("slow");
+    await button(p, "Stop").click();
+    await p.waitForTimeout(300);
+    check((await step(p)) === "cancelled" && /Stopped/.test(await body(p)), "stopped, with the photo kept");
+    await p.evaluate(() => sessionStorage.setItem("praxis_sim", "fast"));
+    await button(p, "Send again").click();
+    await p.waitForFunction(() => document.querySelector("[data-tryon-step]")?.getAttribute("data-tryon-step") === "result", null, { timeout: 8000 });
+    check(/isn’t switched on yet/.test(await body(p)), "sent again and answered");
+  },
+  { premium: true, sim: "slow" },
+);
+
+await scenario(
+  "TRY5",
+  "Without camera access, the reason is given and upload still works",
+  "phone",
+  async (p) => {
+    await openTryOn(p);
+    await button(p, "Continue").click();
+    await button(p, "I agree").click();
+    await p.getByRole("radio", { name: /Take a photo/ }).first().click();
+    await p.waitForTimeout(1500);
+    const t = await body(p);
+    check(/Camera access is turned off|couldn’t find a camera|camera is not available/i.test(t) && /Upload a photo instead/.test(t), "the camera problem is explained with a way on");
+    check((await p.getByRole("radio", { name: /Upload a photo/ }).count()) > 0, "upload is still offered");
+  },
+  { premium: true },
+);
+
+await scenario(
+  "TRY6",
+  "Without Premium, See it on me by address opens the try-on introduction on the looks",
+  "phone",
+  async (p) => {
+    await toResults(p, A);
+    const u = new URL(p.url());
+    await p.goto(`${BASE}/moment/tryon${u.search}`);
+    await p.waitForTimeout(1000);
+    const now = new URL(p.url());
+    check(now.pathname === "/moment/results" && now.searchParams.get("gate") === "tryon", "lands on the looks with the introduction open");
+    check(/See it on you/.test(await body(p)), "the introduction shows");
+  },
+);
+
+/* A real camera, faked by Chromium: the photo is taken from the live preview. */
+if (!ONLY || ONLY.has("TRY7")) {
+  const camBrowser = await chromium.launch({
+    ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}),
+    args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"],
+  });
+  const ctx = await camBrowser.newContext({ ...PHONE, permissions: ["camera"] });
+  await ctx.addInitScript((u) => {
+    if (localStorage.getItem("praxis_e2e_seeded")) return;
+    localStorage.setItem("praxis_e2e_seeded", "1");
+    localStorage.setItem("praxis_lab_a_user", JSON.stringify(u));
+    localStorage.setItem("praxis_lab_a_premium", JSON.stringify({ [u.id]: true }));
+  }, PREMIUM_USER);
+  const p = await ctx.newPage();
+  current = { id: "TRY7", title: "The camera opens, shows a live preview, and the photo taken goes to the preview", device: "phone", checks: [], errors: [], status: "passed" };
+  p.on("pageerror", (e) => current.errors.push(e.message));
+  try {
+    await openTryOn(p);
+    await button(p, "Continue").click();
+    await button(p, "I agree").click();
+    await p.getByRole("radio", { name: /Take a photo/ }).first().click();
+    await p.waitForTimeout(1500);
+    check(await p.locator("video").filter({ visible: true }).count(), "the live preview shows");
+    await p.screenshot({ path: join(OUT, "TRY7-phone-camera.png") });
+    await button(p, "Take photo").click();
+    await p.waitForTimeout(1500);
+    const s = await step(p);
+    const t = await body(p);
+    check(s === "preview" || /too small|too dark|too bright/.test(t), `the photo is checked (${s})`);
+    check(!(await p.evaluate(() => Object.values(localStorage).some((v) => v.includes("data:image")))), "no photo on the device");
+  } catch (e) {
+    current.checks.push({ ok: false, what: `ran to the end (${String(e.message).split("\n")[0]})` });
+  }
+  if (current.errors.length) current.checks.push({ ok: false, what: `no page errors (${current.errors[0]})` });
+  current.status = current.checks.every((c) => c.ok) ? "passed" : "failed";
+  results.push(current);
+  await ctx.close();
+  await camBrowser.close();
 }
 
 /* ------------------------------------------------------------ report */
