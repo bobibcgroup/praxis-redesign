@@ -79,7 +79,7 @@ export const EVENTS = {
   style_dna_completed: { category: "retention", journey: "style_dna", trigger: "A Style DNA is saved.", props: { photo: { type: "enum", values: ["own", "sample"], required: true }, tasteCount: { type: "number", required: true } } },
 
   photo_consent_given: { category: "account", trigger: "The customer agrees to a use of their photo, before giving one.", props: { category: PHOTO } },
-  photo_rejected: { category: "account", trigger: "A photo fails the checks before use. Says why, never the photo.", props: { category: PHOTO, problem: { type: "enum", values: ["not_an_image", "unsupported_type", "too_large", "too_small", "too_dark", "too_bright", "unreadable"], required: true } } },
+  photo_rejected: { category: "account", trigger: "A photo fails the checks before use. Says why, never the photo.", props: { category: PHOTO, problem: { type: "enum", values: ["not_an_image", "unsupported_type", "too_large", "too_small", "too_dark", "too_bright", "unreadable", "no_face", "colour_cast"], required: true } } },
   photo_deleted: { category: "account", trigger: "The customer deletes a photo they gave.", props: { category: PHOTO } },
   tryon_opened: { category: "engagement", trigger: "See it on me opens for a look, after any gate.", props: { recommendationId: REC, outfitId: { type: "string", required: true } } },
   tryon_photo_ready: { category: "engagement", trigger: "A try-on photo passes the checks and is shown back. Says how it was taken, never the photo.", props: { source: { type: "enum", values: ["camera", "upload"], required: true } } },

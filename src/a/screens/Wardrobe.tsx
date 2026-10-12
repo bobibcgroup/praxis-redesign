@@ -1,8 +1,8 @@
 /**
  * The wardrobe: the pieces the customer owns, kept on this device by name, type and colour, with a
  * photo only in this tab. Pieces can be added, corrected and removed here, and used in a set of looks
- * (here when the looks are open, or from Make it yours on the results). Nothing is read from a photo
- * yet: garment recognition is a plug-in point, so the customer says what the piece is.
+ * (here when the looks are open, or from Make it yours on the results). A photo's main colour is read
+ * on the device to fill in the colour; the customer says what the piece is, and can change the colour.
  */
 import { useMemo, useRef, useState } from "react";
 import { track } from "../../core/analytics";
@@ -57,7 +57,7 @@ function PieceForm({ initial, editing, onSave, onCancel }: { initial: Draft; edi
       const photo = await shrinkImage(original);
       setReading(true);
       const stats = await imageStats(photo);
-      // The recognition service may suggest the type and colour; today's mock reads nothing, so the customer's words stand.
+      // The recognition service may suggest the type and colour; the customer's own words always win.
       const seen = await imageServices().recogniseGarment({ ref: photo, category: "wardrobe_garment", width: stats.width, height: stats.height, consentVersion: IMAGE_POLICIES.wardrobe_garment.consentVersion });
       setReading(false);
       setDraft((d) => ({
@@ -113,7 +113,7 @@ function PieceForm({ initial, editing, onSave, onCancel }: { initial: Draft; edi
             </TextButton>
           )}
           {reading && <p className="text-[13px] leading-5 text-[var(--muted)]">Looking at the photo…</p>}
-          <p className="max-w-[48ch] text-[13px] leading-5 text-[var(--muted)]">I don’t read pieces from photos yet, so I go by what you tell me. The photo stays in this tab.</p>
+          <p className="max-w-[48ch] text-[13px] leading-5 text-[var(--muted)]">With a photo, I fill in the colour, read here on your device. You tell me what the piece is. The photo stays in this tab.</p>
           <input
             ref={fileRef}
             type="file"

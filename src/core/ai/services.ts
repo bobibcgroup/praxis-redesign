@@ -46,12 +46,22 @@ export type StylingResult = StylingResponse;
 export interface ExplanationPayload {
   request: StylingRequest;
   outfitId: string;
+  /** The looks to write for in one go (the three of a response): names and pieces, never a photo. */
+  looks?: LookBrief[];
+}
+export interface LookBrief {
+  outfitId: string;
+  role: string;
+  title: string;
+  pieces: { slot: Slot; name: string; owned?: boolean }[];
 }
 export interface ExplanationResult {
   outfitId: string;
   summary: string;
   factors: RecommendationFactor[];
   source: "mock_rules" | "model";
+  /** With `looks` in the payload: the stylist's line (summary) and note for each look it could write. */
+  looks?: { outfitId: string; summary: string; note: string }[];
 }
 
 /* 3. Outfit visualization: a picture of the look itself (no person). */

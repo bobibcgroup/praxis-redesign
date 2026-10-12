@@ -53,6 +53,8 @@ export default async function (H) {
     check(wrong.status === 400, "an envelope for another service is refused");
     check((await fetch(`${BASE}/api/ai/make_me_rich`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).status === 404, "an unknown service is 404");
     check((await fetch(`${BASE}/api/ai/face_colour_analysis`)).status === 405, "only POST is accepted");
+    const live = await (await fetch(`${BASE}/api/ai`)).json();
+    check(Array.isArray(live.live) && live.live.every((x) => x.billable === false), `the server lists only free services as live (${live.live?.map((x) => x.provider).join(", ") || "none"})`);
     check((await fetch(`${BASE}/api/ai/face_colour_analysis`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: "hi" })).status === 415, "only JSON is accepted");
     const tryon = await fetch(`${BASE}/api/tryon`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requestId: "t", outfitId: "o", garmentIds: ["g"], person: { image: "data:image/jpeg;base64,AAAA", width: 720, height: 960, consentVersion: "tryon-server-2026-10-11" } }) });
     const t = await tryon.json();
@@ -75,7 +77,7 @@ export default async function (H) {
     const calls = [];
     p.on("request", (r) => {
       const u = new URL(r.url());
-      if (u.pathname.startsWith("/api/ai") || u.pathname.startsWith("/api/tryon") || !["127.0.0.1", "localhost", "fonts.googleapis.com", "fonts.gstatic.com"].includes(u.hostname)) calls.push(`${r.method()} ${u.host}${u.pathname}`);
+      if ((u.pathname.startsWith("/api/ai/") || (u.pathname === "/api/ai" && r.method() !== "GET")) || u.pathname.startsWith("/api/tryon") || !["127.0.0.1", "localhost", "fonts.googleapis.com", "fonts.gstatic.com"].includes(u.hostname)) calls.push(`${r.method()} ${u.host}${u.pathname}`);
     });
     await p.goto(`${BASE}/dna/face?mode=light`);
     await p.waitForTimeout(600);

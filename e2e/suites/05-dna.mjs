@@ -2,13 +2,14 @@
 import { latest, named, upload } from "./lib.mjs";
 
 export default async function (H) {
-  const { BASE, scenario, check, body, button, events, lab, toResults, A, photoFile, menuClick, signInWith } = H;
+  const { BASE, scenario, check, body, button, events, lab, toResults, A, photoFile, portraitFile, menuClick, signInWith } = H;
 
   /** The four steps with the sample portrait, from /dna/face to the saved profile. */
-  async function fourSteps(p, { fit = "Slim", week = /Mostly office/, tastes = ["Classic tailored", "Quiet luxury"] } = {}) {
+  async function fourSteps(p, { fit = "Slim", week = /Mostly office/, tastes = ["Classic tailored", "Quiet luxury"], face } = {}) {
     await p.waitForURL(/dna\/face/, { timeout: 10000 });
     await p.waitForTimeout(500);
-    await p.getByRole("radio", { name: /Use a sample/ }).first().click();
+    if (face) await face();
+    else await p.getByRole("radio", { name: /Use a sample/ }).first().click();
     await p.waitForTimeout(400);
     await button(p, "Looks right").click();
     await p.waitForURL(/dna\/fit/);
@@ -21,7 +22,7 @@ export default async function (H) {
     await p.waitForTimeout(400);
     for (const t of tastes) await p.getByRole("button", { name: t }).first().click();
     await button(p, "Build my Style DNA").click();
-    await p.waitForURL(/dna\/result/, { timeout: 10000 });
+    await p.waitForURL(face ? /dna\/(build|result)/ : /dna\/result/, { timeout: 10000 });
     await p.waitForTimeout(1200);
   }
 
@@ -137,5 +138,35 @@ export default async function (H) {
     check(!(await p.evaluate(() => Object.values(localStorage).some((v) => v.includes("data:image")))), "the photo is not stored on the device");
     check(named(await events(p), "photo_consent_given").some((e) => e.properties.category === "face_colour"), "consent is recorded for this kind of photo");
     await shot("own-photo");
+  }, { premium: true });
+
+  const ownPhoto = (p, file) => async () => {
+    await p.getByRole("radio", { name: /Upload a photo/ }).first().click();
+    await p.waitForTimeout(300);
+    await upload(p, () => button(p, "I agree").click(), file);
+    await p.waitForTimeout(1200);
+  };
+
+  await scenario("P5-5e", "Colours are read from the customer's own face photo on the device, and marked as an estimate", "desktop", async (p, shot) => {
+    await p.goto(`${BASE}/dna/face?mode=light`);
+    const outside = [];
+    p.on("request", (r) => !r.url().startsWith(BASE) && !/fonts\.(googleapis|gstatic)\.com/.test(r.url()) && outside.push(r.url()));
+    await fourSteps(p, { face: ownPhoto(p, await portraitFile(p)) });
+    await p.waitForFunction(() => /Estimate/.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});
+    const text = await body(p);
+    check(/Undertone/i.test(text) && /Estimate/.test(text) && !/Example/.test(text), "the colours are read from the photo and marked as an estimate");
+    check(outside.length === 0, `reading the photo sends nothing off the site (${outside.join(", ") || "no requests"})`);
+    check(named(await events(p), "style_dna_analysis_finished").some((e) => e.properties.status === "completed"), "the reading finishes");
+    await shot("own-colours");
+  }, { premium: true });
+
+  await scenario("P5-5f", "A photo with no face in it is not guessed at: it says so and offers Retake", "phone", async (p) => {
+    await p.goto(`${BASE}/dna/face?mode=light`);
+    await fourSteps(p, { face: ownPhoto(p, await photoFile(p)) });
+    await p.waitForFunction(() => /find your face/.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});
+    const text = await body(p);
+    check(/find your face/.test(text), "it says it couldn't find a face");
+    check(/Retake/i.test(text) && !/Estimate/.test(text), "it offers Retake and shows no colours as if they were read");
+    check(named(await events(p), "style_dna_analysis_finished").some((e) => e.properties.status === "unreadable"), "the outcome is counted, without the photo");
   }, { premium: true });
 }

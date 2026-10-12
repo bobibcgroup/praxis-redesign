@@ -1,4 +1,12 @@
-# Try-on providers
+# Providers
+
+## AI service providers
+
+`<name>.mjs` files for `server/ai.mjs` export `id`, `version`, `billable`, `SERVICES` (the services they answer) and `run(request, { signal })`. See `docs/AI-SERVICES.md`.
+
+- `gemini-free.mjs`: the stylist's words (`styling_explanation`) on Gemini's free tier. Switches on when `GEMINI_API_KEY` is set; text only, never a photo.
+
+## Try-on providers
 
 A provider is one file here, `<name>.mjs`, chosen with `TRYON_PROVIDER=<name>` on the server.
 None is active by default. `example.mjs` shows the shape and never calls anything.

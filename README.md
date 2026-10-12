@@ -25,7 +25,7 @@ Journeys:
 - **Style DNA**: face (with the photo notice first), fit, lifestyle, up to two inspiration presets, the colour analysis, and a result that marks each part as an estimate, a confirmed answer or the customer's correction, with "Not quite right?" to change any of it or retake the photo (see Style DNA profile). Saving it changes the home so a returning user starts on the occasion chips.
 - **Looks**: saved looks as a horizontal rail; open, remove.
 - **Style DNA**: the saved Style DNA, change it, retake the photo, start again, your data on this device, sign out, light or dark.
-- **Wardrobe** (`/wardrobe`, in the menu and the desktop bar): the pieces the customer owns, by type, name and colour, with an optional photo kept in the tab only. Add, correct, remove (with Undo), and use a piece in the looks; Make it yours on the results offers these pieces first. Each account sees only its own. Nothing is read from a photo yet (`garment_recognition`).
+- **Wardrobe** (`/wardrobe`, in the menu and the desktop bar): the pieces the customer owns, by type, name and colour, with an optional photo kept in the tab only. Add, correct, remove (with Undo), and use a piece in the looks; Make it yours on the results offers these pieces first. Each account sees only its own. A photo's main colour is read on the device to fill in the colour (`garment_recognition`, `src/core/adapters/onDevice.ts`); the photo is never sent.
 - **Your data on this device** (`/data`): what is kept in this browser, deleting a photo, and deleting everything.
 
 Full concept spec: `docs/CONCEPT-A.md`.

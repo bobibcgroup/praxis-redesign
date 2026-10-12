@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { pruneByAge, deleteLocalData, migrateWardrobe, recordSelection, lastSelection, rememberWardrobeItem, wardrobeEntries } from "../data";
 import { checkFile, checkQuality, consentFor, deleteImages, disclosure, grantConsent, IMAGE_POLICIES, withdrawConsent } from "../images";
 import { applyAnalysis, basisOf, clearCorrection, colourGuide, confirmEstimates, correct, createProfile, fromLegacy, hasEstimates, profileRef, summarize, valueOf } from "../styleProfile";
-import { guardBillable, imageServices, mockColourAnalysis, type ColourAnalysisAdapter } from "../vision";
+import { guardBillable, imageServices, freeColourAnalysis, mockColourAnalysis, type ColourAnalysisAdapter } from "../vision";
 import { ANON, FIXED_NOW, memoryStorage } from "./helpers";
 
 describe("photo policies", () => {
@@ -87,9 +87,16 @@ describe("image services", () => {
   });
 
   it("labels the mock estimate as a sample, not a reading of the photo", async () => {
-    const r = await imageServices({}, false).analyseColour(input);
+    const r = await imageServices({ colour: mockColourAnalysis }, false).analyseColour(input);
     expect(r.status).toBe("completed");
     expect(r.undertone?.source).toBe("sample");
+  });
+
+  it("reads only the customer's own photo on the device; the sample portrait stays an example", async () => {
+    const sample = await imageServices({}, false).analyseColour({ ...input, ref: "/images/dinner_sharper_01.jpg" });
+    expect(sample.undertone?.source).toBe("sample");
+    expect(imageServices({}, false)).toBeTruthy();
+    expect(freeColourAnalysis.billable).toBe(false);
   });
 
   it("makes no try-on picture without consent to the current try-on wording", async () => {

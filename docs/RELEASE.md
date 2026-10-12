@@ -25,7 +25,7 @@ This release brings Phases 2, 3 and 4 to the live site. It is built on the last 
   - Make it yours on the results offers wardrobe pieces first.
   - Each account sees only its own pieces.
   - A photo stays in the tab only. Owned pieces are never priced.
-  - Recognition goes through `garment_recognition`, which reads nothing today.
+  - Recognition goes through `garment_recognition`, which reads the photo's main colour on the device.
 - **Desktop bar.** With Wardrobe added, the links sit on the same frosted ivory panel as the look thumbnails, so they stay readable over the photo. Below 1280 px wide, Saved looks shows as its bookmark only (its name is still read out), so the bar clears the step names.
 - **Test mode hidden.** `/internal/analytics` is no longer in the live build. It is in `npm run dev`, or in a build made with `VITE_INTERNAL_PAGE=true`. On the live site the address leads home.
 - **Error monitoring, with no outside service.**
@@ -118,7 +118,8 @@ Environment, all optional and all off by default:
 | --- | --- | --- |
 | `PORT` | server | Set by Railway |
 | `COUNTRY_HEADER` | server | A trusted country header from a proxy |
-| `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | server | AI providers and paid calls |
+| `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | server | AI providers and paid calls (`off` switches a free provider off) |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | server | The free stylist's words (Gemini free tier, text only); unset means the rules engine's words |
 | `TRYON_PROVIDER`, `ALLOW_BILLABLE_IMAGES` | server | Try-on provider and paid images |
 | `VITE_AI_PROVIDERS`, `VITE_TRYON_ADAPTER`, `VITE_ALLOW_BILLABLE_IMAGES` | build | Page switches |
 | `VITE_INTERNAL_PAGE` | build | Shows the test mode page. Never set it on the live site. |

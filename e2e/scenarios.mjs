@@ -95,7 +95,7 @@ function suiteOf(id) {
   if (LEGACY_SUITE[id]) return LEGACY_SUITE[id];
   if (id.startsWith("GEO")) return 1;
   if (id.startsWith("TRY")) return 4;
-  const n = Number(/^P[34]-(\d+)/.exec(id)?.[1]);
+  const n = Number(/^P[345]-(\d+)/.exec(id)?.[1]);
   return n || 0;
 }
 /** SUITE=4,9 runs just those suites. */
@@ -425,7 +425,7 @@ await scenario("P2C", "A full journey with try-on makes no call to an AI, image 
   const calls = [];
   p.on("request", (r) => {
     const u = new URL(r.url());
-    if (u.pathname.startsWith("/api/ai") || u.pathname.startsWith("/api/tryon") || !["127.0.0.1", "localhost", "fonts.googleapis.com", "fonts.gstatic.com"].includes(u.hostname)) calls.push(r.method() + " " + u.host + u.pathname);
+    if ((u.pathname.startsWith("/api/ai/") || (u.pathname === "/api/ai" && r.method() !== "GET")) || u.pathname.startsWith("/api/tryon") || !["127.0.0.1", "localhost", "fonts.googleapis.com", "fonts.gstatic.com"].includes(u.hostname)) calls.push(r.method() + " " + u.host + u.pathname);
   });
   await toResults(p, A);
   await p.goto(p.url().replace("moment/results", "moment/tryon"));
@@ -1089,6 +1089,40 @@ for (const device of ["desktop", "phone"]) {
   });
 }
 
+/** A real portrait (the Style DNA photo on home), redrawn in the page as a JPEG file to upload. */
+async function portraitFile(p) {
+  const b64 = await p.evaluate(async () => {
+    const img = new Image();
+    img.src = "/images/home/style-dna-phone-1200.webp";
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    c.getContext("2d").drawImage(img, 0, 0);
+    return c.toDataURL("image/jpeg", 0.9).split(",")[1];
+  });
+  return { name: "me.jpg", mimeType: "image/jpeg", buffer: Buffer.from(b64, "base64") };
+}
+
+/** A shirt shape in one colour on a pale ground, as a wardrobe photo. */
+async function garmentFile(p, colour = "#202a4a") {
+  const b64 = await p.evaluate((colour) => {
+    const c = document.createElement("canvas");
+    c.width = 800;
+    c.height = 800;
+    const g = c.getContext("2d");
+    g.fillStyle = "#f2f0ea";
+    g.fillRect(0, 0, 800, 800);
+    g.fillStyle = colour;
+    g.beginPath();
+    [[260, 100], [540, 100], [700, 260], [610, 330], [570, 290], [570, 720], [230, 720], [230, 290], [190, 330], [100, 260]].forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath();
+    g.fill();
+    return c.toDataURL("image/jpeg", 0.9).split(",")[1];
+  }, colour);
+  return { name: "shirt.jpg", mimeType: "image/jpeg", buffer: Buffer.from(b64, "base64") };
+}
+
 /* ------------------------------------------------- See it on me */
 
 /** A plain photo of the right size, drawn in the page, as a file to upload. */
@@ -1340,7 +1374,7 @@ if (wanted("TRY7")) {
 /* ------------------------------------------------------------ suites */
 
 /* Everything a suite needs from the harness. Suites live in e2e/suites, one file per suite. */
-const H = { BASE, OUT, AXE, DESKTOP, PHONE, SIZES, PREMIUM_USER, A, B, browser, chromium, scenario, check, body, button, events, history, lab, answer, toResults, photoFile, openTryOn, step, menuClick, signInWith, results, get current() { return current; }, set current(v) { current = v; } };
+const H = { BASE, OUT, AXE, DESKTOP, PHONE, SIZES, PREMIUM_USER, A, B, browser, chromium, scenario, check, body, button, events, history, lab, answer, toResults, photoFile, portraitFile, garmentFile, openTryOn, step, menuClick, signInWith, results, get current() { return current; }, set current(v) { current = v; } };
 for (const file of readdirSync(join(here, "suites")).filter((f) => /^\d+-.*\.mjs$/.test(f)).sort()) {
   const suite = await import(join(here, "suites", file));
   await suite.default(H);

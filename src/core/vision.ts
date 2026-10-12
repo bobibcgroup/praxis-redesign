@@ -3,9 +3,10 @@
  * recognition from a wardrobe photo, outfit visualization, and virtual try-on. Each adapter says
  * whether calling it costs money. One switch, read at build time (VITE_ALLOW_BILLABLE_IMAGES), decides
  * whether billable adapters may run at all: when it is off, the registry refuses the call before any
- * request is made, whatever the screens show. Today every adapter is a free mock.
+ * request is made, whatever the screens show. Colour reading runs free on the device; the rest are free mocks.
  */
 import { httpTryOn } from "./adapters/tryonHttp";
+import { isOwnPhoto, onDeviceFace, onDeviceGarment } from "./adapters/onDevice";
 import { isLive, serviceColourAdapter, serviceGarmentAdapter } from "./ai/bridge";
 import { ALLOW_BILLABLE_IMAGES, TRYON_ADAPTER } from "./config";
 import type { Slot } from "./contracts";
@@ -173,6 +174,32 @@ export const mockTryOn: TryOnAdapter = {
   },
 };
 
+/* ------------------------------------------------- free, on the device */
+
+/**
+ * The customer's own photo is read in the browser (src/core/adapters/onDevice.ts). The sample portrait
+ * and test mode keep the fixed example, so a sample is never presented as a reading.
+ */
+export const freeColourAnalysis: ColourAnalysisAdapter = {
+  id: "on-device-face",
+  version: "1.0.0",
+  billable: false,
+  async analyse(image, options) {
+    if (simScenario() || !isOwnPhoto(image.ref) || image.category !== "face_colour") return mockColourAnalysis.analyse(image, options);
+    return onDeviceFace.analyse(image);
+  },
+};
+
+export const freeGarmentRecognition: GarmentRecognitionAdapter = {
+  id: "on-device-colour",
+  version: "1.0.0",
+  billable: false,
+  async recognise(image, options) {
+    if (simScenario() || !isOwnPhoto(image.ref)) return mockGarmentRecognition.recognise(image, options);
+    return onDeviceGarment.recognise(image);
+  },
+};
+
 /* ----------------------------------------------------------- registry */
 
 /** The try-on adapter this build uses (VITE_TRYON_ADAPTER): the stand-in unless a real engine is set up. */
@@ -205,8 +232,8 @@ export function imageServices(
   } = {},
   allowed: boolean = ALLOW_BILLABLE_IMAGES,
 ) {
-  const colour = adapters.colour ?? (isLive("face_colour_analysis") ? serviceColourAdapter() : mockColourAnalysis);
-  const garment = adapters.garment ?? (isLive("garment_recognition") ? serviceGarmentAdapter() : mockGarmentRecognition);
+  const colour = adapters.colour ?? (isLive("face_colour_analysis") ? serviceColourAdapter() : freeColourAnalysis);
+  const garment = adapters.garment ?? (isLive("garment_recognition") ? serviceGarmentAdapter() : freeGarmentRecognition);
   const visualization = adapters.visualization ?? mockVisualization;
   const tryOn = adapters.tryOn ?? tryOnAdapterInUse();
   return {

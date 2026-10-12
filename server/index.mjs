@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { countryForIp, geoReady, loadGeo } from "./geo.mjs";
 import { handleTryOn } from "./tryon.mjs";
-import { handleAi } from "./ai.mjs";
+import { handleAi, liveServices } from "./ai.mjs";
 import { handleClientError, health, logError, RELEASE } from "./monitor.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
@@ -48,8 +48,13 @@ const TYPES = {
   ".txt": "text/plain; charset=utf-8",
   ".md": "text/markdown; charset=utf-8",
   ".webmanifest": "application/manifest+json",
+  ".wasm": "application/wasm",
+  ".task": "application/octet-stream",
 };
 const COMPRESSIBLE = new Set([".html", ".js", ".mjs", ".css", ".json", ".svg", ".txt", ".md", ".webmanifest"]);
+/* The on-device colour reader's engine and model are large and never change between deploys: compressed once, kept. */
+const COMPRESS_ONCE = new Set([".wasm", ".task"]);
+const compressed = new Map();
 
 const INDEX = readFileSync(join(ROOT, "index.html"), "utf8");
 
@@ -103,6 +108,13 @@ function file(req, res, path, stat) {
     return res.end();
   }
   if (COMPRESSIBLE.has(ext)) return send(req, res, 200, headers, readFileSync(path));
+  if (COMPRESS_ONCE.has(ext) && /\bgzip\b/.test(req.headers["accept-encoding"] ?? "")) {
+    const key = `${path}|${stat.mtimeMs}`;
+    if (!compressed.has(key)) compressed.set(key, gzipSync(readFileSync(path)));
+    const out = compressed.get(key);
+    res.writeHead(200, { ...headers, "Content-Encoding": "gzip", Vary: "Accept-Encoding", "Content-Length": out.length });
+    return res.end(req.method === "HEAD" ? undefined : out);
+  }
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
   if (range && (range[1] || range[2])) {
     let start = range[1] ? Number(range[1]) : stat.size - Number(range[2]);
@@ -161,6 +173,12 @@ function route(req, res) {
   } catch {
     res.writeHead(400);
     return res.end();
+  }
+  if (pathname === "/api/ai") {
+    void liveServices()
+      .catch(() => [])
+      .then((live) => send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "no-store" }, JSON.stringify({ live })));
+    return;
   }
   if (pathname === "/api/health") {
     return send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "no-store" }, JSON.stringify(health()));

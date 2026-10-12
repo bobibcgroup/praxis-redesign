@@ -126,7 +126,7 @@ export function DnaBuild() {
 
 function intro(p: StyleProfile): string {
   if (p.photo === "none" || (!p.undertone.inferred && !p.contrast.inferred)) return "Here’s what you told me. Add your colours whenever you like.";
-  if (isSampleEstimate(p)) return "Colour analysis is in preview, so these colours are an example to start from. Change anything that isn’t you.";
+  if (isSampleEstimate(p)) return "These colours come from the sample portrait, so they’re an example to start from. Add your own photo, or change anything that isn’t you.";
   return "Based on your photo, these shades may suit you particularly well. Change anything that isn’t you.";
 }
 
@@ -207,7 +207,7 @@ export function DnaHome() {
       }
     >
       <h1 className="a-display">Your Style DNA</h1>
-      {isSampleEstimate(dna) && hasEstimates(dna) ? <p className="mt-4 max-w-[40ch] leading-6 text-[var(--muted)]">The colours are an example while colour analysis is in preview. Change anything that isn’t you.</p> : null}
+      {isSampleEstimate(dna) && hasEstimates(dna) ? <p className="mt-4 max-w-[40ch] leading-6 text-[var(--muted)]">The colours are an example from the sample portrait. Change anything that isn’t you.</p> : null}
       <div className="mt-6">
         <StyleProfileView profile={dna} />
       </div>

@@ -1,6 +1,11 @@
 # AI integration handover (Phase 4)
 
-How each future AI capability plugs into Praxis. **None of them is switched on.** Every service runs on a free, deterministic mock, and the live site's `/api/health` reports `providersSet: []`. The quality of real recommendations, generated images, garment recognition and try-on has **not** been validated. That can only happen after a provider is connected and tested.
+How each AI capability plugs into Praxis. **Only free pieces are switched on**, and nothing paid is called:
+
+- **Colour reading on the device** (since 2026-10-12): a face photo's undertone and contrast, and a wardrobe photo's main colour, are read in the customer's browser (`src/core/adapters/onDevice.ts`, `src/core/colour.ts`). The photo is never sent. See 4 and 6.
+- **The stylist's words from Gemini's free tier**, once `GEMINI_API_KEY` is set on the server (off until then). Text only, never a photo. See 1.
+
+Everything else runs on a free, deterministic mock. `/api/health` reports `providersSet: []` (no provider is named) and `freeOn` (free providers switched on by their key); `GET /api/ai` lists what the server answers now. The quality of real recommendations, generated images, garment recognition and try-on has **not** been validated. That can only happen after a provider is connected and tested.
 
 ## What every integration shares
 
@@ -28,7 +33,8 @@ How each future AI capability plugs into Praxis. **None of them is switched on.*
   | `not_connected` | No provider is set. Status is `disabled`. |
   | `consent_missing` | A photo without current consent. Refused before sending. |
 
-- **Switches:** three switches turn a provider on, and all three are off today. With any one of them off, the service answers `disabled`.
+- **Free providers:** a provider in `FREE_DEFAULTS` (`server/ai.mjs`) switches itself on when its key is set, with no other switch; `AI_PROVIDER_<SERVICE>=off` turns it off. Today that is only `gemini-free` for `styling_explanation`.
+- **Switches:** for any other provider, three switches turn it on, and all three are off today. With any one of them off, the service answers `disabled`.
   - Server, which provider: `AI_PROVIDER_<SERVICE>=<name>`
   - Server, paid calls: `ALLOW_BILLABLE_AI=true`
   - Page build: `VITE_AI_PROVIDERS=<service,...>`, plus `VITE_ALLOW_BILLABLE_IMAGES=true` for image services
@@ -47,21 +53,27 @@ How each future AI capability plugs into Praxis. **None of them is switched on.*
 
 **Request schema:**
 - `StylingRequest` (`src/core/contracts.ts`): every quiz answer (occasion, venue, time, feel, budget band), the owned piece as `WardrobeItemRef` (id, slot, label, source, colour), the Style DNA summary, the feedback snapshot, location, and the input key.
-- Explanation payload: `{ request, outfitId }`.
+- Explanation payload: `{ request, outfitId, looks? }`. `looks` names each look's pieces so one call can word all three.
 
 **Response schema:**
 - `StylingResponse`: `outfits[]`, each with a title, rationale, factors, garments (`retail` with a `ProductRef`, or `wardrobe`), pricing and image refs. Plus the recommendation id, provider version and error.
-- Explanation result: `{ outfitId, summary, factors, source: "model" }`.
+- Explanation result: `{ outfitId, summary, factors, source: "model", looks?: [{ outfitId, summary, note }] }`.
 
 **Mock provider:**
 - `src/core/adapters/mock.ts`, the rules engine the app uses today.
 - `MOCKS.styling_recommendation` and `MOCKS.styling_explanation` in `src/core/ai/services.ts`.
 
-**Configuration:**
+**Free writer (live once its key is set):** `server/providers/gemini-free.mjs` answers `styling_explanation` on Google's free tier (default model `gemini-2.5-flash-lite`, `GEMINI_MODEL` to change it). The rules engine still chooses the looks; after it answers, `addStylistWords` (`src/core/ai/words.ts`) asks the server once per journey for each look's line and note, and puts them in `explanation.summary` and `rationale`, marked `source: "model"`.
+- Sent: the answers, the Style DNA in words, the owned piece's name and colour, and each look's pieces. Never a photo, email, name or id (Google may use free-tier requests).
+- Every line is checked against the voice rules on the server and on the page (no dashes, no AI or data talk, "pieces", "Style DNA" in full, no marketing words). A broken line, a refusal, the free limit (429) or 8 s without an answer keeps the rules engine's words.
+- Test mode scenarios skip it. The page asks `GET /api/ai` and never calls a writer marked billable.
+- To switch on: a free key from https://aistudio.google.com/apikey on a Google Cloud project without billing, set as `GEMINI_API_KEY` in Railway. To switch off: remove it, or `AI_PROVIDER_STYLING_EXPLANATION=off`.
+
+**Configuration for a paid engine that chooses the looks (not built):**
 - `AI_PROVIDER_STYLING_RECOMMENDATION=gemini` (and `..._STYLING_EXPLANATION`)
 - `ALLOW_BILLABLE_AI=true`
 - `VITE_AI_PROVIDERS=styling_recommendation`
-- The Gemini key goes in the server's environment, for example `GEMINI_API_KEY`, read only by the provider module.
+- The key goes in the server's environment, read only by the provider module.
 
 **Error handling:**
 - Time limit 20 s for styling and 10 s for the explanation, with one retry.
@@ -70,7 +82,7 @@ How each future AI capability plugs into Praxis. **None of them is switched on.*
 
 **Frontend components:**
 - `src/a/lib/styling.ts` (`useStylingSpec`, `useStylingResponse`), `Build.tsx` (processing states), `Results.tsx`, `LookDetails.tsx`.
-- Explanations are read from `outfit.rationale` and `factors` today. No screen calls `styling_explanation` separately yet.
+- Explanations are read from `outfit.rationale`, `explanation.summary` and `factors`. `stylingService` calls `styling_explanation` once per journey through `addStylistWords`, only when the server lists a free writer.
 
 **Backend changes needed:**
 - Write `server/providers/gemini.mjs`: map `StylingRequest` to a prompt, and map Gemini's JSON to `StylingResponse`.
@@ -172,7 +184,9 @@ How each future AI capability plugs into Praxis. **None of them is switched on.*
 
 **Response schema:** `{ undertone: cool | warm | neutral, contrast: high | medium | low, source: "sample" | "model" }`.
 
-**Mock provider:** `mockColourAnalysis` returns a fixed example marked `sample`, so the screen says "Example".
+**On-device reader (live):** `onDeviceFace` (`src/core/adapters/onDevice.ts`) reads the customer's own photo in the browser. MediaPipe's face landmarker (Apache 2.0) finds the face; it is served from this site (`/mediapipe` wasm, `/models/face_landmarker.task`) and loaded only when a customer asks for their colours. Cheek and forehead skin gives the undertone (CIELAB hue angle: under 47 cool, over 57 warm, between neutral); skin against the darkest of brows, eyes and hair gives the contrast. No face, a dark photo or a strong colour cast answers `unreadable` (`no_face`, `too_dark`, `colour_cast`) with Retake or Skip. Results are estimates marked `model`; the customer corrects them in Style DNA.
+
+**Mock provider:** `mockColourAnalysis` returns a fixed example marked `sample`, so the screen says "Example". It still answers for the sample portrait and in test mode.
 
 **Configuration:**
 - `AI_PROVIDER_FACE_COLOUR_ANALYSIS=<name>`
@@ -236,7 +250,9 @@ How each future AI capability plugs into Praxis. **None of them is switched on.*
 
 **Response schema:** `{ slot, category, colour?, source: "customer" | "model" }`.
 
-**Mock provider:** `mockGarmentRecognition` reads nothing. `MOCKS.garment_recognition` returns the slot the customer chose, marked `customer`.
+**On-device reader (live):** `onDeviceGarment` reads the main colour of the customer's own wardrobe photo in the browser (the centre against the border, grouped, named from 23 everyday colours, `src/core/colour.ts`). It fills in the colour only when the customer left it empty. The type stays the customer's choice.
+
+**Mock provider:** `mockGarmentRecognition` reads nothing (test mode). `MOCKS.garment_recognition` returns the slot the customer chose, marked `customer`.
 
 **Configuration:**
 - `AI_PROVIDER_GARMENT_RECOGNITION=<name>`
@@ -248,7 +264,7 @@ How each future AI capability plugs into Praxis. **None of them is switched on.*
 - On any failure the customer's own type, name and colour stand, and the piece is still added.
 
 **Frontend components:**
-- `src/a/screens/Wardrobe.tsx` (new in Phase 4). It calls `imageServices().recogniseGarment` after a photo is checked, and fills in the type and colour only when the source is `model` and the customer left them empty. The wording "I don't read pieces from photos yet" should change when a model is connected.
+- `src/a/screens/Wardrobe.tsx` (new in Phase 4). It calls `imageServices().recogniseGarment` after a photo is checked, and fills in the type and colour only when the source is `model` and the customer left them empty. The consent wording says the colour is read on the device (`wardrobe-device-2026-10-12`).
 - `src/a/screens/moment/You.tsx` (Make it yours).
 
 **Backend changes needed:** a provider module. Decide whether wardrobe photos may be kept beyond the tab; today they are kept by name, type and colour only.

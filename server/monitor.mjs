@@ -9,7 +9,7 @@
  * smoke tests after a deploy (tools/smoke.mjs).
  */
 import { readFileSync } from "node:fs";
-import { AI_SERVICES } from "./ai.mjs";
+import { AI_SERVICES, FREE_DEFAULTS, providerName } from "./ai.mjs";
 import { readBody } from "./tryon.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
@@ -25,11 +25,12 @@ export function logError(type, fields) {
 
 export function health() {
   const configured = AI_SERVICES.filter((s) => (process.env[`AI_PROVIDER_${s.toUpperCase()}`] ?? "").trim());
+  const free = Object.keys(FREE_DEFAULTS).filter((s) => FREE_DEFAULTS[s][0] === providerName(s));
   return {
     ok: true,
     ...RELEASE,
     startedAt: STARTED,
-    ai: { providersSet: configured, billableAllowed: process.env.ALLOW_BILLABLE_AI === "true" },
+    ai: { providersSet: configured, freeOn: free, billableAllowed: process.env.ALLOW_BILLABLE_AI === "true" },
     tryOn: { providerSet: Boolean((process.env.TRYON_PROVIDER ?? "").trim()), billableAllowed: process.env.ALLOW_BILLABLE_IMAGES === "true" },
   };
 }

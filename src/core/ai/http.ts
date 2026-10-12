@@ -2,7 +2,8 @@
  * The live provider for any AI service: it posts the request envelope to this app's own server
  * (POST /api/ai/<service>, server/ai.mjs), never to a provider directly, so no key is ever in the page.
  * The server answers with a ProviderAnswer; the envelope checks the result before a screen sees it.
- * Marked billable, so it never runs while paid calls are switched off.
+ * Marked billable unless the server says its provider is free, so a paid one never runs while paid
+ * calls are switched off.
  */
 import type { ProviderAnswer, ServiceName, ServiceProvider } from "./envelope";
 
@@ -25,13 +26,14 @@ export function readProviderAnswer<R>(raw: unknown, httpStatus: number): Provide
   return { status: "failed", error: { code: "provider_error", message: `The server answered ${httpStatus} with nothing readable.`, retryable: httpStatus >= 500 } };
 }
 
-export function httpProvider<P, R>(service: ServiceName, endpoint = AI_ENDPOINT, fetcher: typeof fetch = (...a) => fetch(...a)): ServiceProvider<P, R> {
+export function httpProvider<P, R>(service: ServiceName, endpoint = AI_ENDPOINT, fetcher: typeof fetch = (...a) => fetch(...a), info: { id?: string; version?: string; billable?: boolean } = {}): ServiceProvider<P, R> {
   return {
-    id: `server-${service}`,
-    version: "1.0.0",
+    id: info.id ?? `server-${service}`,
+    version: info.version ?? "1.0.0",
     mode: "live",
     processing: "server",
-    billable: true,
+    // Paid unless the server says this provider is free (GET /api/ai).
+    billable: info.billable ?? true,
     async run(request, { signal }) {
       const res = await fetcher(`${endpoint}/${service}`, {
         method: "POST",

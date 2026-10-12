@@ -1,6 +1,6 @@
 # AI services (Phase 2)
 
-Every AI capability Praxis will use goes through one service layer, so a mock can be replaced by a real provider by configuration, without touching a screen. Today every service is a free, deterministic mock. No paid AI, image, try-on, retailer or location service is called.
+Every AI capability Praxis will use goes through one service layer, so a mock can be replaced by a real provider by configuration, without touching a screen. Today every service is a free, deterministic mock, with two free exceptions: colour reading runs on the customer's device (`src/core/adapters/onDevice.ts`, the photo is never sent), and `styling_explanation` is answered by Gemini's free tier once `GEMINI_API_KEY` is set on the server (`server/providers/gemini-free.mjs`, text only). No paid AI, image, try-on, retailer or location service is called.
 
 Code: `src/core/ai/envelope.ts` (the envelope and runner), `src/core/ai/services.ts` (the nine contracts, their checks and mocks), `src/core/ai/http.ts` (the live provider, page side), `src/core/ai/bridge.ts` (plugs services into the adapters the screens already use), `server/ai.mjs` (the server plug-in point). Tests: `src/core/__tests__/ai-services.test.ts`, `phase2-integrity.test.ts`.
 
@@ -69,7 +69,7 @@ Every mock runs every scenario, deterministically. In the app the scenario comes
 What the mocks never do:
 
 - Try-on and outfit visualization answer `disabled` / `not_connected`. No picture of the customer or of a look is made.
-- Colour analysis returns a fixed example marked `source: "sample"`; fit is `self_reported`; garment recognition returns the slot the customer chose, marked `customer`.
+- Colour analysis returns a fixed example marked `source: "sample"`; fit is `self_reported`; garment recognition returns the slot the customer chose, marked `customer`. (The on-device readers replace the colour mocks for the customer's own photos outside test mode.)
 - Prices are `priceStatus: "example"`; stock is `unknown`; inventory freshness is `example` with no price. Nothing is presented as live.
 
 ## Turning a real provider on (later, with approval)
@@ -78,7 +78,7 @@ What the mocks never do:
 2. On the server: `AI_PROVIDER_<SERVICE>=<name>` (for example `AI_PROVIDER_FACE_COLOUR_ANALYSIS=acme-colour`) and, for a paid provider, `ALLOW_BILLABLE_AI=true`. Keys go in the server's environment only.
 3. On the page build: `VITE_AI_PROVIDERS=face_colour_analysis` and `VITE_ALLOW_BILLABLE_IMAGES=true`.
 
-All three switches are off by default. With any one of them off the service answers `disabled` and nothing is charged. Try-on keeps its own endpoint (`/api/tryon`, `docs/TRY-ON.md`).
+A free provider listed in `FREE_DEFAULTS` (`server/ai.mjs`) needs only its key, and `AI_PROVIDER_<SERVICE>=off` turns it off. `GET /api/ai` lists the services the server answers now. All three switches are off by default. With any one of them off the service answers `disabled` and nothing is charged. Try-on keeps its own endpoint (`/api/tryon`, `docs/TRY-ON.md`).
 
 ## Retailer data model
 
@@ -134,10 +134,10 @@ All three switches are off by default. With any one of them off the service answ
 
 ## Pending integrations (each needs approval before it is switched on)
 
-1. Recommendation engine (for example Gemini) as `server/providers/<name>.mjs` for `styling_recommendation` and `styling_explanation`.
+1. Recommendation engine (for example Gemini) as `server/providers/<name>.mjs` for `styling_recommendation`. The free writer for `styling_explanation` is built and waits for `GEMINI_API_KEY`.
 2. Image generation for `outfit_visualization`.
 3. Virtual try-on provider (`/api/tryon`, `docs/TRY-ON.md`).
-4. Face colour analysis, body and fit analysis, garment recognition providers.
+4. Body and fit analysis; garment type recognition. Face colours and a garment's colour are read on the device already.
 5. Retailer feeds for `product_matching` and `inventory_pricing`.
 6. Real sign-in and payment provider; server-side storage for accounts and saved looks.
 7. Legal sign-off on the photo disclosures.

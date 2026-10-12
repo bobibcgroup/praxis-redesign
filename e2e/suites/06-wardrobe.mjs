@@ -6,7 +6,7 @@
 import { latest, named, textFile, upload } from "./lib.mjs";
 
 export default async function (H) {
-  const { BASE, scenario, check, body, button, events, toResults, A, photoFile, menuClick, signInWith } = H;
+  const { BASE, scenario, check, body, button, events, toResults, A, photoFile, garmentFile, menuClick, signInWith } = H;
 
   async function addOwn(p, slot, file) {
     await p.locator(".a-personal-card").filter({ visible: true }).nth(1).click();
@@ -146,6 +146,27 @@ export default async function (H) {
       await shot("wardrobe");
     });
   }
+
+  await scenario("P5-6g", "A wardrobe photo fills in the piece's colour, read on the device, and the customer can change it", "phone", async (p) => {
+    await p.goto(`${BASE}/wardrobe?mode=light`);
+    await p.waitForTimeout(600);
+    const outside = [];
+    p.on("request", (r) => !r.url().startsWith(BASE) && !/fonts\.(googleapis|gstatic)\.com/.test(r.url()) && outside.push(r.url()));
+    await addPiece(p, { kind: "Top", file: await garmentFile(p) });
+    check(/Top, navy/.test(await body(p)), "the navy shirt is listed as navy");
+    check(outside.length === 0, "reading the colour sends nothing off the site");
+    await button(p, "Add a piece").click();
+    const form = p.getByRole("region", { name: "Add a piece" });
+    await form.getByRole("radio", { name: "Top" }).click();
+    await form.getByLabel("Colour (optional)").fill("Ecru");
+    const chooser = p.waitForEvent("filechooser", { timeout: 5000 });
+    await form.getByRole("button", { name: /Add a photo/ }).click();
+    const agree = form.getByRole("button", { name: "I agree" });
+    if (await agree.count()) await agree.click();
+    await (await chooser).setFiles(await garmentFile(p, "#6c1e2c"));
+    await form.getByRole("img", { name: "Your photo of the piece" }).waitFor({ timeout: 8000 });
+    check((await form.getByLabel("Colour (optional)").inputValue()) === "Ecru", "a colour the customer typed is never replaced");
+  });
 
   await scenario("P4-6e", "A wardrobe piece is used in the looks, from the wardrobe and from Make it yours, as the client's own", "desktop", async (p) => {
     await p.goto(`${BASE}/wardrobe?mode=light`);

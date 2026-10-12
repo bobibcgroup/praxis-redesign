@@ -8,6 +8,10 @@
  * (for example AI_PROVIDER_FACE_COLOUR_ANALYSIS=acme-colour). Nothing is set by default, so every
  * service answers "disabled" and nothing is charged. A billable provider also needs ALLOW_BILLABLE_AI=true.
  *
+ * One free provider switches itself on: with GEMINI_API_KEY set, styling_explanation is answered by
+ * gemini-free (server/providers/gemini-free.mjs), unless AI_PROVIDER_STYLING_EXPLANATION names another
+ * provider or says "off". GET /api/ai tells the page which services have a provider that may run.
+ *
  * Bodies are held in memory for the call only and never logged: only the service, request id,
  * status and time taken are.
  */
@@ -43,9 +47,21 @@ export function checkEnvelope(service, body) {
   return null;
 }
 
+/** Free providers that switch on by themselves when their key is set: service -> [provider, key variable]. */
+export const FREE_DEFAULTS = { styling_explanation: ["gemini-free", "GEMINI_API_KEY"] };
+
+/** The provider named for a service, or the free default when its key is set. "off" switches it off. */
+export function providerName(service, env = process.env) {
+  const named = (env[`AI_PROVIDER_${service.toUpperCase()}`] ?? "").trim();
+  if (named === "off") return "";
+  if (named) return named;
+  const free = FREE_DEFAULTS[service];
+  return free && (env[free[1]] ?? "").trim() ? free[0] : "";
+}
+
 const cache = new Map();
 async function providerFor(service) {
-  const name = (process.env[`AI_PROVIDER_${service.toUpperCase()}`] ?? "").trim();
+  const name = providerName(service);
   if (!name || !/^[a-z0-9-]+$/.test(name)) return null;
   if (cache.has(name)) return cache.get(name);
   const file = join(HERE, "providers", `${name}.mjs`);
@@ -93,4 +109,17 @@ export async function handleAi(req, res, service) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** GET /api/ai: the services whose provider may run now, so the page only calls those. No keys, no names of people. */
+export async function liveServices() {
+  const live = [];
+  for (const service of AI_SERVICES) {
+    const engine = await providerFor(service).catch(() => null);
+    if (!engine) continue;
+    if (Array.isArray(engine.SERVICES) && !engine.SERVICES.includes(service)) continue;
+    if (engine.billable && process.env.ALLOW_BILLABLE_AI !== "true") continue;
+    live.push({ service, provider: engine.id, version: engine.version, billable: Boolean(engine.billable) });
+  }
+  return live;
 }

@@ -83,13 +83,13 @@ const TRY_ON_SERVER: ImagePolicy = {
 export const IMAGE_POLICIES: Record<ImageCategory, ImagePolicy> = {
   face_colour: {
     category: "face_colour",
-    why: "A daylight photo of your face is what I’ll use to suggest your colours once colour analysis opens.",
-    use: "Colour analysis is in preview, so I don’t read the photo yet. I show it while you build your Style DNA.",
-    processing: "none",
+    why: "A daylight photo of your face is what I’ll use to suggest your colours.",
+    use: "I read the colour of your skin, eyes, brows and hair here on your device, to suggest your undertone and contrast. The photo isn’t sent anywhere, and you can change what I suggest.",
+    processing: "on_device",
     leavesDevice: false,
     retention: { where: "this_tab" },
     deletion: "It’s deleted when you close this tab, or straight away with Delete and change the photo, or from Your data on this device.",
-    consentVersion: "face-2026-10-11",
+    consentVersion: "face-device-2026-10-12",
     accepts: PHOTO_TYPES,
     maxBytes: 15 * 1024 * 1024,
     minEdge: 320,
@@ -114,12 +114,12 @@ export const IMAGE_POLICIES: Record<ImageCategory, ImagePolicy> = {
   wardrobe_garment: {
     category: "wardrobe_garment",
     why: "A photo of the piece lets you see it beside the looks I build around it.",
-    use: "I don’t read the photo yet. I keep its name and type, and show the photo beside your looks.",
-    processing: "none",
+    use: "I read its main colour here on your device, to fill in the colour for you. The photo isn’t sent anywhere. I keep the piece’s name and type, and show the photo beside your looks.",
+    processing: "on_device",
     leavesDevice: false,
     retention: { where: "this_tab" },
     deletion: "It’s deleted when you close this tab, or straight away from Your data on this device.",
-    consentVersion: "wardrobe-2026-10-11",
+    consentVersion: "wardrobe-device-2026-10-12",
     accepts: PHOTO_TYPES,
     maxBytes: 15 * 1024 * 1024,
     minEdge: 240,
@@ -148,7 +148,7 @@ export function disclosure(category: ImageCategory): { why: string; use: string;
 
 /* ------------------------------------------------------------- validation */
 
-export type ImageProblem = "not_an_image" | "unsupported_type" | "too_large" | "too_small" | "too_dark" | "too_bright" | "unreadable";
+export type ImageProblem = "not_an_image" | "unsupported_type" | "too_large" | "too_small" | "too_dark" | "too_bright" | "unreadable" | "no_face" | "colour_cast";
 
 /** Before reading a file: its type and size. */
 export function checkFile(file: { type: string; size: number }, category: ImageCategory): ImageProblem | null {
@@ -177,6 +177,8 @@ export const PROBLEM_COPY: Record<ImageProblem, string> = {
   too_dark: "That photo is too dark for me to see your colours. Try again near a window.",
   too_bright: "That photo is too bright for me to see your colours. Try again out of direct sun.",
   unreadable: "I couldn’t read that photo. Try another one.",
+  no_face: "I couldn’t find your face in that photo. Try one facing the camera, with your whole face in it.",
+  colour_cast: "The light in that photo is too coloured for me to read your skin. Try again in daylight.",
 };
 
 /* ---------------------------------------------------------------- consent */

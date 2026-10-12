@@ -54,7 +54,7 @@ function Swatches({ hexes, label }: { hexes: string[]; label: string }) {
   );
 }
 
-/** Whether the colours come from a sample while analysis is in preview. */
+/** Whether the colours are the fixed example from the sample portrait (or test mode), not a reading. */
 export function isSampleEstimate(p: StyleProfile): boolean {
   return p.undertone.inferred?.source === "sample" || p.contrast.inferred?.source === "sample";
 }

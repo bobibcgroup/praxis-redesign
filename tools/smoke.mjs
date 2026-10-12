@@ -37,7 +37,7 @@ await step("health", async () => {
   const h = await res.json();
   check(res.status === 200 && h.ok, `health answers (version ${h.version}, commit ${h.commit})`);
   if (EXPECT) check(h.commit === EXPECT, `the deployed commit is ${EXPECT}`);
-  check(Array.isArray(h.ai?.providersSet) && h.ai.providersSet.length === 0, "no AI provider is set");
+  check(Array.isArray(h.ai?.providersSet) && h.ai.providersSet.length === 0, "no AI provider is named (free ones on: " + (h.ai?.freeOn?.join(", ") || "none") + ")");
   check(h.ai?.billableAllowed === false && h.tryOn?.billableAllowed === false && h.tryOn?.providerSet === false, "paid AI and image calls are off");
 });
 
@@ -72,6 +72,10 @@ await step("files", async () => {
     const f = await get(`/media/${file}`, { method: "HEAD" });
     check(f.status === 200, `the home film file ${file} loads`);
   }
+  for (const file of ["/mediapipe/vision_wasm_internal.wasm", "/mediapipe/vision_wasm_internal.js", "/models/face_landmarker.task"]) {
+    const f = await get(file, { method: "HEAD" });
+    check(f.status === 200, `the on-device colour reader file ${file} loads`);
+  }
   const missing = await get("/assets/does-not-exist.js");
   check(missing.status === 404, "a missing file is a real 404");
   const country = await get("/api/country");
@@ -84,6 +88,8 @@ await step("ai", async () => {
   check(ai.status === "disabled" && ai.error?.code === "not_connected", "AI plug-in point answers not connected");
   const t = await (await post("/api/tryon", { requestId: "smoke", outfitId: "o", garmentIds: ["g"], person: { image: "data:image/jpeg;base64,AAAA", width: 720, height: 960, consentVersion: "tryon-server-2026-10-11" } })).json();
   check(t.status === "disabled", "try-on plug-in point makes nothing");
+  const live = await (await get("/api/ai")).json();
+  check(Array.isArray(live.live) && live.live.every((s) => s.billable === false), `only free AI answers (${live.live?.map((s) => s.provider).join(", ") || "none"})`);
 });
 
 await step("monitoring", async () => {
