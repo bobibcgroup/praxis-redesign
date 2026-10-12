@@ -99,6 +99,18 @@ await step("ai", async () => {
     check(words.status === "succeeded" && !!line?.summary && !!line?.note, `the free writer answers (${words.status}${words.error ? `, ${words.error.message}` : ""})`);
     if (line) console.log(`      line: ${line.summary}\n      note: ${line.note}`);
   }
+  if (live.live?.some((s) => s.service === "product_matching")) {
+    // The test store is on: three pieces of a dinner look, and what the store offers for each.
+    const garments = [{ garmentId: "smoke-top", slot: "top", name: "Navy wool blazer" }, { garmentId: "smoke-bottom", slot: "bottom", name: "Grey trousers" }, { garmentId: "smoke-shoes", slot: "shoes", name: "Brown suede boots" }];
+    const found = await (await post("/api/ai/product_matching", { ...envelope, requestId: "smoke-stock", service: "product_matching", payload: { garments, budget: "ELEVATED", currency: "USD" } })).json();
+    const hits = (found.result?.matches ?? []).filter((m) => m.products?.length);
+    check((found.status === "succeeded" || found.status === "partial") && hits.length > 0, `the test store answers (${found.status}, ${hits.length} of 3 pieces matched${found.error ? `, ${found.error.message}` : ""})`);
+    for (const m of hits) {
+      const p = m.products[0];
+      const inStock = Object.entries(p.sizeAvailability ?? {}).filter(([, a]) => a === "in_stock").map(([s]) => s);
+      console.log(`      ${m.garmentId}: ${p.title} $${p.price} ${p.availability}, sizes in stock ${inStock.join(" ") || "none"} ${p.productUrl}`);
+    }
+  }
 });
 
 await step("monitoring", async () => {
