@@ -21,6 +21,7 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 
 afterEach(() => {
   resetLiveServices();
+  gemini.resetModel();
   vi.unstubAllEnvs();
 });
 
@@ -85,18 +86,40 @@ describe("the Gemini provider on the server", () => {
         { outfitId: "zzz", summary: "A look I was not asked about at all", note: "Should never be kept by the page." },
       ],
     };
-    const fetcher = vi.fn(async () => json(200, { candidates: [{ content: { parts: [{ text: JSON.stringify(answer) }] } }] }));
+    const fetcher = vi.fn(async (url: string) =>
+      url.includes("/models?")
+        ? json(200, { models: [{ name: "models/gemini-9.0-flash-lite", supportedGenerationMethods: ["generateContent"] }] })
+        : json(200, { candidates: [{ content: { parts: [{ text: JSON.stringify(answer) }] } }] }),
+    );
     const out = await gemini.run({ service: "styling_explanation", payload: { request: request(), outfitId: "a", looks: [{ outfitId: "a" }, { outfitId: "b" }] } }, { fetcher });
     expect(out.status).toBe("partial");
     expect(out.result.looks).toEqual([{ outfitId: "a", summary: "Sharp enough for a restaurant at night, as you asked.", note: "The navy knit keeps the charcoal jacket calm." }]);
-    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toContain(`/models/${gemini.MODEL}:generateContent`);
+    const [url, init] = fetcher.mock.calls[1] as unknown as [string, RequestInit];
+    expect(url).toContain("/models/gemini-9.0-flash-lite:generateContent");
     expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("k");
+  });
+
+  it("picks the newest stable Flash Lite the key can use", () => {
+    const m = (name: string, methods = ["generateContent"]) => ({ name: `models/${name}`, supportedGenerationMethods: methods });
+    expect(gemini.pickModel([m("gemini-2.5-flash"), m("gemini-2.5-flash-lite"), m("gemini-3.0-flash-lite-preview-09"), m("gemini-3.0-flash-lite"), m("text-embedding-004", ["embedContent"])])).toBe("gemini-3.0-flash-lite");
+    expect(gemini.pickModel([m("gemini-2.5-pro"), m("gemini-3.0-flash")])).toBe("gemini-3.0-flash");
+    expect(gemini.pickModel([m("gemini-2.5-pro")])).toBeNull();
+  });
+
+  it("asks for the model list again after Google says a model is gone, and passes Google's reason on", async () => {
+    vi.stubEnv("GEMINI_API_KEY", "k");
+    const list = json(200, { models: [{ name: "models/gemini-2.5-flash-lite", supportedGenerationMethods: ["generateContent"] }] });
+    const fetcher = vi.fn(async (url: string) => (url.includes("/models?") ? list.clone() : json(404, { error: { message: "models/gemini-2.5-flash-lite is not found" } })));
+    const payload = { request: request(), outfitId: "a", looks: [{ outfitId: "a" }] };
+    const out = await gemini.run({ service: "styling_explanation", payload }, { fetcher });
+    expect(out.error.message).toContain("is not found");
+    await gemini.run({ service: "styling_explanation", payload }, { fetcher });
+    expect(fetcher.mock.calls.filter(([u]) => String(u).includes("/models?"))).toHaveLength(2);
   });
 
   it("says the free limit is reached instead of retrying", async () => {
     vi.stubEnv("GEMINI_API_KEY", "k");
-    const out = await gemini.run({ service: "styling_explanation", payload: { request: request(), outfitId: "a", looks: [{ outfitId: "a" }] } }, { fetcher: async () => json(429, {}) });
+    const out = await gemini.run({ service: "styling_explanation", payload: { request: request(), outfitId: "a", looks: [{ outfitId: "a" }] } }, { fetcher: async (url: string) => (url.includes("/models?") ? json(200, { models: [{ name: "models/gemini-2.5-flash-lite", supportedGenerationMethods: ["generateContent"] }] }) : json(429, {})) });
     expect(out.status).toBe("failed");
     expect(out.error.retryable).toBe(false);
   });

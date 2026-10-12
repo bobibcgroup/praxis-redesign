@@ -31,7 +31,7 @@ Phase 2 added one service layer for all nine AI services, with contracts, mocks 
 | `PREMIUM` | `src/core/config.ts:30` | Constant: `Premium`, 9, `USD`, `month` | The name and price shown in the gate. Not an environment value. |
 | `VITE_AI_PROVIDERS` | `src/core/config.ts` | comma list of service names; empty (default) | A listed service answers through `src/core/ai` and this app's server (`POST /api/ai/<service>`); see `docs/AI-SERVICES.md`. |
 | `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | `server/ai.mjs` (server environment) | provider module name or `off`; `true` | Which provider module answers a service, and whether a paid one may run. Unset: every service answers `disabled`, except a free provider whose key is set. |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | `server/providers/gemini-free.mjs` (server environment) | a free AI Studio key; model name (default `gemini-2.5-flash-lite`) | Switches on the free writer for `styling_explanation`. Use a key from a project without billing. |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | `server/providers/gemini-free.mjs` (server environment) | a free AI Studio key; model name (unset: the newest stable Flash Lite the key can use, read from Google's model list) | Switches on the free writer for `styling_explanation`. Use a key from a project without billing. |
 | Test mode | `src/core/sim.ts:9`, set from `/internal/analytics` | `fast`, `slow`, `timeout`, `failure`, `partial`, `empty`, `invalid_image`, `unavailable_products`, `validation_error`, `retry_success` | Per tab (`praxis_sim` in `sessionStorage`). Wraps whatever adapter is configured (`withSimulation`, `src/core/service.ts:81`). |
 
 Two facts that apply to every integration below:

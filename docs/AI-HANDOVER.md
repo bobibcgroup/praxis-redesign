@@ -63,7 +63,7 @@ Everything else runs on a free, deterministic mock. `/api/health` reports `provi
 - `src/core/adapters/mock.ts`, the rules engine the app uses today.
 - `MOCKS.styling_recommendation` and `MOCKS.styling_explanation` in `src/core/ai/services.ts`.
 
-**Free writer (live once its key is set):** `server/providers/gemini-free.mjs` answers `styling_explanation` on Google's free tier (default model `gemini-2.5-flash-lite`, `GEMINI_MODEL` to change it). The rules engine still chooses the looks; after it answers, `addStylistWords` (`src/core/ai/words.ts`) asks the server once per journey for each look's line and note, and puts them in `explanation.summary` and `rationale`, marked `source: "model"`.
+**Free writer (live once its key is set):** `server/providers/gemini-free.mjs` answers `styling_explanation` on Google's free tier (the newest stable Flash Lite the key can use, read from Google's model list because model names are retired; `GEMINI_MODEL` names one instead). The rules engine still chooses the looks; after it answers, `addStylistWords` (`src/core/ai/words.ts`) asks the server once per journey for each look's line and note, and puts them in `explanation.summary` and `rationale`, marked `source: "model"`.
 - Sent: the answers, the Style DNA in words, the owned piece's name and colour, and each look's pieces. Never a photo, email, name or id (Google may use free-tier requests).
 - Every line is checked against the voice rules on the server and on the page (no dashes, no AI or data talk, "pieces", "Style DNA" in full, no marketing words). A broken line, a refusal, the free limit (429) or 8 s without an answer keeps the rules engine's words.
 - Test mode scenarios skip it. The page asks `GET /api/ai` and never calls a writer marked billable.

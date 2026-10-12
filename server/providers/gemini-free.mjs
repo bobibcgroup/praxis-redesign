@@ -8,13 +8,16 @@
  * an email, a name or an id: Google may use free-tier requests to improve its products.
  *
  * Needs GEMINI_API_KEY (a free key from https://aistudio.google.com/apikey, on a project without
- * billing). GEMINI_MODEL picks the model (default gemini-2.5-flash-lite). Not billable: on a project
+ * billing). GEMINI_MODEL picks the model; without it the provider asks Google which models the key
+ * can use and takes the newest Flash Lite (then Flash), since model names are retired over time.
+ * Not billable: on a project
  * without billing Google refuses rather than charges when the free limits are reached, and the page
  * then keeps the rules engine's words.
  */
 export const id = "gemini-free";
 export const billable = false;
-export const MODEL = (process.env.GEMINI_MODEL ?? "gemini-2.5-flash-lite").trim();
+/** The model named in GEMINI_MODEL, or "auto": the newest Flash Lite the key can use (resolveModel). */
+export const MODEL = (process.env.GEMINI_MODEL ?? "").trim() || "auto";
 export const version = MODEL;
 export const SERVICES = ["styling_explanation"];
 
@@ -102,6 +105,51 @@ const SCHEMA = {
   required: ["looks"],
 };
 
+/**
+ * The model to call. A named GEMINI_MODEL is used as it is. Otherwise Google's list of models for this
+ * key is read once, and the newest stable Flash Lite that can generate text is taken (Flash if there is
+ * no Lite). Previews, experiments and audio, image or live models are left out.
+ */
+let resolved = null;
+export function resetModel() {
+  resolved = null;
+}
+export function pickModel(models) {
+  const usable = (Array.isArray(models) ? models : [])
+    .filter((m) => Array.isArray(m?.supportedGenerationMethods) && m.supportedGenerationMethods.includes("generateContent"))
+    .map((m) => String(m.name ?? "").replace(/^models\//, ""))
+    .filter((n) => /^gemini-/.test(n) && /flash/.test(n) && !/preview|exp|tts|image|live|audio|thinking|embedding|\d{3}$/.test(n));
+  const rank = (n) => {
+    const v = Number(/^gemini-(\d+(?:\.\d+)?)/.exec(n)?.[1] ?? 0);
+    return (/lite/.test(n) ? 1000 : 0) + (/latest/.test(n) ? 500 : 0) + v;
+  };
+  return usable.sort((a, b) => rank(b) - rank(a))[0] ?? null;
+}
+export function resolveModel(key, fetcher = fetch) {
+  if (MODEL !== "auto") return Promise.resolve(MODEL);
+  if (!resolved) {
+    resolved = (async () => {
+      const res = await fetcher(`${ENDPOINT}?pageSize=200`, { headers: { "x-goog-api-key": key } });
+      if (!res.ok) throw new Error(`Gemini listed models with ${res.status}.`);
+      const name = pickModel((await res.json())?.models);
+      if (!name) throw new Error("No Gemini Flash model is available to this key.");
+      return name;
+    })();
+    resolved.catch(() => (resolved = null));
+  }
+  return resolved;
+}
+
+/** Google's own reason for a refusal, without anything from the request. */
+async function reasonOf(res) {
+  try {
+    const body = await res.json();
+    return String(body?.error?.message ?? "").slice(0, 160);
+  } catch {
+    return "";
+  }
+}
+
 /** Words that break the voice rules. A line with any of them is dropped; the rules engine's words stand. */
 const BANNED = /[‐-―−]|\s-\s|\w-\w|\b(ai|a\.i\.|artificial|algorithm|model|data|analysis|products?|curated|effortless(ly)?|elevate[sd]?|must[ -]have|game[ -]changer)\b|!|(?<!style )\bdna\b/i;
 
@@ -135,18 +183,33 @@ export async function run(request, { signal, fetcher = fetch } = {}) {
   const asked = Array.isArray(payload.looks) ? payload.looks.slice(0, 3) : [];
   if (!asked.length) return { status: "failed", error: { code: "validation_error", message: "No looks to describe.", retryable: false } };
 
-  const res = await fetcher(`${ENDPOINT}/${encodeURIComponent(MODEL)}:generateContent`, {
-    method: "POST",
-    signal,
-    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: VOICE }] },
-      contents: [{ role: "user", parts: [{ text: promptFor(payload) }] }],
-      generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.6, maxOutputTokens: 700, thinkingConfig: { thinkingBudget: 0 } },
-    }),
-  });
+  let model;
+  try {
+    model = await resolveModel(key, fetcher);
+  } catch (e) {
+    return { status: "failed", error: { code: "provider_error", message: String(e?.message ?? "Gemini models could not be listed."), retryable: false } };
+  }
+  const ask = (generationConfig) =>
+    fetcher(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: VOICE }] },
+        contents: [{ role: "user", parts: [{ text: promptFor(payload) }] }],
+        generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.6, ...generationConfig },
+      }),
+    });
+  // No thinking keeps it quick; a model that refuses that setting is asked again with its own default.
+  let res = await ask({ maxOutputTokens: 700, thinkingConfig: { thinkingBudget: 0 } });
+  if (res.status === 400) res = await ask({ maxOutputTokens: 4000 });
   if (res.status === 429) return { status: "failed", error: { code: "provider_error", message: "The free Gemini limit is reached for now.", retryable: false } };
-  if (!res.ok) return { status: "failed", error: { code: "provider_error", message: `Gemini answered ${res.status}.`, retryable: res.status >= 500 } };
+  if (!res.ok) {
+    // A retired model name: ask for the list again next time.
+    if (res.status === 404) resetModel();
+    const why = await reasonOf(res);
+    return { status: "failed", error: { code: "provider_error", message: `Gemini answered ${res.status}${why ? `: ${why}` : "."}`, retryable: res.status >= 500 } };
+  }
   let looks = [];
   try {
     const body = await res.json();
@@ -155,11 +218,11 @@ export async function run(request, { signal, fetcher = fetch } = {}) {
   } catch {
     return { status: "failed", error: { code: "provider_error", message: "Gemini's answer could not be read.", retryable: true } };
   }
-  if (!looks.length) return { status: "empty", metadata: { model: MODEL } };
+  if (!looks.length) return { status: "empty", metadata: { model } };
   const first = looks.find((l) => l.outfitId === String(payload.outfitId)) ?? looks[0];
   return {
     status: looks.length === asked.length ? "succeeded" : "partial",
     result: { outfitId: first.outfitId, summary: first.summary, factors: [], source: "model", looks },
-    metadata: { model: MODEL, looks: looks.length },
+    metadata: { model, looks: looks.length },
   };
 }
