@@ -78,6 +78,8 @@ export function toProduct(p, store, name, at) {
     ...(sizes.length ? { availableSizes: sizes, sizeAvailability } : {}),
     productUrl: url,
     ...(p.images?.[0]?.src ? { imageUrl: String(p.images[0].src).replace(/^\/\//, "https://") } : {}),
+    // The store's own photos, so the page can show the piece worn (see modelPhoto in src/core/ai/stock.ts).
+    photos: (p.images ?? []).slice(0, 6).filter((i) => i?.src).map((i) => ({ src: String(i.src).replace(/^\/\//, "https://"), alt: String(i.alt ?? "").slice(0, 120), width: Number(i.width) || undefined, height: Number(i.height) || undefined })),
     lastUpdatedAt: at,
     purchase: { kind: "retailer_site", url },
     title: p.title,

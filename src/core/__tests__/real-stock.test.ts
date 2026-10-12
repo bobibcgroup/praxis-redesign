@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockRecommend } from "../adapters/mock";
 import { buildStylingRequest } from "../request";
 import { resetLiveServices } from "../ai/words";
-import { addRealPieces, withRealPieces } from "../ai/stock";
+import { addRealPieces, modelPhoto, withRealPieces } from "../ai/stock";
 import { ANON, SCENARIO_A } from "./helpers";
 // @ts-expect-error plain JavaScript module
 import * as feed from "../../../server/providers/shopify-feed.mjs";
@@ -93,6 +93,25 @@ describe("the page with a store feed", () => {
     expect(out.garments.filter((g) => g.source === "retail").map((g) => g.name)).toEqual(retail.map((_, i) => `Real piece ${i}`));
     expect(out.pricing).toMatchObject({ total: retail.reduce((s, _, i) => s + 100 + i, 0), status: "live" });
     expect(JSON.stringify(out)).not.toContain('"title":"Real piece');
+  });
+
+  it("picks the store's photo of the piece being worn", () => {
+    const at = (name: string, alt = "") => ({ src: `https://cdn.example.com/${name}.jpg?v=1`, alt });
+    expect(modelPhoto([at("crew-front"), at("crew-on-model")])?.src).toContain("crew-on-model");
+    expect(modelPhoto([at("a"), at("b", "Model wearing the crew in navy")])?.src).toContain("/b.jpg");
+    expect(modelPhoto([at("crew_flat"), at("crew_2")])?.src).toContain("crew_2");
+    expect(modelPhoto([at("crew_1"), at("crew_2")])?.src).toContain("crew_1");
+    expect(modelPhoto([{ src: "http://cdn.example.com/x.jpg" }])).toBeNull();
+  });
+
+  it("shows the store's photo of the top piece as the look's picture", () => {
+    const response = mockRecommend(request());
+    const look = response.outfits[0];
+    const top = look.garments.find((g) => g.source === "retail" && g.slot === "top")!;
+    const result = { matches: [{ garmentId: top.garmentId, products: [{ productId: "p", retailerId: "s", retailerName: "Test Tailors", price: 98, currency: "USD" as const, priceStatus: "live" as const, availability: "in_stock" as const, title: "Crew", photos: [{ src: "https://cdn.example.com/crew-on-model.jpg", width: 1200, height: 1500 }] }] }] };
+    const out = withRealPieces(response, result as never).outfits[0];
+    expect(out.visualization).toMatchObject({ kind: "product_photo", url: "https://cdn.example.com/crew-on-model.jpg", provider: "Test Tailors", sourceGarmentIds: [top.garmentId], width: 1200, height: 1500 });
+    expect(JSON.stringify(out)).not.toContain('"photos"');
   });
 
   it("refuses a piece without a real price or with a link that isn't https", () => {

@@ -109,6 +109,7 @@ await step("ai", async () => {
       const p = m.products[0];
       const inStock = Object.entries(p.sizeAvailability ?? {}).filter(([, a]) => a === "in_stock").map(([s]) => s);
       console.log(`      ${m.garmentId}: ${p.title} $${p.price} ${p.availability}, sizes in stock ${inStock.join(" ") || "none"} ${p.productUrl}`);
+      for (const [i, ph] of (p.photos ?? []).entries()) console.log(`        photo ${i + 1}: ${ph.src.split("/").pop().split("?")[0]} ${ph.width ?? "?"}x${ph.height ?? "?"} "${ph.alt}"`);
     }
   }
 });
