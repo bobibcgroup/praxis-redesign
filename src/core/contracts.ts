@@ -131,10 +131,15 @@ export interface ProductRef {
 
 export type RetailProduct = ProductRef;
 
+/** Within the top: the outer layer (blazer, jacket, overshirt) worn over the base (shirt, knit, t-shirt). */
+export type Layer = "outer" | "base";
+
 interface GarmentBase {
   garmentId: string;
   slot: Slot;
   name: string;
+  /** Tops only, when the look layers them. */
+  layer?: Layer;
 }
 
 export interface RetailGarment extends GarmentBase {
@@ -147,7 +152,26 @@ export interface WardrobeGarment extends GarmentBase {
   wardrobeItemId: string;
 }
 
-export type Garment = RetailGarment | WardrobeGarment;
+/**
+ * A piece from the Praxis reference catalogue (src/core/catalogue/reference.ts): it completes the
+ * styling when no store piece is right, and is never priced or bought from here.
+ */
+export interface ReferenceGarment extends GarmentBase {
+  source: "reference";
+  referenceId: string;
+  /** What it is, so the customer can find something like it: such as "Chelsea boots, black leather". */
+  description?: string;
+  /** A picture of the reference piece (a crop of a Praxis library photograph). */
+  image?: ReferenceImage;
+}
+
+/** A library photograph and the part of it that shows the piece, as fractions of its width and height. */
+export interface ReferenceImage {
+  src: string;
+  region: { x: number; y: number; w: number; h: number };
+}
+
+export type Garment = RetailGarment | WardrobeGarment | ReferenceGarment;
 
 export type VisualizationKind = "product_photo" | "styled_visualization" | "try_on";
 
@@ -159,10 +183,16 @@ export interface Visualization {
   url: string;
   /** Who made it: "praxis-library" for the curated photographs. */
   provider: string;
-  /** "exact" only when the picture shows these very garments. */
+  /**
+   * "exact" only when the picture has been checked to show these very garments (verified); otherwise
+   * "representative": a styling visualization, where product details may differ (illustrative).
+   */
   fidelity: "exact" | "representative";
   sourceGarmentIds: string[];
-  status: "ready" | "pending" | "failed" | "unavailable";
+  /** mock: a stand-in picture from the mock visualization provider, not made for these pieces. */
+  status: "ready" | "pending" | "processing" | "mock" | "failed" | "unavailable";
+  /** The composition the picture was made or chosen for (src/core/catalogue/visualize.ts), so it is never reused for other pieces. */
+  cacheKey?: string;
   width?: number;
   height?: number;
   createdAt?: string;

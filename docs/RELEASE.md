@@ -122,6 +122,7 @@ Environment, all optional and all off by default:
 | `RETAIL_SHOPIFY_STORE`, `RETAIL_SHOPIFY_FOR` | server | Real pieces from one store for testing; only `?stock=live` tabs unless `everyone` |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | server | The free stylist's words (Gemini free tier, text only); unset means the rules engine's words |
 | `TRYON_PROVIDER`, `ALLOW_BILLABLE_IMAGES` | server | Try-on provider and paid images |
+| `VISUALIZATION_DAILY_CAP` | server | New outfit pictures per visitor per day (default 20); see docs/CATALOGUE.md |
 | `VITE_AI_PROVIDERS`, `VITE_TRYON_ADAPTER`, `VITE_ALLOW_BILLABLE_IMAGES` | build | Page switches |
 | `VITE_INTERNAL_PAGE` | build | Shows the test mode page. Never set it on the live site. |
 | `RAILWAY_GIT_COMMIT_SHA` | server | Set by Railway, shown by `/api/health` |

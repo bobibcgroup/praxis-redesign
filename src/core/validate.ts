@@ -9,7 +9,9 @@ import {
   type Availability,
   type FactorKind,
   type Garment,
+  type Layer,
   type OutfitRecommendation,
+  type ReferenceImage,
   type OutfitRole,
   type PriceStatus,
   type PurchaseRoute,
@@ -34,7 +36,8 @@ const AVAILABILITY: readonly Availability[] = ["in_stock", "out_of_stock", "unkn
 const FACTORS: readonly FactorKind[] = ["occasion", "venue", "time", "style", "budget", "body", "colour", "wardrobe", "weather", "style_dna", "feedback"];
 const STATUSES: readonly ResponseStatus[] = ["completed", "partial", "empty", "failed"];
 const VIS_KINDS: readonly Visualization["kind"][] = ["product_photo", "styled_visualization", "try_on"];
-const VIS_STATUS: readonly Visualization["status"][] = ["ready", "pending", "failed", "unavailable"];
+const VIS_STATUS: readonly Visualization["status"][] = ["ready", "pending", "processing", "mock", "failed", "unavailable"];
+const LAYERS: readonly Layer[] = ["outer", "base"];
 
 type Obj = Record<string, unknown>;
 
@@ -66,8 +69,14 @@ function factor(v: unknown): RecommendationFactor | null {
 
 function garment(v: unknown): Garment | null {
   if (!isObj(v) || !isStr(v.garmentId, 200) || !oneOf(v.slot, SLOTS) || !isStr(v.name, 200)) return null;
-  const base = { garmentId: v.garmentId, slot: v.slot, name: v.name };
+  const base = { garmentId: v.garmentId, slot: v.slot, name: v.name, ...(oneOf(v.layer, LAYERS) ? { layer: v.layer } : {}) };
   if (v.source === "wardrobe") return isStr(v.wardrobeItemId, 200) ? { ...base, source: "wardrobe", wardrobeItemId: v.wardrobeItemId } : null;
+  // A reference piece completes the styling only: whatever price or link came with it is dropped.
+  if (v.source === "reference") {
+    if (!isStr(v.referenceId, 200)) return null;
+    const image = referenceImage(v.image);
+    return { ...base, source: "reference", referenceId: v.referenceId, ...(optStr(v.description, 200) ? { description: optStr(v.description, 200) } : {}), ...(image ? { image } : {}) };
+  }
   if (v.source !== "retail" || !isObj(v.product)) return null;
   const p = v.product;
   if (!isStr(p.productId, 200) || !isStr(p.retailerId, 200) || !isStr(p.retailerName, 120)) return null;
@@ -94,6 +103,15 @@ function garment(v: unknown): Garment | null {
       deliveryEstimate: optStr(p.deliveryEstimate, 60),
     },
   };
+}
+
+function referenceImage(v: unknown): ReferenceImage | undefined {
+  if (!isObj(v) || !isObj(v.region)) return undefined;
+  const src = safeUrl(v.src);
+  const { x, y, w, h } = v.region as Obj;
+  const unit = (n: unknown) => isNum(n) && n >= 0 && n <= 1;
+  if (!src || !unit(x) || !unit(y) || !unit(w) || !unit(h) || (w as number) <= 0 || (h as number) <= 0) return undefined;
+  return { src, region: { x: x as number, y: y as number, w: w as number, h: h as number } };
 }
 
 function sizes(v: unknown): string[] | undefined {
@@ -131,6 +149,7 @@ function visualization(v: unknown, outfitId: string): Visualization | null {
     fidelity: v.fidelity === "exact" ? "exact" : "representative",
     sourceGarmentIds: Array.isArray(v.sourceGarmentIds) ? v.sourceGarmentIds.filter((id): id is string => isStr(id, 200)) : [],
     status: oneOf(v.status, VIS_STATUS) ? v.status : "ready",
+    cacheKey: optStr(v.cacheKey, 200),
     width: isNum(v.width) ? v.width : undefined,
     height: isNum(v.height) ? v.height : undefined,
     createdAt: optStr(v.createdAt, 40),

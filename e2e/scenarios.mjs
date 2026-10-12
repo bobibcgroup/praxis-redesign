@@ -76,6 +76,7 @@ export const SUITES = {
   11: "Accessibility",
   12: "AI integration contracts",
   13: "Analytics",
+  14: "Hybrid catalogue",
 };
 /** The suite of each scenario written before the suites existed. */
 const LEGACY_SUITE = {
@@ -85,7 +86,8 @@ const LEGACY_SUITE = {
   S4: 7, S5: 7, ISO1: 7, ISO3: 7, TABS1: 7, SAVE2: 7, UX6: 7, UX8: 7, DATA1: 7, FULL1: 7,
   S10: 8,
   S8: 9, S9: 9, P2A: 9, P2B: 9,
-  LAYOUT: 10, UX9: 10,
+  WHY1: 3, WHY2: 3,
+  LAYOUT: 10, UX9: 10, FACE1: 10,
   A11Y: 11,
   P2C: 12,
   S12: 13,
@@ -684,6 +686,80 @@ await scenario("UX10", "Phone results: the title shows on the first screen", "ph
   check(title.y + title.height < vh - 120, "title above the action row without scrolling");
   await shot("results");
 });
+
+/* Why this look is a real disclosure: open at first on desktop, folded on a phone; the reasons truly
+   fold away and leave the tab order; mouse and keyboard both work; the choice holds across looks. */
+for (const device of ["desktop", "phone"]) {
+  await scenario("WHY1", "Why this look opens and closes for real", device, async (p, shot) => {
+    await toResults(p, A);
+    const toggle = button(p, /Why this look/);
+    const fold = p.locator(".a-why-fold");
+    const expanded = async () => (await toggle.getAttribute("aria-expanded")) === "true";
+    const shown = () => fold.evaluate((el) => !el.hidden && getComputedStyle(el).display !== "none" && el.getBoundingClientRect().height > 40);
+    const nextTop = () => p.evaluate(() => document.querySelector(".a-why").nextElementSibling.getBoundingClientRect().top);
+    check((await toggle.getAttribute("aria-controls")) === (await fold.getAttribute("id")), "the header button names the reasons it controls");
+    const first = device === "desktop";
+    check((await expanded()) === first && (await shown()) === first, `${first ? "open" : "folded"} at first on ${device}`);
+    if (!first) {
+      await toggle.click();
+      await p.waitForTimeout(450);
+      check((await expanded()) && (await shown()), "a tap opens it");
+    }
+    const openNext = await nextTop();
+    await toggle.click();
+    await p.waitForTimeout(450);
+    check(!(await expanded()) && !(await shown()), "a click closes it: the reasons are gone, not just the arrow");
+    check((await nextTop()) < openNext - 80, "what follows moves up");
+    check(!(await p.getByText("One of my dinner looks").isVisible()), "folded reasons can't be seen or reached");
+    await toggle.focus();
+    await p.keyboard.press("Enter");
+    await p.waitForTimeout(450);
+    check((await expanded()) && (await shown()), "Enter opens it");
+    check(await toggle.evaluate((el) => el.matches(":focus-visible") && getComputedStyle(el).boxShadow !== "none"), "the focus ring shows");
+    const bottom = await fold.evaluate((el) => el.getBoundingClientRect().bottom);
+    check(bottom <= (await nextTop()) + 1, "the open reasons overlap nothing");
+    await p.keyboard.press(" ");
+    await p.waitForTimeout(450);
+    check(!(await expanded()) && !(await shown()), "Space closes it");
+    await p.keyboard.press(" ");
+    await p.waitForTimeout(450);
+    await p.locator(".a-thumb").filter({ visible: true }).nth(1).click();
+    await p.waitForTimeout(900);
+    check((await expanded()) && (await shown()), "open stays open on the next look");
+    check(await p.getByText("A classic alternative").filter({ visible: true }).count() > 0, "and gives that look's reasons");
+    await button(p, /Why this look/).click();
+    await p.waitForTimeout(450);
+    await p.locator(".a-thumb").filter({ visible: true }).nth(2).click();
+    await p.waitForTimeout(900);
+    check(!(await expanded()) && !(await shown()), "folded stays folded on the next look");
+    await button(p, /Why this look/).click();
+    await p.waitForTimeout(450);
+    check(await p.getByText("A more relaxed alternative").filter({ visible: true }).count() > 0, "opening it there gives the new look's reasons");
+    await shot("why-open");
+  });
+}
+
+await scenario("WHY2", "Why this look folds at once with reduced motion", "desktop", async (p) => {
+  await toResults(p, A);
+  await button(p, /Why this look/).click();
+  await p.waitForTimeout(60);
+  check(await p.locator(".a-why-fold").evaluate((el) => el.hidden && getComputedStyle(el).display === "none"), "folded without animating");
+}, { reducedMotion: "reduce" });
+
+/* The bar never sits over the look's photo: at every width, for all three looks. */
+for (const [w, h] of [[1920, 1080], [1440, 900], [1280, 800], [1024, 768], [768, 1024], [390, 844], [375, 667]]) {
+  await scenario("FACE1", `The bar stays clear of the photo at ${w} px`, w < 1024 ? "phone" : "desktop", async (p, shot) => {
+    await toResults(p, A);
+    const thumbs = p.locator(".a-thumb").filter({ visible: true });
+    for (let i = 0; i < 3; i += 1) {
+      await thumbs.nth(i).click();
+      await p.waitForTimeout(700);
+      const [bar, print] = await p.evaluate(() => [document.querySelector("header").getBoundingClientRect().bottom, [...document.querySelectorAll(".a-frame")].map((el) => el.getBoundingClientRect()).find((r) => r.width > 0).top]);
+      check(print >= bar, `look ${i + 1}: photo starts at ${Math.round(print)} px, under the bar's ${Math.round(bar)} px`);
+    }
+    await shot("results");
+  }, { viewport: { viewport: { width: w, height: h }, ...(w < 1024 ? { isMobile: true, hasTouch: true } : {}) } });
+}
 
 for (const device of ["desktop", "phone"]) {
   await scenario("NAV", "Every way back to the occasion lands on home", device, async (p) => {

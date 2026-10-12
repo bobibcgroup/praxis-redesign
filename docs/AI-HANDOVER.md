@@ -107,7 +107,9 @@ Everything else runs on a free, deterministic mock. `/api/health` reports `provi
 - `{ outfitId, imageUrl, fidelity: "exact" | "representative", generated }`
 - The page sees it as a `GeneratedImage` (`vision.ts`): image id, kind, source garments, provider, model version, status, retention.
 
-**Mock provider:** `mockVisualization` (`vision.ts`) and `MOCKS.outfit_visualization`. Both answer `disabled` / `not_connected`, and no picture is made.
+**Mock provider:** for hybrid looks (`?stock=live` tabs), `mockVisualizationProvider` (`src/core/catalogue/visualize.ts`) answers with the look's library photograph, marked illustrative; on the server, `library-visualization` does the same at no cost. Elsewhere `mockVisualization` (`vision.ts`) and `MOCKS.outfit_visualization` answer `disabled` / `not_connected`, and no picture is made.
+
+**Hybrid path (current):** the composed look's `OutfitVisualizationSpec` (pieces, one fixed model, `cacheKey`) goes to the server as `payload.spec`; `server/visuals.mjs` caches by `cacheKey`, caps each visitor per day (`VISUALIZATION_DAILY_CAP`) and records `costPerImageUsd`. Full guide, including connecting Gemini: `docs/CATALOGUE.md`.
 
 **Configuration:**
 - `AI_PROVIDER_OUTFIT_VISUALIZATION=<name>`

@@ -2,7 +2,7 @@
  * Check out: the pieces ticked on the page, each with its size and what the retailer says about
  * stock, then the way to buy. It only offers to buy where a real route exists (the retailer's site
  * or an affiliate link); the sample pieces have none, so the sheet says so instead of pretending to
- * take an order. Stock reads "not confirmed" unless a retailer feed confirms it, and delivery is
+ * take an order. Styling references never enter it: they aren't for sale here. Stock reads "not confirmed" unless a retailer feed confirms it, and delivery is
  * shown only when the retailer supplies it.
  */
 import { ExternalLink } from "lucide-react";
@@ -42,7 +42,8 @@ export function PiecesSheet({ look, open, onClose, selection }: PiecesSheetProps
   const buyable = chosen.filter((p) => linkOf(p));
   const priceNote = chosen.some((p) => (p.priceStatus ?? "example") === "example") ? "Prices are examples." : chosen.some((p) => p.priceStatus === "estimated") ? "Prices are estimates." : "";
   const unconfirmed = chosen.some((p) => stockLine(p, selection.sizeOf(p.id)) === "Stock not confirmed" || !p.deliveryEstimate);
-  const footNote = [priceNote, unconfirmed ? "Stock and delivery aren’t confirmed." : ""].filter(Boolean).join(" ");
+  const references = look.pieces.filter((p) => p.reference).length;
+  const footNote = [priceNote, unconfirmed ? "Stock and delivery aren’t confirmed." : "", references ? `My ${references === 1 ? "reference piece isn’t" : `${references} reference pieces aren’t`} included; ${references === 1 ? "it isn’t" : "they aren’t"} for sale here.` : ""].filter(Boolean).join(" ");
   const needsSize = buyable.filter((p) => p.sizes?.length && !selection.sizeOf(p.id));
 
   const pickSize = (p: Piece, size: string) => {

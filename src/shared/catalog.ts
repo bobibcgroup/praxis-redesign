@@ -113,6 +113,16 @@ export interface Piece {
   price: number;
   /** True when this slot is filled by the user's own item. */
   owned?: boolean;
+  /** A Praxis styling reference: shows what completes the look, is never priced or bought here. */
+  reference?: boolean;
+  /** What the reference piece is, so it can be found elsewhere. */
+  description?: string;
+  /** The piece's own picture: the store's product photo, or a crop of a library photograph for a reference. */
+  photo?: { src: string; region?: { x: number; y: number; w: number; h: number } };
+  /** Within the top: outer layer or base. */
+  layer?: "outer" | "base";
+  /** The store's page for the piece. */
+  productUrl?: string;
   priceStatus?: PriceStatus;
   availability?: Availability;
   /** From the retailer, when it lists them. */
@@ -144,6 +154,8 @@ export interface Look {
   priceStatus?: PriceStatus;
   /** Whether the photo shows these exact pieces or a similar styling. */
   imageFidelity?: "exact" | "representative";
+  /** mock: a stand-in picture from the mock visualization, not made for these pieces. */
+  imageStatus?: "ready" | "pending" | "processing" | "mock" | "failed" | "unavailable";
 }
 
 /** The occasion's mood picture, then the look for the feel being chosen: a preview while answering, not a recommendation. */

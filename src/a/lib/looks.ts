@@ -27,24 +27,41 @@ export function toLook(o: OutfitRecommendation, occasion: OccasionId): Look {
     priceStatus: o.pricing.status,
     imageFidelity: o.visualization.fidelity,
     total: o.pricing.total,
-    pieces: o.garments.map((g) =>
+    imageStatus: o.visualization.status,
+    pieces: o.garments.map((g): Look["pieces"][number] =>
       g.source === "wardrobe"
         ? { id: g.garmentId, slot: g.slot, name: g.name, vendor: "Your wardrobe", price: 0, owned: true }
-        : {
-            id: g.garmentId,
-            slot: g.slot,
-            name: g.name,
-            vendor: g.product.retailerName,
-            price: g.product.price,
-            priceStatus: g.product.priceStatus,
-            availability: g.product.availability,
-            sizes: g.product.availableSizes,
-            sizeAvailability: g.product.sizeAvailability,
-            category: g.product.category,
-            retailerId: g.product.retailerId,
-            purchase: g.product.purchase,
-            deliveryEstimate: g.product.deliveryEstimate,
-          },
+        : g.source === "reference"
+          ? {
+              id: g.garmentId,
+              slot: g.slot,
+              name: g.name,
+              vendor: "Styling reference",
+              price: 0,
+              reference: true,
+              ...(g.layer ? { layer: g.layer } : {}),
+              ...(g.description ? { description: g.description } : {}),
+              ...(g.image ? { photo: { src: g.image.src, region: g.image.region } } : {}),
+            }
+          : {
+              id: g.garmentId,
+              slot: g.slot,
+              name: g.name,
+              vendor: g.product.retailerName,
+              price: g.product.price,
+              priceStatus: g.product.priceStatus,
+              availability: g.product.availability,
+              sizes: g.product.availableSizes,
+              sizeAvailability: g.product.sizeAvailability,
+              category: g.product.category,
+              retailerId: g.product.retailerId,
+              purchase: g.product.purchase,
+              deliveryEstimate: g.product.deliveryEstimate,
+              ...(g.layer ? { layer: g.layer } : {}),
+              // Only a live store piece shows its own photo: an example piece has none of its own.
+              ...(g.product.priceStatus === "live" && g.product.imageUrl ? { photo: { src: g.product.imageUrl } } : {}),
+              ...(g.product.productUrl ? { productUrl: g.product.productUrl } : {}),
+            },
     ),
   };
 }

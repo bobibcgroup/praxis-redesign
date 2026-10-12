@@ -1,10 +1,6 @@
-/** Real pieces from a store for testing: the Shopify feed on the server, and how the page takes them. */
+/** The Shopify store feed on the server: reading, paging, filing pieces by the ontology, prices, stock, failures. */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mockRecommend } from "../adapters/mock";
-import { buildStylingRequest } from "../request";
-import { resetLiveServices } from "../ai/words";
-import { addRealPieces, modelPhoto, withRealPieces } from "../ai/stock";
-import { ANON, SCENARIO_A } from "./helpers";
+import { fromStoreProduct } from "../catalogue/garment";
 // @ts-expect-error plain JavaScript module
 import * as feed from "../../../server/providers/shopify-feed.mjs";
 // @ts-expect-error plain JavaScript module
@@ -14,17 +10,17 @@ const json = (status: number, body: unknown) => new Response(JSON.stringify(body
 
 const variant = (id: number, size: string, price: string, available: boolean) => ({ id, option1: size, title: size, price, available });
 const STORE_PRODUCTS = [
-  { id: 1, handle: "navy-merino-crew", title: "The Merino Crew in Navy", product_type: "Sweaters", tags: [], options: [{ name: "Size" }], variants: [variant(11, "S", "98.00", false), variant(12, "M", "98.00", true)], images: [{ src: "https://cdn.example.com/navy.jpg" }] },
+  { id: 1, handle: "navy-merino-crew", title: "The Merino Crew in Navy", vendor: "Test Tailors", product_type: "Sweaters", tags: ["Knitwear", "Slim"], body_html: "<p>Fine merino wool.</p>", options: [{ name: "Size" }], variants: [variant(11, "S", "98.00", false), variant(12, "M", "98.00", true)], images: [{ src: "https://cdn.example.com/navy.jpg", alt: "Crew", width: 1200, height: 1500 }] },
   { id: 2, handle: "black-crew", title: "The Merino Crew in Black", product_type: "Sweaters", tags: [], options: [{ name: "Size" }], variants: [variant(21, "M", "98.00", true)], images: [] },
   { id: 3, handle: "grey-chino", title: "The Democratic Chino in Grey", product_type: "Pants", tags: [], options: [{ name: "Size" }], variants: [variant(31, "32", "128.00", true)], images: [] },
   { id: 4, handle: "suede-boot", title: "The Ranch Boot in Brown Suede", product_type: "Footwear", tags: ["boots"], options: [{ name: "Size" }], variants: [variant(41, "10", "298.00", false)], images: [] },
-  { id: 6, handle: "jack-oxford", title: "The Jack in Marsh Check Oxford", product_type: "", tags: [], options: [{ name: "Size" }], variants: [variant(61, "M", "128.00", true)], images: [] },
+  { id: 6, handle: "jack-oxford", title: "The Jack in Marsh Check Oxford", product_type: "", tags: [], options: [{ name: "Size" }, { name: "Color" }], variants: [{ ...variant(61, "M", "128.00", true), option2: "Olive" }], images: [] },
+  { id: 7, handle: "navy-blazer", title: "The Sport Coat in Navy Hopsack", product_type: "Outerwear", tags: [], options: [{ name: "Size" }], variants: [variant(71, "40", "448.00", true)], images: [] },
   { id: 5, handle: "gift-card", title: "Gift Card", product_type: "Gift Card", tags: [], options: [], variants: [variant(51, "Default Title", "50.00", true)], images: [] },
 ];
 const store = vi.fn(async (url: string) => (url.includes("/products.json") ? json(200, { products: url.includes("page=1") ? STORE_PRODUCTS : [] }) : json(200, { name: "Test Tailors" })));
 
 afterEach(() => {
-  resetLiveServices();
   feed.resetCatalogue();
   vi.unstubAllEnvs();
   store.mockClear();
@@ -40,22 +36,54 @@ describe("the store feed on the server", () => {
     expect((await serverLive()).find((s: { service: string }) => s.service === "product_matching").testOnly).toBeUndefined();
   });
 
-  it("files the store's pieces by kind and leaves out what Praxis doesn't style", () => {
-    expect(STORE_PRODUCTS.map((p) => feed.slotOf(p))).toEqual(["top", "top", "bottom", "shoes", "top", null]);
+  it("files the store's pieces by the shared ontology and leaves out what Praxis doesn't style", () => {
+    expect(STORE_PRODUCTS.map((p) => feed.slotOf(p))).toEqual(["top", "top", "bottom", "shoes", "top", "top", null]);
+    expect(feed.attributesOf(STORE_PRODUCTS[0])).toMatchObject({ subcategory: "knit", slot: "top", layer: "base", formality: 3, colour: "navy", material: "merino", fit: "slim", brand: "Test Tailors", variantId: "12" });
+    expect(feed.attributesOf(STORE_PRODUCTS[4])).toMatchObject({ subcategory: "shirt", layer: "base", colour: "green" });
+    expect(feed.attributesOf(STORE_PRODUCTS[5])).toMatchObject({ subcategory: "blazer", layer: "outer", formality: 4, colour: "navy" });
   });
 
-  it("matches each piece to the same kind and colour, in stock first, with real sizes and a link", async () => {
+  it("reads every page until a short one", async () => {
+    vi.stubEnv("RETAIL_SHOPIFY_STORE", "www.example.com");
+    const many = Array.from({ length: 250 }, (_, i) => ({ ...STORE_PRODUCTS[1], id: 1000 + i, handle: `crew-${i}` }));
+    const paged = vi.fn(async (url: string) => (url.includes("/products.json") ? json(200, { products: url.includes("page=1") ? many : url.includes("page=2") ? STORE_PRODUCTS : [] }) : json(200, { name: "Paged" })));
+    const out = await feed.run({ service: "product_matching", payload: { garments: [{ garmentId: "g", slot: "top", layer: "outer", subcategory: "blazer", name: "Navy blazer" }], currency: "USD" } }, { fetcher: paged });
+    expect(paged.mock.calls.filter(([u]) => String(u).includes("products.json")).map(([u]) => /page=(\d)/.exec(String(u))?.[1])).toEqual(["1", "2"]);
+    expect(out.metadata.catalogue).toBe(256);
+    expect(out.result.matches[0].products[0].title).toBe("The Sport Coat in Navy Hopsack");
+  });
+
+  it("gives up to four candidates of the same kind per part, in stock first, with the store's own ids, prices, sizes and link", async () => {
     vi.stubEnv("RETAIL_SHOPIFY_STORE", "https://www.example.com/");
     const out = await feed.run(
-      { service: "product_matching", payload: { garments: [{ garmentId: "g1", slot: "top", name: "Navy merino knit" }, { garmentId: "g2", slot: "shoes", name: "Brown suede boots" }, { garmentId: "g3", slot: "extras", name: "Leather belt" }], budget: "ELEVATED", currency: "USD" } },
+      {
+        service: "product_matching",
+        payload: {
+          garments: [
+            { garmentId: "g1", slot: "top", layer: "base", subcategory: "knit", colour: "navy", formality: 3, name: "Navy merino crew neck" },
+            { garmentId: "g2", slot: "shoes", subcategory: "boots", formality: 3, name: "Brown suede boots" },
+            { garmentId: "g3", slot: "extras", subcategory: "belt", name: "Leather belt" },
+          ],
+          budget: "ELEVATED",
+          currency: "USD",
+        },
+      },
       { fetcher: store },
     );
     expect(out.status).toBe("partial");
     const [top, shoes, belt] = out.result.matches;
-    expect(top.products[0]).toMatchObject({ retailerName: "Test Tailors", title: "The Merino Crew in Navy", price: 98, currency: "USD", priceStatus: "live", availability: "in_stock", availableSizes: ["S", "M"], sizeAvailability: { S: "out_of_stock", M: "in_stock" }, productUrl: "https://www.example.com/products/navy-merino-crew", purchase: { kind: "retailer_site", url: "https://www.example.com/products/navy-merino-crew" } });
+    expect(top.products.map((p: { title: string }) => p.title)).toEqual(["The Merino Crew in Navy", "The Merino Crew in Black"]);
+    expect(top.products[0]).toMatchObject({ productId: "shopify_www.example.com_1", retailerName: "Test Tailors", price: 98, currency: "USD", priceStatus: "live", availability: "in_stock", availableSizes: ["S", "M"], sizeAvailability: { S: "out_of_stock", M: "in_stock" }, productUrl: "https://www.example.com/products/navy-merino-crew", purchase: { kind: "retailer_site", url: "https://www.example.com/products/navy-merino-crew" } });
+    expect(top.products[0].photos[0]).toMatchObject({ src: "https://cdn.example.com/navy.jpg", width: 1200, height: 1500 });
     expect(shoes.products[0]).toMatchObject({ title: "The Ranch Boot in Brown Suede", availability: "out_of_stock" });
     expect(belt.products).toEqual([]);
     expect(store.mock.calls.every(([u]) => String(u).startsWith("https://www.example.com/"))).toBe(true);
+  });
+
+  it("never offers a piece of another kind, even when the words match", async () => {
+    vi.stubEnv("RETAIL_SHOPIFY_STORE", "www.example.com");
+    const out = await feed.run({ service: "product_matching", payload: { garments: [{ garmentId: "g", slot: "top", layer: "outer", subcategory: "overshirt", name: "Navy merino overshirt" }], currency: "USD" } }, { fetcher: store });
+    expect(out.result.matches[0].products).toEqual([]);
   });
 
   it("reads the store once and keeps it for a while", async () => {
@@ -67,81 +95,26 @@ describe("the store feed on the server", () => {
     expect(store.mock.calls.length).toBe(calls);
   });
 
-  it("says what went wrong when the store refuses", async () => {
+  it("says what went wrong when the store refuses or breaks", async () => {
     vi.stubEnv("RETAIL_SHOPIFY_STORE", "www.example.com");
-    const out = await feed.run({ service: "product_matching", payload: { garments: [{ garmentId: "g", slot: "top", name: "Shirt" }], currency: "USD" } }, { fetcher: async () => json(403, {}) });
-    expect(out).toMatchObject({ status: "failed", error: { code: "provider_error", retryable: false } });
-    expect(out.error.message).toContain("403");
-  });
-});
-
-describe("the page with a store feed", () => {
-  const request = () => buildStylingRequest(SCENARIO_A, { anonymousSessionId: ANON });
-  const liveFeed = (testOnly: boolean) => json(200, { live: [{ service: "product_matching", provider: "shopify-feed", version: "www.example.com", billable: false, ...(testOnly ? { testOnly: true } : {}) }] });
-
-  it("swaps in the store's pieces and adds the look up from them", () => {
-    const response = mockRecommend(request());
-    const look = response.outfits[0];
-    const retail = look.garments.filter((g) => g.source === "retail");
-    const result = {
-      matches: retail.map((g, i) => ({
-        garmentId: g.garmentId,
-        products: [{ productId: `p${i}`, retailerId: "www.example.com", retailerName: "Test Tailors", price: 100 + i, currency: "USD" as const, priceStatus: "live" as const, availability: "in_stock" as const, purchase: { kind: "retailer_site" as const, url: "https://www.example.com/products/x" }, title: `Real piece ${i}` }],
-      })),
-    };
-    const out = withRealPieces(response, result).outfits[0];
-    expect(out.garments.filter((g) => g.source === "retail").map((g) => g.name)).toEqual(retail.map((_, i) => `Real piece ${i}`));
-    expect(out.pricing).toMatchObject({ total: retail.reduce((s, _, i) => s + 100 + i, 0), status: "live" });
-    expect(JSON.stringify(out)).not.toContain('"title":"Real piece');
+    const ask = (fetcher: () => Promise<Response>) => feed.run({ service: "product_matching", payload: { garments: [{ garmentId: "g", slot: "top", name: "Shirt" }], currency: "USD" } }, { fetcher });
+    const refused = await ask(async () => json(403, {}));
+    expect(refused).toMatchObject({ status: "failed", error: { code: "provider_error", retryable: false } });
+    expect(refused.error.message).toContain("403");
+    feed.resetCatalogue();
+    expect(await ask(async () => json(503, {}))).toMatchObject({ status: "failed", error: { retryable: true } });
+    feed.resetCatalogue();
+    expect(await ask(async () => new Response("not json", { status: 200 }))).toMatchObject({ status: "failed" });
   });
 
-  it("picks the store's photo of the piece being worn", () => {
-    const at = (name: string, alt = "") => ({ src: `https://cdn.example.com/${name}.jpg?v=1`, alt });
-    expect(modelPhoto([at("crew-front"), at("crew-on-model")])?.src).toContain("crew-on-model");
-    expect(modelPhoto([at("a"), at("b", "Model wearing the crew in navy")])?.src).toContain("/b.jpg");
-    expect(modelPhoto([at("crew_flat"), at("crew_2")])?.src).toContain("crew_2");
-    expect(modelPhoto([at("crew_1"), at("crew_2")])?.src).toContain("crew_1");
-    expect(modelPhoto([{ src: "http://cdn.example.com/x.jpg" }])).toBeNull();
-  });
-
-  it("shows the store's photo of the top piece as the look's picture", () => {
-    const response = mockRecommend(request());
-    const look = response.outfits[0];
-    const top = look.garments.find((g) => g.source === "retail" && g.slot === "top")!;
-    const result = { matches: [{ garmentId: top.garmentId, products: [{ productId: "p", retailerId: "s", retailerName: "Test Tailors", price: 98, currency: "USD" as const, priceStatus: "live" as const, availability: "in_stock" as const, title: "Crew", photos: [{ src: "https://cdn.example.com/crew-on-model.jpg", width: 1200, height: 1500 }] }] }] };
-    const out = withRealPieces(response, result as never).outfits[0];
-    expect(out.visualization).toMatchObject({ kind: "product_photo", url: "https://cdn.example.com/crew-on-model.jpg", provider: "Test Tailors", sourceGarmentIds: [top.garmentId], width: 1200, height: 1500 });
-    expect(JSON.stringify(out)).not.toContain('"photos"');
-  });
-
-  it("refuses a piece without a real price or with a link that isn't https", () => {
-    const response = mockRecommend(request());
-    const g = response.outfits[0].garments.find((x) => x.source === "retail")!;
-    const bad = { matches: [{ garmentId: g.garmentId, products: [{ productId: "p", retailerId: "s", retailerName: "S", price: 0, currency: "USD" as const, priceStatus: "live" as const, availability: "in_stock" as const }] }] };
-    expect(withRealPieces(response, bad)).toBe(response);
-    const http = { matches: [{ garmentId: g.garmentId, products: [{ productId: "p", retailerId: "s", retailerName: "S", price: 10, currency: "USD" as const, priceStatus: "live" as const, availability: "in_stock" as const, purchase: { kind: "retailer_site" as const, url: "http://insecure.example.com" } }] }] };
-    const piece = withRealPieces(response, http).outfits[0].garments.find((x) => x.garmentId === g.garmentId)!;
-    expect(piece.source === "retail" && piece.product.purchase).toEqual({ kind: "none", reason: "not_supported" });
-  });
-
-  it("leaves the looks alone for a browser that didn't ask for the test store", async () => {
-    const response = mockRecommend(request());
-    const fetcher = vi.fn(async () => liveFeed(true));
-    expect(await addRealPieces(response, request(), { fetcher: fetcher as unknown as typeof fetch, wanted: () => false })).toBe(response);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-  });
-
-  it("asks the store for a browser that asked, sending only the pieces' kinds and names", async () => {
-    const r = request();
-    const response = mockRecommend(r);
-    const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
-      if (url === "/api/ai") return liveFeed(true);
-      const body = JSON.parse(String(init?.body));
-      expect(Object.keys(body.payload.garments[0]).sort()).toEqual(["garmentId", "name", "slot"]);
-      expect(JSON.stringify(body.payload)).not.toContain(ANON);
-      return json(200, { status: "succeeded", result: { matches: [] } });
-    });
-    await addRealPieces(response, r, { fetcher: fetcher as unknown as typeof fetch, wanted: () => true });
-    expect(fetcher).toHaveBeenCalledTimes(2);
+  it("keeps a piece with missing fields as far as it goes, and the page refuses one without a real price", () => {
+    const bare = { id: 9, handle: "plain-tee", title: "Plain Tee", variants: [{ id: 91, title: "Default Title", price: "0.00", available: true }] };
+    const product = feed.toProduct(bare, "www.example.com", "Test Tailors", "2026-10-12T00:00:00.000Z");
+    expect(product).toMatchObject({ price: 0, availability: "in_stock", attributes: { subcategory: "t-shirt" } });
+    expect(product.availableSizes).toBeUndefined();
+    expect(product.imageUrl).toBeUndefined();
+    expect(fromStoreProduct(product)).toBeNull();
+    const priced = feed.toProduct({ ...bare, variants: [{ id: 92, title: "Default Title", price: "35.00", available: false }] }, "www.example.com", "Test Tailors", "2026-10-12T00:00:00.000Z");
+    expect(fromStoreProduct(priced)).toMatchObject({ source: "shopify", subcategory: "t-shirt", availability: "out_of_stock", formality: 1, product: { price: 35, priceStatus: "live" } });
   });
 });

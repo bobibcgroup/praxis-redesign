@@ -387,6 +387,14 @@
   font-weight: 500;
 }
 
+/* The references' count sits under the total without a second rule and without the weight of a price. */
+[data-concept="a"] .a-total.a-total-references {
+  margin-top: 0;
+  padding-top: 4px;
+  border-top: 0;
+  font-weight: 400;
+}
+
 /* ---------- Thumbnails: 64 x 85, 12 px gaps, active underline flush to the print, 6 px below. ---------- */
 [data-concept="a"] .a-thumbs {
   display: flex;
@@ -678,6 +686,21 @@
   transform: rotate(180deg);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  [data-concept="a"] .a-why-toggle svg {
+    transition: none;
+  }
+}
+
+/* The fold that holds the reasons; it animates its height, so nothing inside spills while it moves. */
+[data-concept="a"] .a-why-fold {
+  overflow: hidden;
+}
+
+[data-concept="a"] .a-why-fold[hidden] {
+  display: none;
+}
+
 [data-concept="a"] .a-why-list {
   display: grid;
   gap: 8px;
@@ -785,6 +808,40 @@
   align-items: center;
   min-height: 64px;
   cursor: pointer;
+}
+
+/* A piece with its own picture: the store's product photo, or the reference's part of a library photograph. */
+[data-concept="a"] .a-piece[data-photo] {
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+}
+
+[data-concept="a"] .a-pick[data-photo] {
+  grid-template-columns: 20px 44px 1fr auto;
+}
+
+[data-concept="a"] .a-piece-photo {
+  position: relative;
+  width: 44px;
+  height: 56px;
+  overflow: hidden;
+  border-radius: var(--r-control);
+  background: var(--surface);
+  outline: none;
+}
+
+[data-concept="a"] .a-piece-photo:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+[data-concept="a"] .a-piece-photo-large {
+  position: relative;
+  width: 320px;
+  max-width: 100%;
+  height: 400px;
+  overflow: hidden;
+  border-radius: var(--r-control);
+  background: var(--surface);
 }
 
 [data-concept="a"] .a-box {
@@ -1209,7 +1266,19 @@
   pointer-events: none;
 }
 
+/* On the results the note sits at the foot of the print, clear of the zoom button, so it never lies over a face. */
+[data-concept="a"] .a-print-note.a-print-note-foot {
+  top: auto;
+  bottom: 8px;
+  max-width: calc(100% - 68px);
+}
+
 @media (min-width: 1024px) {
+  [data-concept="a"] .a-print-note.a-print-note-foot {
+    top: auto;
+    bottom: 84px;
+  }
+
   [data-concept="a"] .a-print-note {
     left: 32px;
     top: 104px;

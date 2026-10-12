@@ -34,7 +34,8 @@ interface Props {
 
 export function LookDetails({ look, eyebrow, compact = false, selection, caption, explain = true, after, personal, end }: Props) {
   const count = selection.chosen.length;
-  const buyable = look.pieces.some((p) => !p.owned);
+  const buyable = look.pieces.some((p) => !p.owned && !p.reference);
+  const references = look.pieces.filter((p) => p.reference).length;
   return (
     <div className="flex min-h-0 flex-col">
       <p className="a-label mb-3 text-[var(--muted)]">{eyebrow}</p>
@@ -51,14 +52,28 @@ export function LookDetails({ look, eyebrow, compact = false, selection, caption
           ))}
           <div className="a-total">
             <span className="a-label">
-              Total, {count} {count === 1 ? "piece" : "pieces"}
+              {references ? "Available to shop" : "Total"}, {count} {count === 1 ? "piece" : "pieces"}
             </span>
             <span className="a-mono">{money(count === 0 ? 0 : selection.total)}</span>
           </div>
+          {references ? (
+            <div className="a-total a-total-references">
+              <span className="a-label">Styling references</span>
+              <span className="a-mono text-[var(--muted)]">
+                {references} {references === 1 ? "piece" : "pieces"}
+              </span>
+            </div>
+          ) : null}
           {count === 0 && buyable ? (
             <p id={CHECKOUT_REASON_ID} className="mt-2 text-[13px] leading-5 text-[var(--muted)]" aria-live="polite">
               Select at least one piece to continue.
             </p>
+          ) : count === 0 && references ? (
+            <p id={CHECKOUT_REASON_ID} className="mt-2 text-[13px] leading-5 text-[var(--muted)]" aria-live="polite">
+              Every piece in this look is a styling reference, so there’s nothing to buy here yet.
+            </p>
+          ) : references ? (
+            <p className="mt-2 text-[13px] leading-5 text-[var(--muted)]">Only the store’s pieces can be bought here. My references show what completes the look and aren’t included in the price.</p>
           ) : null}
           {caption ? <p className="mt-3 max-w-[44ch] text-[13px] leading-5 text-[var(--muted)]">{caption}</p> : null}
         </div>

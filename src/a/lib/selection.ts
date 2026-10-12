@@ -3,7 +3,7 @@ import type { Look, Piece } from "../../shared/catalog";
 
 /**
  * Which pieces of a look the client is taking, and in which size. Every piece starts chosen except
- * one the retailer reports sold out; owned pieces are never bought.
+ * one the retailer reports sold out; owned pieces and styling references are never bought.
  */
 export interface PieceSelection {
   isChosen: (id: string) => boolean;
@@ -41,7 +41,7 @@ export function usePieceSelection(look: Look | null): PieceSelection {
   return useMemo(() => {
     const unavailable = new Set((look?.pieces ?? []).filter(soldOut).map((p) => p.id));
     const isChosen = (id: string) => !dropped.has(id) && !unavailable.has(id);
-    const chosen = (look?.pieces ?? []).filter((p) => !p.owned && isChosen(p.id));
+    const chosen = (look?.pieces ?? []).filter((p) => !p.owned && !p.reference && isChosen(p.id));
     return {
       isChosen,
       toggle,

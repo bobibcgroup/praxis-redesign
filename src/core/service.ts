@@ -6,7 +6,7 @@
 import { createMockAdapter } from "./adapters/mock";
 import { isLive, serviceRecommendationAdapter, serviceRetailer } from "./ai/bridge";
 import { addStylistWords } from "./ai/words";
-import { addRealPieces } from "./ai/stock";
+import { composeHybrid } from "./catalogue/hybrid";
 import { RECOMMENDATION_ADAPTER } from "./config";
 import type { StylingRequest, StylingResponse } from "./contracts";
 import { local, readJson, writeJson } from "./ids";
@@ -32,7 +32,7 @@ export interface ServiceOptions {
   retailer?: RetailerAdapter;
   /** Gives up after this long. A function so test mode can shorten it. */
   timeoutMs?: number | (() => number);
-  /** Swaps in real pieces from a store feed (src/core/ai/stock.ts); keeps the pieces as they are on any problem. */
+  /** Composes the looks from a store feed and the reference catalogue, and pictures them (src/core/catalogue/hybrid.ts); keeps the pieces as they are on any problem. */
   pieces?: (response: StylingResponse, request: StylingRequest, signal: AbortSignal) => Promise<StylingResponse>;
   /** Rewrites the looks' words for this brief (src/core/ai/words.ts); keeps them as they are on any problem. */
   words?: (response: StylingResponse, request: StylingRequest, signal: AbortSignal) => Promise<StylingResponse>;
@@ -190,7 +190,7 @@ export function stylingService(): StylingService {
       retailer: isLive("inventory_pricing") ? serviceRetailer() : createMockRetailer((productId) => simScenario() === "unavailable_products" && productId.endsWith("_shoes")),
       timeoutMs: () => (simScenario() === "timeout" ? SIM_TIMEOUT_MS : TIMEOUT_MS),
       // Test mode keeps the sample pieces and the rules engine's words, so its scenarios stay the same.
-      pieces: (response, request, signal) => (simScenario() ? Promise.resolve(response) : addRealPieces(response, request, { signal })),
+      pieces: (response, request, signal) => (simScenario() ? Promise.resolve(response) : composeHybrid(response, request, { signal })),
       // Test mode keeps the rules engine's words, so its scenarios stay the same with a writer switched on.
       words: (response, request, signal) => (simScenario() ? Promise.resolve(response) : addStylistWords(response, request, { signal })),
     });

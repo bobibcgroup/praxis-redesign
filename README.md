@@ -80,6 +80,7 @@ Browser storage (prototype only, replace with real persistence):
 - **Looks and pieces** (`src/core/adapters/mock.ts`): the fifteen catalog outfits in `src/lib/outfitLibrary.ts` with invented houses and example prices inside the chosen budget; every price is marked `example` and every stock level `unknown`, and the screens say so. Replace with the vendor catalog behind an adapter.
 - **Try-on** (`src/a/screens/moment/TryOn.tsx`, `src/core/tryon.ts`, `server/tryon.mjs`): the full See it on me journey works (explanation, consent, camera or upload, checks, preview, request, answer, retry), but no engine is connected, so the answer says plainly that no picture was made. A real engine plugs in on the server; see docs/TRY-ON.md.
 - **Colour analysis** (`src/core/vision.ts`, `mockColourAnalysis`): returns the same sample estimate for every photo, marked `source: "sample"`, and the screens call it an example while analysis is in preview. Replace with a `ColourAnalysisAdapter`.
+- **Store pieces and outfit pictures** (`src/core/catalogue`, `server/providers/shopify-feed.mjs`): in `?stock=live` tabs each look is rebuilt from one real store's public list where a piece truly fits, with Praxis styling references (never for sale) filling the rest; only store pieces count toward Check out. The look's picture is the library photograph marked "Styling visualization"; no image model is connected. See docs/CATALOGUE.md.
 - **Images**: `public/images/*.jpg` (catalog looks) and `src/assets/styles/*.jpg` (inspiration presets).
 
 ## Recommendation architecture
@@ -91,7 +92,7 @@ Browser storage (prototype only, replace with real persistence):
 3. `src/a/lib/styling.ts` sends one request per set of inputs and reuses the stored answer on reload or Back. The build, results, try-on and saved looks read the same response, so a look keeps its `recommendationId`, `requestId` and `outfitId` everywhere.
 4. `src/a/lib/looks.ts` (`toLook`) maps an `OutfitRecommendation` to what the screens draw. Rank 1 is "My pick".
 
-Garments are either `retail` (a `ProductRef` with price, price status and stock) or `wardrobe` (a piece the customer owns, never in the total). Visualizations say what they are: a product photo, a styled image, or a try-on, and whether they are exact or representative. Only an adapter other than the mock can answer in `personalized` mode.
+Garments are `retail` (a `ProductRef` with price, price status and stock), `wardrobe` (a piece the customer owns, never in the total) or `reference` (a Praxis styling reference, never priced, linked or bought). Visualizations say what they are: a product photo, a styled image, or a try-on, and whether they are exact or representative. Only an adapter other than the mock can answer in `personalized` mode.
 
 ## Processing states
 
@@ -157,11 +158,11 @@ Motion is `motion/react` only, transform and opacity only, and every animation r
 
 ## Tests
 
-`npm test` runs the unit tests in `src/core/__tests__`. `npm run build && npm run e2e` runs thirteen suites (`e2e/suites`, loaded by `e2e/scenarios.mjs`) in Chromium on desktop, phone and seven viewports; results go to `e2e/results`. `SUITE=4 npm run e2e` runs one suite, `ONLY=TRY1 npm run e2e` one scenario. See `docs/testing-report.md`.
+`npm test` runs the unit tests in `src/core/__tests__`. `npm run build && npm run e2e` runs fourteen suites (`e2e/suites`, loaded by `e2e/scenarios.mjs`) in Chromium on desktop, phone and seven viewports; results go to `e2e/results`. `SUITE=4 npm run e2e` runs one suite, `ONLY=TRY1 npm run e2e` one scenario. See `docs/testing-report.md`.
 
 ## Documentation
 
-`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos), `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/AI-HANDOVER.md` (each future AI integration: interface, schemas, mock, settings, errors, screens, backend work, tests, dependencies), `docs/TRY-ON.md`, `docs/RELEASE.md` (release notes, deploying, environment, monitoring, rollback).
+`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos), `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/AI-HANDOVER.md` (each future AI integration: interface, schemas, mock, settings, errors, screens, backend work, tests, dependencies), `docs/TRY-ON.md`, `docs/CATALOGUE.md` (store pieces, styling references, outfit pictures, connecting an image model), `docs/RELEASE.md` (release notes, deploying, environment, monitoring, rollback).
 
 ## Structure
 

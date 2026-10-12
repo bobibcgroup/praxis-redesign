@@ -40,10 +40,11 @@ type Method = "thumbnail" | "swipe" | "arrow" | "key" | "viewer";
 function captionFor(response: StylingResponse, occasion: string): string {
   // Real pieces from a store being tested: say so, so nobody mistakes the test for the finished service.
   const store = response.outfits.flatMap((o) => o.garments).find((g) => g.source === "retail" && g.product.priceStatus === "live");
+  const references = response.outfits.some((o) => o.garments.some((g) => g.source === "reference"));
   if (store && store.source === "retail") {
-    const theirs = response.outfits.some((o) => o.visualization.kind === "product_photo");
-    return `Real pieces from ${store.product.retailerName}, while I test live stock. Prices and sizes are theirs${theirs ? `, and the picture is their own photo of the main piece` : `; the photo shows the look, not these exact pieces`}.`;
+    return `Real pieces from ${store.product.retailerName} where they suit the look, while I test live stock; their prices and sizes are theirs.${references ? " My references complete the rest and aren’t for sale here." : ""}`;
   }
+  if (references) return "My references complete these looks; nothing from the store suited them, so there’s nothing to buy here yet.";
   return response.mode === "personalized"
     ? `Chosen for your ${occasion} plans, preferred style and budget.`
     : "An example of the looks Praxis can help you explore. Pieces and prices are for illustration.";
@@ -205,6 +206,8 @@ export function Results() {
   const fresh = href("", FRESH);
   const seeOnMe = () => gated("tryon", () => go("moment/tryon"));
   const none = selection.chosen.length === 0;
+  /* A look composed from a store and my references: its picture shows the styling, not these exact pieces. */
+  const visualized = hero.imageStatus === "mock" || hero.pieces.some((p) => p.reference || p.priceStatus === "live");
 
   return (
     <>
@@ -226,9 +229,11 @@ export function Results() {
             overlay={
               <>
                 {left > 0 ? (
-                  <p className="a-print-note" aria-live="polite">
+                  <p className="a-print-note a-print-note-foot" aria-live="polite">
                     Original look, {left} {left === 1 ? "piece" : "pieces"} not included
                   </p>
+                ) : visualized ? (
+                  <p className="a-print-note a-print-note-foot">Styling visualization. Product details may vary.</p>
                 ) : null}
                 <button
                   type="button"

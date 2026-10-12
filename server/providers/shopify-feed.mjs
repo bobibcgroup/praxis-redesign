@@ -1,7 +1,13 @@
 /**
- * Real pieces for testing, from one menswear store's public Shopify product list (/products.json):
- * names, prices, photos and stock by size. Answers product_matching: for each piece of a look, the
- * store's closest piece of the same kind and colour, in stock first.
+ * Real pieces for testing, from one menswear store's public Shopify product list (/products.json, read
+ * page by page, up to 1000 pieces): names, prices, photos and stock by size. Answers product_matching:
+ * for each part of a look, up to four of the store's pieces of the same kind (or a close stand-in),
+ * filed by the shared ontology (src/shared/ontology.mjs) with formality, colour, material and fit.
+ * The page's composer picks one or keeps the Praxis reference (src/core/catalogue/compose.ts).
+ *
+ * What this list gives: product and variant ids, title, type, vendor, tags, description, photos, each
+ * variant's price and whether it is available. What it doesn't: stock quantities (only in or out per
+ * variant), compare-at currency (prices are the store's own currency, assumed USD for a US store).
  *
  * Free and keyless, but not an official API: it is for private testing. Before customers see a
  * store's pieces, the store has to agree (or an affiliate feed takes over).
@@ -13,6 +19,8 @@
  *
  * Nothing about the customer is sent to the store: the list is read whole and matched here.
  */
+import { classify, colourOf, fitOf, materialOf, STANDS_IN_FOR } from "../../src/shared/ontology.mjs";
+
 export const id = "shopify-feed";
 export const billable = false;
 export const SERVICES = ["product_matching"];
@@ -27,30 +35,53 @@ export const testOnly = () => (process.env.RETAIL_SHOPIFY_FOR ?? "test").trim() 
 const PAGES = 4;
 const KEEP_MS = 30 * 60 * 1000;
 
-/** The kind of piece, from how the store files and names it. Null for anything Praxis doesn't style. */
-const KINDS = [
-  // "Oxford" and "derby" name shirts as often as shoes, so they count as shoes only beside "shoe".
-  ["shoes", /\b(footwear|boots?|shoes?|sneakers?|trainers?|loafers?|chukkas?|sandals?|mules?|(oxford|derby) shoes?)\b/],
-  ["bottom", /\b(pants?|trousers?|chinos?|jeans?|denim|shorts?|joggers?|slacks)\b/],
-  ["extras", /\b(belts?|hats?|caps?|beanies?|scarf|scarves|bags?|totes?|socks?|wallets?|sunglasses|ties?)\b/],
-  ["top", /\b(outerwear|oxfords?|shirts?|tees?|t-shirts?|polos?|henleys?|sweaters?|knits?|knitwear|cardigans?|crews?|crewnecks?|hoodies?|sweatshirts?|jackets?|overshirts?|blazers?|coats?|parkas?|vests?|gilets?|tops?|turtlenecks?|quarter zips?)\b/],
-];
-const SKIP = /\b(gift ?cards?|women'?s?|womens|kids?|sample sale|e-?gift|insurance|shipping protection)\b/;
+/** Candidates returned per part; the page's composer makes the final choice (src/core/catalogue/compose.ts). */
+const PER_PART = 4;
 
-export function slotOf(product) {
-  const text = `${product.product_type ?? ""} ${product.title ?? ""} ${(Array.isArray(product.tags) ? product.tags : String(product.tags ?? "").split(",")).join(" ")}`.toLowerCase();
-  if (SKIP.test(text)) return null;
-  const type = String(product.product_type ?? "").toLowerCase();
-  // The store's own filing decides first; the title and tags only when the type says nothing.
-  for (const [slot, re] of KINDS) if (re.test(type)) return slot;
-  for (const [slot, re] of KINDS) if (re.test(text)) return slot;
-  return null;
+/** What a store piece is, by the shared ontology (src/shared/ontology.mjs). Null for anything Praxis doesn't style. */
+function kindOf(product) {
+  const tags = Array.isArray(product.tags) ? product.tags : String(product.tags ?? "").split(",");
+  // The name says best what a piece is; the store's type next; its tags only when both are silent.
+  return classify(String(product.title ?? ""), product.product_type ?? "") ?? classify(tags.join(" "));
 }
 
-const COLOURS = ["black", "white", "ivory", "ecru", "cream", "grey", "gray", "charcoal", "navy", "blue", "indigo", "green", "olive", "sage", "khaki", "stone", "sand", "beige", "tan", "camel", "brown", "chocolate", "rust", "burgundy", "red", "pink", "orange", "yellow", "purple", "oat", "natural", "denim"];
-const SAME = { gray: "grey", cream: "ivory", ecru: "ivory", natural: "ivory", oat: "beige", sand: "beige", stone: "beige", chocolate: "brown", indigo: "navy" };
-const colourWords = (text) => new Set(COLOURS.filter((c) => new RegExp(`\\b${c}\\b`).test(text)).map((c) => SAME[c] ?? c));
-const words = (text) => new Set(String(text).toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2 && !COLOURS.includes(w)));
+/** The slot alone. */
+export function slotOf(product) {
+  return kindOf(product)?.slot ?? null;
+}
+
+const plain = (html) => String(html ?? "").replace(/<[^>]*>/g, " ").replace(/&[a-z#0-9]+;/g, " ").replace(/\s+/g, " ").slice(0, 2000);
+
+/** The colour named on a variant option called Color or Colour. */
+function optionColour(p) {
+  const i = (p.options ?? []).findIndex((o) => /colou?r/i.test(o?.name ?? ""));
+  if (i < 0) return undefined;
+  const value = (p.variants ?? []).map((v) => v[`option${i + 1}`]).find(Boolean);
+  return value ? colourOf(String(value)) : undefined;
+}
+
+/** How the store's piece reads in the ontology: kind, formality, colour, material, fit, brand and its own tags. */
+export function attributesOf(p) {
+  const kind = kindOf(p);
+  if (!kind) return null;
+  const tags = (Array.isArray(p.tags) ? p.tags : String(p.tags ?? "").split(",")).map((t) => String(t).trim()).filter((t) => t && t.length <= 30 && !/[:_]/.test(t));
+  const body = plain(p.body_html);
+  const variant = (p.variants ?? []).find((v) => v.available) ?? (p.variants ?? [])[0];
+  const colour = colourOf(p.title ?? "") ?? optionColour(p) ?? colourOf(tags.join(" "));
+  const material = materialOf(`${p.title ?? ""} ${tags.join(" ")}`) ?? materialOf(body);
+  const fit = fitOf(`${p.title ?? ""} ${tags.join(" ")} ${body}`);
+  return {
+    ...kind,
+    ...(colour ? { colour } : {}),
+    ...(material ? { material } : {}),
+    ...(fit ? { fit } : {}),
+    ...(p.vendor ? { brand: String(p.vendor).slice(0, 60) } : {}),
+    styleAttributes: tags.slice(0, 8),
+    ...(variant?.id ? { variantId: String(variant.id) } : {}),
+  };
+}
+
+const words = (text) => new Set(String(text).toLowerCase().split(/[^a-z]+/).filter((w) => w.length > 2));
 
 /** A store piece in Praxis's ProductRef shape. Sizes come from the variant option named Size, else the first option. */
 export function toProduct(p, store, name, at) {
@@ -83,19 +114,29 @@ export function toProduct(p, store, name, at) {
     lastUpdatedAt: at,
     purchase: { kind: "retailer_site", url },
     title: p.title,
+    attributes: attributesOf(p),
   };
 }
 
-/** How well a store piece fits a look's piece: same kind is required; colour counts most, then words, then stock. */
-export function score(garment, product, slot) {
-  if (slot !== garment.slot) return -1;
-  const text = `${product.title} ${product.product_type ?? ""} ${(product.variants ?? []).map((v) => v.option1).join(" ")}`.toLowerCase();
-  const want = colourWords(garment.name.toLowerCase());
-  const have = colourWords(text);
+/**
+ * How close a store piece is to a part of a look, to shortlist candidates. The same kind and layer are
+ * required (or a close stand-in when the part names its kind); then colour, formality, words and stock.
+ * -1: not a candidate. The page's composer decides whether the best is good enough.
+ */
+export function score(garment, product, attrs) {
+  if (!attrs || attrs.slot !== garment.slot) return -1;
+  if (garment.layer && (attrs.layer ?? null) !== garment.layer) return -1;
   let s = 0;
-  for (const c of want) if (have.has(c)) s += 5;
-  const w = words(text);
-  for (const x of words(garment.name)) if (w.has(x) || w.has(x.replace(/s$/, ""))) s += 3;
+  if (garment.subcategory) {
+    if (attrs.subcategory === garment.subcategory) s += 20;
+    else if ((STANDS_IN_FOR[garment.subcategory] ?? []).includes(attrs.subcategory)) s += 10;
+    else return -1;
+  }
+  const wantColour = garment.colour ?? colourOf(garment.name);
+  if (wantColour && attrs.colour === wantColour) s += 5;
+  if (typeof garment.formality === "number") s -= 2 * Math.abs(attrs.formality - garment.formality);
+  const have = words(`${product.title} ${product.product_type ?? ""}`);
+  for (const x of words(garment.name)) if (have.has(x) || have.has(x.replace(/s$/, ""))) s += 3;
   // A sold out piece can't be bought, so stock outweighs a colour match.
   if ((product.variants ?? []).some((v) => v.available)) s += 6;
   return s;
@@ -128,7 +169,7 @@ async function readCatalogue(store, fetcher, signal) {
       /* the address stands in */
     }
   }
-  const usable = products.map((p) => ({ p, slot: slotOf(p) })).filter((x) => x.slot && x.p.handle);
+  const usable = products.map((p) => ({ p, attrs: attributesOf(p) })).filter((x) => x.attrs && x.p.handle);
   catalogue = { store, name: name || store.replace(/^www\./, ""), at: Date.now(), checkedAt: new Date().toISOString(), items: usable };
   return catalogue;
 }
@@ -147,10 +188,10 @@ export async function run(request, { signal, fetcher = fetch } = {}) {
   }
   const matches = garments.map((g) => {
     const ranked = cat.items
-      .map(({ p, slot }) => ({ p, s: score(g, p, slot) }))
+      .map(({ p, attrs }) => ({ p, s: score(g, p, attrs) }))
       .filter((x) => x.s >= 0)
       .sort((a, b) => b.s - a.s)
-      .slice(0, 2);
+      .slice(0, PER_PART);
     return { garmentId: String(g.garmentId), products: ranked.map(({ p }) => toProduct(p, store, cat.name, cat.checkedAt)) };
   });
   const found = matches.filter((m) => m.products.length).length;

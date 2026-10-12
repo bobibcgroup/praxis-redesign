@@ -227,10 +227,13 @@
   object-position: center 12%;
 }
 
-/* Results on desktop: the print runs full bleed too; the looks ride on it instead of under it. */
+/* Results on desktop: the print runs full bleed below the bar; the looks ride on it instead of under it.
+   The bar's height (80 px, the header's lg:h-20) is kept clear above the print, on the page colour,
+   so the links never sit over a face, whatever the photo and however it is cropped. */
 @media (min-width: 1024px) {
   .a-canvas:has(> .a-frame-room[data-bleed="desktop"]) {
-    padding: 0;
+    padding: 80px 0 0;
+    background: var(--bg);
   }
 
   .a-frame-room[data-bleed="desktop"] .a-print {

@@ -68,6 +68,8 @@ export interface ExplanationResult {
 export interface VisualizationPayload {
   outfitId: string;
   garmentIds: string[];
+  /** The full composition to render (src/core/catalogue/visualize.ts): pieces, their pictures, the model setup and the cache key. */
+  spec?: unknown;
 }
 export interface VisualizationResult {
   outfitId: string;
@@ -128,7 +130,8 @@ export interface GarmentResult {
 
 /* 8. Retailer product matching. */
 export interface MatchPayload {
-  garments: { garmentId: string; slot: Slot; name: string }[];
+  /** Each part to fill. The ontology fields (src/shared/ontology.mjs) let a store feed search by kind, not by name alone. */
+  garments: { garmentId: string; slot: Slot; name: string; layer?: "outer" | "base"; subcategory?: string; colour?: string; formality?: number }[];
   budget: BudgetBand;
   currency: Currency;
   /** Two-letter country, for which retailers and currency apply. */

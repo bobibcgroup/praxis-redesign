@@ -21,6 +21,7 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { readBody } from "./tryon.mjs";
+import { afterVisual, beforeVisual } from "./visuals.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const AI_SERVICES = [
@@ -100,8 +101,18 @@ export async function handleAi(req, res, service) {
   req.on("close", () => {
     if (!res.writableEnded) controller.abort();
   });
+  // Outfit pictures: the same composition comes from the cache, and each visitor has a daily ceiling.
+  const visual = service === "outfit_visualization";
+  if (visual) {
+    const early = beforeVisual(body);
+    if (early) {
+      clearTimeout(timer);
+      return reply(200, { ...early.answer, metadata: { ...(early.answer.metadata ?? {}), provider: engine.id, providerVersion: engine.version } });
+    }
+  }
   try {
-    const out = await engine.run(body, { signal: controller.signal });
+    let out = await engine.run(body, { signal: controller.signal });
+    if (visual) out = afterVisual(body, engine, out);
     console.log(`ai ${service} ${body.requestId} ${out?.status ?? "unknown"} ${Date.now() - started}ms`);
     return reply(200, { ...out, metadata: { ...(out?.metadata ?? {}), provider: engine.id, providerVersion: engine.version } });
   } catch {

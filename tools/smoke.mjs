@@ -100,15 +100,24 @@ await step("ai", async () => {
     if (line) console.log(`      line: ${line.summary}\n      note: ${line.note}`);
   }
   if (live.live?.some((s) => s.service === "product_matching")) {
-    // The test store is on: three pieces of a dinner look, and what the store offers for each.
-    const garments = [{ garmentId: "smoke-top", slot: "top", name: "Navy wool blazer" }, { garmentId: "smoke-bottom", slot: "bottom", name: "Grey trousers" }, { garmentId: "smoke-shoes", slot: "shoes", name: "Brown suede boots" }];
+    // The test store is on: the parts of a dinner look as the page sends them, and the store's candidates for each.
+    const garments = [
+      { garmentId: "smoke-outer", slot: "top", layer: "outer", subcategory: "blazer", colour: "navy", formality: 4, name: "Navy wool blazer" },
+      { garmentId: "smoke-base", slot: "top", layer: "base", subcategory: "knit", colour: "navy", formality: 3, name: "Navy merino crew neck" },
+      { garmentId: "smoke-bottom", slot: "bottom", subcategory: "trousers", colour: "grey", formality: 4, name: "Grey wool trousers" },
+      { garmentId: "smoke-shoes", slot: "shoes", subcategory: "boots", colour: "brown", formality: 3, name: "Brown suede boots" },
+    ];
     const found = await (await post("/api/ai/product_matching", { ...envelope, requestId: "smoke-stock", service: "product_matching", payload: { garments, budget: "ELEVATED", currency: "USD" } })).json();
     const hits = (found.result?.matches ?? []).filter((m) => m.products?.length);
-    check((found.status === "succeeded" || found.status === "partial") && hits.length > 0, `the test store answers (${found.status}, ${hits.length} of 3 pieces matched${found.error ? `, ${found.error.message}` : ""})`);
+    check((found.status === "succeeded" || found.status === "partial") && hits.length > 0, `the test store answers (${found.status}, ${hits.length} of ${garments.length} parts matched, catalogue ${found.metadata?.catalogue ?? "?"}${found.error ? `, ${found.error.message}` : ""})`);
     for (const m of hits) {
       const p = m.products[0];
       const inStock = Object.entries(p.sizeAvailability ?? {}).filter(([, a]) => a === "in_stock").map(([s]) => s);
       console.log(`      ${m.garmentId}: ${p.title} $${p.price} ${p.availability}, sizes in stock ${inStock.join(" ") || "none"} ${p.productUrl}`);
+      for (const c of m.products) {
+        const a = c.attributes ?? {};
+        console.log(`        candidate: ${c.title} | ${a.subcategory ?? "?"} ${a.layer ?? ""} formality ${a.formality ?? "?"} ${a.colour ?? "?"} ${a.material ?? ""} ${a.fit ?? ""} | ${c.availability}`);
+      }
       for (const [i, ph] of (p.photos ?? []).entries()) console.log(`        photo ${i + 1}: ${ph.src.split("/").pop().split("?")[0]} ${ph.width ?? "?"}x${ph.height ?? "?"} "${ph.alt}"`);
     }
   }
