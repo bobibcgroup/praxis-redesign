@@ -4,9 +4,9 @@ Deliverable G of the master spec. Three layers of tests cover the app. All of th
 
 | Layer | Command | What it covers | Result |
 | --- | --- | --- | --- |
-| Unit | `npm test` | `src/core`: request building, validation of adapter answers, the mock adapter, the service with timeouts, cancel and the retailer lookup, processing states, feedback, accounts and migration, identity, analytics guards, photo policies and checks, consent, Style DNA layers, retention and deletion | 93 tests, all pass |
+| Unit | `npm test` | `src/core`: request building, validation of adapter answers, the mock adapter, the service with timeouts, cancel and the retailer lookup, processing states, feedback, accounts and migration, identity, analytics guards, photo policies and checks, consent, Style DNA layers, retention and deletion | 204 tests in 13 files, all pass (2026-10-12) |
 | Type and build | `npm run build` | strict TypeScript and the production bundle | passes |
-| Scenarios | `npm run build && npm run e2e` | the twelve scenarios of spec section 22 in Chromium, on desktop (1440 x 900) and phone (390 x 844), plus accessibility (axe, WCAG 2.1 A and AA), 44px targets, sideways scroll and load | 30 of 30 runs pass |
+| Scenarios | `npm run build && npm run e2e` | the twelve scenarios of spec section 22 in Chromium, on desktop (1440 x 900) and phone (390 x 844), plus accessibility (axe, WCAG 2.1 A and AA), 44px targets, sideways scroll and load | 107 of 107 runs pass (2026-10-12) |
 
 `npm run e2e` starts `vite preview` itself (or uses `BASE_URL`), needs a Chromium that Playwright can find (`PLAYWRIGHT_BROWSERS_PATH`, or `CHROMIUM_PATH`), writes `e2e/results/report.md`, `report.json` and screenshots, and exits non-zero on any failure. Scenarios that need a misbehaving service use test mode (`src/core/sim.ts`), set per tab, so nothing in the app changes for them.
 
@@ -26,6 +26,17 @@ Deliverable G of the master spec. Three layers of tests cover the app. All of th
 | 10 | Retailer unavailable | test mode sold out: the piece reads Sold out and cannot be ticked, the buy button is disabled, no retailer link, no order | passed |
 | 11 | Mobile experience | 390 px: full journey, sideways swipe to the next look, tap to enlarge, zoom, close on the same look, save, Back, no sideways scroll | passed |
 | 12 | Analytics integrity | one anonymous id, unique event ids, one request and one results view also after a reload, one save event, events carry their recommendation id, no photo data, nothing recorded that did not happen | passed |
+
+## Added since (Stage 1 and Phase 2)
+
+| Scenario | What it checks |
+| --- | --- |
+| ISO1 to ISO3, DATA1, FULL1, TABS1, SAVE2, PARAMS1 | accounts and guests never see each other's looks, Style DNA, history or feedback; sign out clears the tab; two tabs keep both saves; a failed save says so |
+| TRY1 to TRY7 | the full See it on me journey on 375, 390, 430, 768 and desktop: consent, camera or upload, checks, preview, submit, answer, retry, cancel, delete |
+| P2A, P2B | a service that fails once recovers on Try again; an answer that breaks the contract becomes a clean failure |
+| P2C | a full journey with try-on makes no call to any AI, image or retailer service (only fonts load from outside) |
+
+Unit tests for the nine AI service contracts and their eight mock scenarios: `src/core/__tests__/ai-services.test.ts`; request integrity and the engine's use of Style DNA, feedback and budget: `phase2-integrity.test.ts`.
 
 Nothing is blocked. Scenarios 5 and 10 test the previews of sign-in and the retailer, because the real services do not exist yet (see `docs/integration-dependencies.md`).
 
