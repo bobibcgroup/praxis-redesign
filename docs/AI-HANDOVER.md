@@ -277,7 +277,13 @@ Everything else runs on a free, deterministic mock. `/api/health` reports `provi
 
 **Services:** `product_matching`, plus `inventory_pricing` for stock and price.
 
-**Provider interface:** `RetailerAdapter` (`src/core/retail.ts`), reached through `serviceRetailer` for inventory. Matching is a service contract only; products come with the styling response today.
+**Provider interface:** `RetailerAdapter` (`src/core/retail.ts`), reached through `serviceRetailer` for inventory. Matching is called by `addRealPieces` (`src/core/ai/stock.ts`) after validation, when the server lists a free `product_matching` provider.
+
+**Test store (free, for private testing):** `server/providers/shopify-feed.mjs` reads one store's public Shopify product list (`/products.json`) and matches each piece to the store's closest piece of the same kind and colour, in stock first, with its real name, price, sizes in stock and link. It is not an official API: the store's agreement is needed before customers see it.
+- `RETAIL_SHOPIFY_STORE=www.taylorstitch.com` switches it on (prices are read as USD, so a US store).
+- `RETAIL_SHOPIFY_FOR=test` (default): only a tab opened with `?stock=live` uses it (`?stock=off` stops it). `everyone`: every visitor.
+- `RETAIL_SHOPIFY_NAME` overrides the store name shown on pieces.
+- The list is read whole on the server and kept for 30 minutes; nothing about the customer reaches the store. Results then say the pieces are real and the photos show the look, not these exact pieces.
 
 **Request schema:**
 - Matching: `{ garments: [{ garmentId, slot, name }], budget, currency, country? }`

@@ -10,7 +10,9 @@
  *
  * One free provider switches itself on: with GEMINI_API_KEY set, styling_explanation is answered by
  * gemini-free (server/providers/gemini-free.mjs), unless AI_PROVIDER_STYLING_EXPLANATION names another
- * provider or says "off". GET /api/ai tells the page which services have a provider that may run.
+ * provider or says "off". Likewise RETAIL_SHOPIFY_STORE switches on shopify-feed for product_matching
+ * (real pieces from one store, for testing). GET /api/ai tells the page which services have a provider
+ * that may run, and which of them only test browsers use.
  *
  * Bodies are held in memory for the call only and never logged: only the service, request id,
  * status and time taken are.
@@ -48,7 +50,7 @@ export function checkEnvelope(service, body) {
 }
 
 /** Free providers that switch on by themselves when their key is set: service -> [provider, key variable]. */
-export const FREE_DEFAULTS = { styling_explanation: ["gemini-free", "GEMINI_API_KEY"] };
+export const FREE_DEFAULTS = { styling_explanation: ["gemini-free", "GEMINI_API_KEY"], product_matching: ["shopify-feed", "RETAIL_SHOPIFY_STORE"] };
 
 /** The provider named for a service, or the free default when its key is set. "off" switches it off. */
 export function providerName(service, env = process.env) {
@@ -119,7 +121,8 @@ export async function liveServices() {
     if (!engine) continue;
     if (Array.isArray(engine.SERVICES) && !engine.SERVICES.includes(service)) continue;
     if (engine.billable && process.env.ALLOW_BILLABLE_AI !== "true") continue;
-    live.push({ service, provider: engine.id, version: engine.version, billable: Boolean(engine.billable) });
+    const testOnly = typeof engine.testOnly === "function" && engine.testOnly();
+    live.push({ service, provider: engine.id, version: engine.version, billable: Boolean(engine.billable), ...(testOnly ? { testOnly: true } : {}) });
   }
   return live;
 }

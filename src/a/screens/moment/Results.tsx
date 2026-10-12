@@ -38,6 +38,9 @@ type Method = "thumbnail" | "swipe" | "arrow" | "key" | "viewer";
 
 /** What these looks are, in one quiet line: an example from the sample set, or chosen for this person. */
 function captionFor(response: StylingResponse, occasion: string): string {
+  // Real pieces from a store being tested: say so, so nobody mistakes the test for the finished service.
+  const store = response.outfits.flatMap((o) => o.garments).find((g) => g.source === "retail" && g.product.priceStatus === "live");
+  if (store && store.source === "retail") return `Real pieces from ${store.product.retailerName}, while I test live stock. Prices and sizes are theirs; the photos show the look, not these exact pieces.`;
   return response.mode === "personalized"
     ? `Chosen for your ${occasion} plans, preferred style and budget.`
     : "An example of the looks Praxis can help you explore. Pieces and prices are for illustration.";

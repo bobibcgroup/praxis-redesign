@@ -6,6 +6,7 @@
 import { createMockAdapter } from "./adapters/mock";
 import { isLive, serviceRecommendationAdapter, serviceRetailer } from "./ai/bridge";
 import { addStylistWords } from "./ai/words";
+import { addRealPieces } from "./ai/stock";
 import { RECOMMENDATION_ADAPTER } from "./config";
 import type { StylingRequest, StylingResponse } from "./contracts";
 import { local, readJson, writeJson } from "./ids";
@@ -31,12 +32,14 @@ export interface ServiceOptions {
   retailer?: RetailerAdapter;
   /** Gives up after this long. A function so test mode can shorten it. */
   timeoutMs?: number | (() => number);
+  /** Swaps in real pieces from a store feed (src/core/ai/stock.ts); keeps the pieces as they are on any problem. */
+  pieces?: (response: StylingResponse, request: StylingRequest, signal: AbortSignal) => Promise<StylingResponse>;
   /** Rewrites the looks' words for this brief (src/core/ai/words.ts); keeps them as they are on any problem. */
   words?: (response: StylingResponse, request: StylingRequest, signal: AbortSignal) => Promise<StylingResponse>;
 }
 
 /**
- * Validation, then product matching, then the stylist's words, then the history. A request the caller cancels is answered
+ * Validation, then real pieces from a store feed, then product matching, then the stylist's words, then the history. A request the caller cancels is answered
  * as failed and not retryable, and is not kept in the history.
  */
 export function createStylingService(adapter: RecommendationAdapter, history: RequestHistory | null = requestHistory, opts: ServiceOptions = {}): StylingService {
@@ -60,6 +63,10 @@ export function createStylingService(adapter: RecommendationAdapter, history: Re
         const raw = await adapter.recommend(request, { signal: controller.signal });
         if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
         response = validateStylingResponse(raw, request, meta).response;
+        if (opts.pieces && (response.status === "completed" || response.status === "partial")) {
+          response = await opts.pieces(response, request, controller.signal);
+          if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
+        }
         if (opts.retailer && (response.status === "completed" || response.status === "partial")) {
           response = await matchProducts(response, opts.retailer, { signal: controller.signal });
           if (controller.signal.aborted) throw new DOMException("Aborted", "AbortError");
@@ -182,6 +189,8 @@ export function stylingService(): StylingService {
     service = createStylingService(withSimulation(adapter), requestHistory, {
       retailer: isLive("inventory_pricing") ? serviceRetailer() : createMockRetailer((productId) => simScenario() === "unavailable_products" && productId.endsWith("_shoes")),
       timeoutMs: () => (simScenario() === "timeout" ? SIM_TIMEOUT_MS : TIMEOUT_MS),
+      // Test mode keeps the sample pieces and the rules engine's words, so its scenarios stay the same.
+      pieces: (response, request, signal) => (simScenario() ? Promise.resolve(response) : addRealPieces(response, request, { signal })),
       // Test mode keeps the rules engine's words, so its scenarios stay the same with a writer switched on.
       words: (response, request, signal) => (simScenario() ? Promise.resolve(response) : addStylistWords(response, request, { signal })),
     });

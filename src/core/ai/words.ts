@@ -16,6 +16,8 @@ export interface LiveService {
   provider: string;
   version: string;
   billable: boolean;
+  /** Only browsers that asked for it use it (a store feed being tested). */
+  testOnly?: boolean;
 }
 
 /** How long the looks may wait for the words. */

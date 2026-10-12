@@ -119,6 +119,7 @@ Environment, all optional and all off by default:
 | `PORT` | server | Set by Railway |
 | `COUNTRY_HEADER` | server | A trusted country header from a proxy |
 | `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | server | AI providers and paid calls (`off` switches a free provider off) |
+| `RETAIL_SHOPIFY_STORE`, `RETAIL_SHOPIFY_FOR` | server | Real pieces from one store for testing; only `?stock=live` tabs unless `everyone` |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | server | The free stylist's words (Gemini free tier, text only); unset means the rules engine's words |
 | `TRYON_PROVIDER`, `ALLOW_BILLABLE_IMAGES` | server | Try-on provider and paid images |
 | `VITE_AI_PROVIDERS`, `VITE_TRYON_ADAPTER`, `VITE_ALLOW_BILLABLE_IMAGES` | build | Page switches |
