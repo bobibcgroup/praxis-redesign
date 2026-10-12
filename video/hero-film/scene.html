@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Praxis hero film</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=Geist:wght@400;500;600&display=block" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: #1c140c;
+        overflow: hidden;
+      }
+      #stage {
+        display: block;
+      }
+      /* Loads the fonts before the canvases draw with them. */
+      .warm {
+        position: absolute;
+        left: -9999px;
+        font: 400 20px "Playfair Display";
+      }
+      .warm i {
+        font-style: italic;
+      }
+      .warm b {
+        font: 500 20px "Geist";
+      }
+      .warm s {
+        font: 600 20px "Geist";
+        text-decoration: none;
+      }
+    </style>
+    <script type="importmap">
+      { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+    </script>
+  </head>
+  <body>
+    <span class="warm">Aa <i>Aa</i> <b>Aa</b> <s>Aa</s></span>
+    <canvas id="stage"></canvas>
+    <script type="module" src="/scene/scene.js"></script>
+  </body>
+</html>

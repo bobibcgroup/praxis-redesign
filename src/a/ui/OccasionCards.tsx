@@ -1,8 +1,8 @@
 /**
- * The occasions as photographs: five in one row on desktop, like a set of editorial prints; two to a
- * row with Party across the width on a phone. Each card is a photograph of the place, and under it the
- * name and a small round arrow. Hover leans the photo in a touch, lifts the shadow and moves the arrow;
- * choosing one marks it for a beat before the journey moves on. `a-transition` opts them out of the
+ * The occasions as photographs, like a curated set of editorial prints: three over two on desktop, two
+ * to a row with Party across the width on a phone. The name and a small round arrow sit on the photo,
+ * over a soft shade that keeps them readable. Hover leans the photo in a touch, lifts the shadow and
+ * moves the arrow; choosing one marks it for a beat before the journey moves on. `a-transition` opts them out of the
  * lab rule in src/index.css. The photos come from the visitor's country collection (src/a/lib/country.ts);
  * a photo that fails to load is replaced by the default photo for the same occasion.
  */
@@ -32,12 +32,13 @@ export function OccasionCards({ options, value, onChange, collection }: Props) {
           <button key={o.id} type="button" role="radio" aria-checked={value === o.id} onClick={() => onChange(o.id)} className="a-card a-transition">
             <span className="a-card-frame">
               <CardImage key={photo.base} photo={photo} />
+              <span className="a-card-shade a-transition" aria-hidden="true" />
               {photo.place ? <span className="a-card-place">{photo.place}</span> : null}
-            </span>
-            <span className="a-card-foot">
-              <span className="a-card-name">{o.label}</span>
-              <span className="a-card-arrow a-transition" aria-hidden="true">
-                <ArrowRight size={14} strokeWidth={1.5} />
+              <span className="a-card-foot">
+                <span className="a-card-name">{o.label}</span>
+                <span className="a-card-arrow a-transition" aria-hidden="true">
+                  <ArrowRight size={14} strokeWidth={1.5} />
+                </span>
               </span>
             </span>
           </button>
@@ -53,7 +54,7 @@ function CardImage({ photo }: { photo: CardPhoto }) {
   return (
     <img
       {...photoSet(base)}
-      sizes="(min-width: 1024px) 160px, (min-width: 640px) 45vw, 50vw"
+      sizes="(min-width: 1024px) 300px, (min-width: 640px) 45vw, 50vw"
       alt=""
       className="a-card-photo a-transition"
       style={photo.position && !failed ? { objectPosition: photo.position } : undefined}

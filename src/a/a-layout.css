@@ -543,29 +543,28 @@
   margin-top: 28px;
 }
 
-/* The occasion cards: a photograph each, and under it the name and a small round arrow on the raised
-   surface, like a print with its caption. Two to a row on a phone with Party across the width. */
+/* The occasion cards: a photograph each with the name and a small round arrow set on it, over a soft
+   shade from the foot so the name always reads. Two to a row on a phone with Party across the width. */
 [data-concept="a"] .a-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 [data-concept="a"] .a-card {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: block;
   min-width: 0;
   overflow: hidden;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--rule) 70%, transparent);
+  border: 0;
   border-radius: var(--r-card);
-  background: var(--raised);
-  color: var(--text);
+  background: var(--champagne);
+  color: #fbf3e6;
   text-align: left;
   cursor: pointer;
   box-shadow: var(--shadow-soft);
-  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -576,13 +575,12 @@
 [data-concept="a"] .a-card-frame {
   position: relative;
   display: block;
-  aspect-ratio: 3 / 2;
+  aspect-ratio: 5 / 4;
   overflow: hidden;
-  background: var(--champagne);
 }
 
 [data-concept="a"] .a-card:nth-child(5) .a-card-frame {
-  aspect-ratio: 3 / 1;
+  aspect-ratio: 5 / 2;
 }
 
 [data-concept="a"] .a-card-photo {
@@ -593,33 +591,48 @@
   object-fit: cover;
   transform: scale(1.001);
   filter: saturate(0.92) sepia(0.06);
-  transition: transform 0.35s ease, filter 0.35s ease;
+  transition: transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1), filter 0.35s ease;
+}
+
+/* Warm, not black: the shade is the photographs' own deep brown, strongest where the name sits. */
+[data-concept="a"] .a-card-shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(28, 19, 11, 0.72) 0%, rgba(28, 19, 11, 0.38) 34%, rgba(28, 19, 11, 0) 62%);
+  opacity: 0.92;
+  transition: opacity 0.35s ease;
 }
 
 [data-concept="a"] .a-card-foot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 48px;
-  padding: 0 10px 0 14px;
+  min-height: 44px;
+  padding: 0 10px 10px 14px;
 }
 
 [data-concept="a"] .a-card-name {
-  font-size: 15px;
-  line-height: 20px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
+  font-family: var(--font-display);
+  font-size: 19px;
+  line-height: 24px;
+  letter-spacing: 0.005em;
+  text-shadow: 0 1px 12px rgba(20, 13, 7, 0.35);
 }
 
 [data-concept="a"] .a-card-arrow {
   display: grid;
   flex: none;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  border: 1px solid var(--text);
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(251, 243, 230, 0.85);
   border-radius: 50%;
+  background: rgba(28, 19, 11, 0.12);
   transition: transform 0.3s ease, background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -630,11 +643,17 @@
   }
 
   [data-concept="a"] .a-card:hover .a-card-photo {
-    transform: scale(1.04);
+    transform: scale(1.045);
+  }
+
+  [data-concept="a"] .a-card:hover .a-card-shade {
+    opacity: 1;
   }
 
   [data-concept="a"] .a-card:hover .a-card-arrow {
     transform: translateX(3px);
+    background: #fbf3e6;
+    color: #25221e;
   }
 }
 
@@ -643,14 +662,13 @@
 }
 
 [data-concept="a"] .a-card[aria-checked="true"] {
-  border-color: var(--text);
-  box-shadow: var(--shadow-lift);
+  box-shadow: 0 0 0 2px var(--text), var(--shadow-lift);
 }
 
 [data-concept="a"] .a-card[aria-checked="true"] .a-card-arrow {
-  background: var(--ink);
-  color: var(--ink-fg);
-  border-color: var(--ink);
+  background: #fbf3e6;
+  color: #25221e;
+  border-color: #fbf3e6;
   transform: translateX(3px);
 }
 
@@ -659,73 +677,20 @@
   outline-offset: 3px;
 }
 
-/* The demo: the film plays on a phone, standing in front of two photographs (cloth behind, the dinner
-   table beside), all on soft warm shadows. Sized by width, so nothing shifts while it loads. */
+/* The film: a print of the scene, sized by width so nothing shifts while it loads (6:5, 4:5 on a
+   phone). Its round control sits in the lower right on a frosted ivory disc. */
 [data-concept="a"] .a-demo {
   position: relative;
   width: 100%;
   margin: 0;
-  aspect-ratio: 6 / 5;
-}
-
-[data-concept="a"] .a-demo-print {
-  position: absolute;
-  display: block;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
   border-radius: var(--r-card);
-  background: var(--champagne);
+  background: #2a2017;
   box-shadow: var(--shadow-lift);
 }
 
-[data-concept="a"] .a-demo-print img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: saturate(0.85) sepia(0.12);
-}
-
-[data-concept="a"] .a-demo-print-back {
-  left: 0;
-  top: 6%;
-  width: 70%;
-  height: 72%;
-  transform: rotate(-2deg);
-}
-
-[data-concept="a"] .a-demo-print-side {
-  right: 0;
-  top: 22%;
-  width: 34%;
-  height: 58%;
-  transform: rotate(1.5deg);
-}
-
-[data-concept="a"] .a-phone-device {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  display: block;
-  aspect-ratio: 9 / 19;
-  padding: 2.4%;
-  border-radius: 13% / 6.4%;
-  background: #1f1c18;
-  box-shadow: var(--shadow-deep), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  transform: translateX(-38%) rotate(3deg);
-}
-
-/* The screen is the film; its own background shows only while it loads. */
-[data-concept="a"] .a-phone-screen {
-  display: block;
-  height: 100%;
-  overflow: hidden;
-  border-radius: 11% / 5.2%;
-  background: #efe2cc;
-}
-
-[data-concept="a"] .a-phone-screen video,
-[data-concept="a"] .a-phone-screen img {
+[data-concept="a"] .a-demo-film {
   display: block;
   width: 100%;
   height: 100%;
@@ -741,17 +706,42 @@
   place-items: center;
   width: 44px;
   height: 44px;
-  border: 0;
-  border-radius: var(--r-control);
-  background: var(--text);
-  color: var(--bg);
-  opacity: 0;
-  pointer-events: none;
+  border: 1px solid rgba(37, 33, 30, 0.12);
+  border-radius: 50%;
+  background: color-mix(in srgb, #fbf3e6 78%, transparent);
+  color: #25211e;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+@media (hover: hover) {
+  [data-concept="a"] .a-demo-toggle:hover {
+    background: #fbf3e6;
+    transform: scale(1.06);
+  }
+}
+
+[data-concept="a"] .a-demo-toggle:active {
+  transform: scale(0.96);
 }
 
 [data-concept="a"] .a-demo-toggle:focus-visible {
-  opacity: 1;
-  pointer-events: auto;
+  outline: 2px solid #fbf3e6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #25211e;
+}
+
+@media (min-width: 640px) {
+  [data-concept="a"] .a-demo {
+    aspect-ratio: 6 / 5;
+  }
+
+  [data-concept="a"] .a-demo-toggle {
+    right: 16px;
+    bottom: 16px;
+  }
 }
 
 /* How it works: one strip between hairlines, the label centred on the top one. */
@@ -826,7 +816,7 @@
 [data-concept="a"] .a-card-place {
   position: absolute;
   left: 8px;
-  bottom: 8px;
+  top: 8px;
   padding: 2px 6px;
   border-radius: 2px;
   background: rgba(20, 13, 7, 0.55);
@@ -1004,8 +994,10 @@
     grid-column: span 3;
   }
 
+  [data-concept="a"] .a-card-frame,
   [data-concept="a"] .a-card:nth-child(5) .a-card-frame {
-    aspect-ratio: 4 / 3;
+    aspect-ratio: auto;
+    height: 200px;
   }
 
   [data-concept="a"] .a-demo {
@@ -1097,29 +1089,33 @@
     margin-top: clamp(20px, 3.6vh, 36px);
   }
 
+  /* Three over two, like a curated set: the second row's two prints share the full width. */
   [data-concept="a"] .a-cards {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: clamp(8px, 0.8vw, 14px);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: clamp(8px, 0.7vw, 12px);
   }
 
   [data-concept="a"] .a-card,
   [data-concept="a"] .a-card:nth-child(5) {
-    grid-column: auto;
+    grid-column: span 2;
+  }
+
+  [data-concept="a"] .a-card:nth-child(n + 4) {
+    grid-column: span 3;
   }
 
   [data-concept="a"] .a-card-frame,
   [data-concept="a"] .a-card:nth-child(5) .a-card-frame {
     aspect-ratio: auto;
-    height: clamp(128px, 22vh, 220px);
+    height: clamp(118px, 20vh, 206px);
   }
 
   [data-concept="a"] .a-card-foot {
-    min-height: 46px;
-    padding: 0 8px 0 12px;
+    padding: 0 12px 12px 16px;
   }
 
   [data-concept="a"] .a-card-name {
-    font-size: 14px;
+    font-size: clamp(18px, 1.45vw, 22px);
   }
 
   /* Never taller than the window under the bar, so the hero stays in one view. */
@@ -1160,6 +1156,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   [data-concept="a"] .a-card-photo,
+  [data-concept="a"] .a-card-shade,
   [data-concept="a"] .a-card-arrow {
     transition: none;
   }

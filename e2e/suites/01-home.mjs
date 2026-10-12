@@ -41,5 +41,87 @@ export default async function (H) {
       const sel = named(await events(p), "occasion_selected");
       check(sel.length === 5 && sel.every((e) => e.properties.surface === "home"), "occasion_selected recorded for each, from home");
     });
+
+    /* The home film: its round control always tells the truth, it holds on the occasions, and it never
+       restarts on its own after the visitor paused it. */
+    await scenario("P4-1f", "The home film plays, pauses, holds on the occasions and leaves the screen paused", device, async (p, shot) => {
+      await p.goto(`${BASE}/?mode=light`);
+      const film = p.locator(".a-demo video");
+      const button = p.locator(".a-demo-toggle");
+      const state = () => film.evaluate((v) => ({ paused: v.paused, time: v.currentTime, src: v.currentSrc, muted: v.muted, loop: v.loop, inline: v.playsInline }));
+      /* On a phone the film sits under the occasions. */
+      const toFilm = () => film.evaluate((v) => v.scrollIntoView({ block: "center" }));
+      await toFilm();
+      await p.waitForFunction(() => {
+        const v = document.querySelector(".a-demo video");
+        return v && !v.paused && v.currentTime > 0.3;
+      }, null, { timeout: 15000 });
+      const s0 = await state();
+      check(s0.muted && s0.loop && s0.inline, "the film is muted, loops and plays inline");
+      check(device === "phone" ? /hero-film-mobile\./.test(s0.src) : /hero-film\./.test(s0.src) && !/mobile/.test(s0.src), `the ${device} cut plays (${s0.src.split("/").pop()})`);
+      check((await button.getAttribute("aria-label")) === "Pause the film", "the control offers Pause while it plays");
+      const box = await button.boundingBox();
+      check(box && box.width >= 44 && box.height >= 44, "the control is at least 44 px");
+      await shot("film");
+
+      await button.click();
+      await p.waitForTimeout(300);
+      check((await state()).paused, "Pause stops the film");
+      check((await button.getAttribute("aria-label")) === "Play the film", "the control then offers Play");
+      await p.mouse.wheel(0, 2400);
+      await p.waitForTimeout(500);
+      await toFilm();
+      await p.waitForTimeout(800);
+      check((await state()).paused, "back on screen, a paused film stays paused");
+      await button.click();
+      await p.waitForTimeout(500);
+      check(!(await state()).paused, "Play starts it again");
+      await button.focus();
+      await p.keyboard.press("Enter");
+      await p.waitForTimeout(300);
+      check((await state()).paused, "the control works from the keyboard");
+      await p.keyboard.press("Space");
+      await p.waitForTimeout(400);
+      check(!(await state()).paused, "and Space plays it again");
+
+      await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await p.waitForTimeout(800);
+      check((await state()).paused, "off screen, the film pauses");
+      await toFilm();
+      await p.waitForTimeout(1000);
+      check(!(await state()).paused, "back on screen, it plays again");
+
+      if (device === "desktop") {
+        await p.locator(".a-cards [role=radio]").nth(1).hover();
+        await p.waitForTimeout(400);
+        check((await state()).paused, "the film holds while the pointer is on the occasions");
+        await p.mouse.move(5, 5);
+        await p.waitForTimeout(600);
+        check(!(await state()).paused, "and plays again when it leaves");
+      }
+      if (device === "desktop") {
+        await p.locator(".a-cards [role=radio]").first().focus();
+        await p.waitForTimeout(400);
+        check((await state()).paused, "the film holds while an occasion has focus");
+      }
+    });
+
+    await scenario("P4-1g", "With reduced motion the film waits on its poster until Play is chosen", device, async (p) => {
+      await p.goto(`${BASE}/?mode=light`);
+      const film = p.locator(".a-demo video");
+      await p.waitForTimeout(1500);
+      const v = await film.evaluate((v) => ({ paused: v.paused, time: v.currentTime, poster: v.poster }));
+      check(v.paused && v.time === 0, "the film does not start on its own");
+      check(/hero-film(-mobile)?-poster\.webp$/.test(v.poster), "the poster shows the phone and the three looks");
+      const button = p.locator(".a-demo-toggle");
+      await button.scrollIntoViewIfNeeded();
+      check((await button.getAttribute("aria-label")) === "Play the film", "the control offers Play");
+      await button.click();
+      await p.waitForFunction(() => {
+        const v = document.querySelector(".a-demo video");
+        return v && !v.paused && v.currentTime > 0.2;
+      }, null, { timeout: 15000 });
+      check((await button.getAttribute("aria-label")) === "Pause the film", "Play starts it, and the control offers Pause");
+    }, { reducedMotion: "reduce" });
   }
 }

@@ -68,6 +68,10 @@ await step("pages", async () => {
 await step("files", async () => {
   const r = await get("/images/home/date-480.webp", { method: "HEAD" });
   check(r.status === 200, "a home photo loads");
+  for (const file of ["praxis-hero-film.mp4", "praxis-hero-film.webm", "praxis-hero-film-poster.webp", "praxis-hero-film-mobile.mp4", "praxis-hero-film-mobile.webm", "praxis-hero-film-mobile-poster.webp"]) {
+    const f = await get(`/media/${file}`, { method: "HEAD" });
+    check(f.status === 200, `the home film file ${file} loads`);
+  }
   const missing = await get("/assets/does-not-exist.js");
   check(missing.status === 404, "a missing file is a real 404");
   const country = await get("/api/country");

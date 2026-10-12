@@ -85,6 +85,7 @@ export function Home() {
   const preview = previewCode(params);
   const collection = useMemo(() => collectionFor(resolution.countryCode, preview), [resolution.countryCode, preview]);
   const [picker, setPicker] = useState(false);
+  const [onCards, setOnCards] = useState(false);
 
   useEffect(() => {
     if (answers.done) return;
@@ -136,7 +137,16 @@ export function Home() {
             </h1>
             <p className="a-hero-line">{LINE}</p>
             <p className="a-label a-hero-ask text-[var(--muted)]">Where are you going?</p>
-            <div className="mt-4">
+            {/* The film holds while the visitor is on the occasions, so the choice has their attention. */}
+            <div
+              className="mt-4"
+              onPointerEnter={() => setOnCards(true)}
+              onPointerLeave={() => setOnCards(false)}
+              onFocus={() => setOnCards(true)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOnCards(false);
+              }}
+            >
               <OccasionCards options={OCCASIONS} value={pending ?? answers.occasion} onChange={choose} collection={collection} />
             </div>
             {collection.code ? (
@@ -154,7 +164,7 @@ export function Home() {
               </LinkButton>
             ) : null}
           </div>
-          <HomeDemo reduced={reduced} />
+          <HomeDemo reduced={reduced} hold={onCards} />
         </section>
 
         <section className="a-steps" aria-labelledby="steps-title">
