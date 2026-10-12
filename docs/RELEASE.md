@@ -1,6 +1,6 @@
 # Release 0.4.0 (Phase 4)
 
-This release brings Phases 2, 3 and 4 to the live site. It is built on the last live version, commit `d270831`, which is tagged `v0.3.0-last-good` so that it can be restored.
+This release brings Phases 2, 3 and 4 to the live site. It is built on the last live version, commit `d270831`, which is kept as the branch `release/0.3.0-last-good` so that it can be restored. This release is the branch `release/0.4.0`.
 
 ## Changes implemented
 
@@ -138,8 +138,8 @@ In Railway, open Project, then Deployments, then View logs, and search for `clie
 1. **Fastest.** In Railway, go to Deployments, find the previous successful deployment, and choose Redeploy. Nothing in the repository changes.
 2. **From the repository:**
    ```
-   git revert --no-edit v0.3.0-last-good..v0.4.0
+   git revert --no-edit origin/release/0.3.0-last-good..origin/release/0.4.0
    git push origin main
    ```
-   Railway deploys the reverted main. The tag `v0.3.0-last-good` marks the last version before this release.
+   Railway deploys the reverted main. The branch `release/0.3.0-last-good` marks the last version before this release; in an emergency `git push --force-with-lease origin origin/release/0.3.0-last-good:main` puts it back exactly, but that rewrites main, so prefer 1 or the revert.
 3. **Data.** No server data exists, and browser data is backward compatible (see Database changes), so nothing needs undoing.
