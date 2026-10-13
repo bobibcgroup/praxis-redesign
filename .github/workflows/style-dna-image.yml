@@ -1,0 +1,42 @@
+# Makes candidates for the home page's Style DNA banner with Gemini (tools/style-dna-image.mjs) when
+# .github/style-dna-request.txt changes on main, and puts them on the style-dna-candidates branch to be
+# reviewed. Paid: each run costs up to about 1.70 USD (six 4K wide and four 2K phone pictures at most),
+# and runs only on a change Tarek approved. Needs the GEMINI_API_KEY Actions secret.
+name: Style DNA image candidates
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/style-dna-request.txt]
+
+permissions:
+  contents: write
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Make the candidates
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          counts=$(grep -E '^counts:' .github/style-dna-request.txt | tail -1 | sed 's/counts://')
+          node tools/style-dna-image.mjs out $counts
+      - name: Keep them on the candidates branch
+        if: always()
+        run: |
+          [ -d out ] || exit 0
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan style-dna-candidates
+          git rm -rq --cached .
+          find . -mindepth 1 -maxdepth 1 ! -name out ! -name .git -exec rm -rf {} +
+          mkdir -p "run-${GITHUB_RUN_ID}" && mv out/* "run-${GITHUB_RUN_ID}/" && rmdir out
+          git add "run-${GITHUB_RUN_ID}"
+          git commit -qm "Style DNA candidates, run ${GITHUB_RUN_ID}"
+          git push -f origin style-dna-candidates
