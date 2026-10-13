@@ -48,7 +48,11 @@ const WANTED = [
   { garmentId: "want-shoes", slot: "shoes", subcategory: "loafers", colour: "brown", formality: 4, name: "Brown loafers" },
 ];
 const found = await post("product_matching", { garments: WANTED, budget: "ELEVATED", currency: "USD" }, "match");
-const first = (id) => (found.body.result?.matches ?? []).find((m) => m.garmentId === id)?.products?.find((p) => p.imageUrl && p.availability !== "out_of_stock");
+// In stock first; a picture doesn't need stock, so a sold out piece of the right kind will do.
+const first = (id) => {
+  const products = ((found.body.result?.matches ?? []).find((m) => m.garmentId === id)?.products ?? []).filter((p) => p.imageUrl);
+  return products.find((p) => p.availability !== "out_of_stock") ?? products[0];
+};
 const store = Object.fromEntries(WANTED.map((w) => [w.garmentId, first(w.garmentId)]));
 console.log(`store search: ${found.body.status}; ${Object.entries(store).map(([k, p]) => `${k}=${p ? p.title : "none"}`).join(", ")}`);
 

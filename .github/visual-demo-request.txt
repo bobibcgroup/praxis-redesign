@@ -1,2 +1,3 @@
 Changing this file on main runs the visualization demo (.github/workflows/visual-demo.yml).
 2026-10-13 first run: outfits A, B and C for Tarek's remediation brief.
+2026-10-13 second run: store pieces may be sold out (pictures don't need stock).
