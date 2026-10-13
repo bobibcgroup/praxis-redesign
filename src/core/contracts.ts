@@ -134,17 +134,30 @@ export type RetailProduct = ProductRef;
 /** Within the top: the outer layer (blazer, jacket, overshirt) worn over the base (shirt, knit, t-shirt). */
 export type Layer = "outer" | "base";
 
+/** What a piece is, in the shared ontology's words (src/shared/ontology.mjs), so its picture can be checked against it. */
+export interface GarmentAttributes {
+  subcategory?: string;
+  colour?: string;
+  material?: string;
+  fit?: string;
+  silhouette?: string;
+  formality?: number;
+}
+
 interface GarmentBase {
   garmentId: string;
   slot: Slot;
   name: string;
   /** Tops only, when the look layers them. */
   layer?: Layer;
+  attributes?: GarmentAttributes;
 }
 
 export interface RetailGarment extends GarmentBase {
   source: "retail";
   product: ProductRef;
+  /** The store's variant the picture and the sizes refer to, when the feed names one. */
+  retailerVariantId?: string;
 }
 
 export interface WardrobeGarment extends GarmentBase {
@@ -196,6 +209,15 @@ export interface Visualization {
   width?: number;
   height?: number;
   createdAt?: string;
+  /** What the picture's checks found (generated pictures only), such as "shoes visible". */
+  checks?: VisualizationCheck[];
+}
+
+/** One check of a generated picture against its pieces. */
+export interface VisualizationCheck {
+  check: string;
+  ok: boolean;
+  note?: string;
 }
 
 export type FactorKind = "occasion" | "venue" | "time" | "style" | "budget" | "body" | "colour" | "wardrobe" | "weather" | "style_dna" | "feedback";

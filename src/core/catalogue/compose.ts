@@ -15,7 +15,7 @@
  *
  * Pure and deterministic: the same spec and candidates always give the same look.
  */
-import type { Garment, Layer, OutfitRecommendation, ReferenceGarment, RetailGarment, Slot, WardrobeGarment } from "../contracts";
+import type { Garment, GarmentAttributes, Layer, OutfitRecommendation, ReferenceGarment, RetailGarment, Slot, WardrobeGarment } from "../contracts";
 import { classify, NEUTRALS, colourOf } from "../../shared/ontology.mjs";
 import { purchasable, standsIn, type CatalogueGarment, type ColourFamily, type Formality } from "./garment";
 import { referenceOutfit } from "./reference";
@@ -193,15 +193,30 @@ export function compose(spec: StylingSpec, candidates: Readonly<Record<string, r
 /* ------------------------------------------------------------ back to the contract */
 
 /** The look with its composed pieces: store pieces as retail garments, references as reference garments, owned pieces as they were. */
+/** A catalogue piece's attributes as the look carries them, for its picture and the picture's checks. */
+function attributesOf(g: CatalogueGarment): GarmentAttributes {
+  return {
+    subcategory: g.subcategory,
+    ...(g.colour ? { colour: g.colour } : {}),
+    ...(g.material ? { material: g.material } : {}),
+    ...(g.fit ? { fit: g.fit } : {}),
+    ...(g.silhouette ? { silhouette: g.silhouette } : {}),
+    formality: g.formality,
+  };
+}
+
 export function toOutfit(o: OutfitRecommendation, look: ComposedLook): OutfitRecommendation {
   const garments: Garment[] = look.picks.flatMap((p): Garment[] => {
     const garmentId = `${o.outfitId}_${p.part.partId}`;
     const layer = p.part.layer ? { layer: p.part.layer } : {};
     if (p.kind === "wardrobe" && p.owned) return [{ ...p.owned, ...layer }];
-    if (p.kind === "shopify" && p.garment?.product) return [{ garmentId, slot: p.part.slot, ...layer, name: p.garment.name, source: "retail", product: p.garment.product } satisfies RetailGarment];
+    if (p.kind === "shopify" && p.garment?.product) {
+      const g = p.garment;
+      return [{ garmentId, slot: p.part.slot, ...layer, name: g.name, attributes: attributesOf(g), source: "retail", product: g.product!, ...(g.retailerVariantId ? { retailerVariantId: g.retailerVariantId } : {}) } satisfies RetailGarment];
+    }
     if (p.kind === "reference" && p.garment) {
       const g = p.garment;
-      return [{ garmentId, slot: p.part.slot, ...layer, name: g.name, source: "reference", referenceId: g.id, description: [g.silhouette, g.material].filter(Boolean).join(", "), ...(g.image ? { image: g.image } : {}) } satisfies ReferenceGarment];
+      return [{ garmentId, slot: p.part.slot, ...layer, name: g.name, attributes: attributesOf(g), source: "reference", referenceId: g.id, description: [g.silhouette, g.material].filter(Boolean).join(", "), ...(g.image ? { image: g.image } : {}) } satisfies ReferenceGarment];
     }
     return [];
   });

@@ -1266,6 +1266,41 @@
   pointer-events: none;
 }
 
+/* The picture being made: the note carries a short travelling line, still when motion is reduced. */
+[data-concept="a"] .a-print-note.a-print-note-working {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+[data-concept="a"] .a-print-note-line {
+  position: relative;
+  display: block;
+  height: 2px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+}
+
+[data-concept="a"] .a-print-note-line > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  background: var(--text);
+}
+
+/* A failed picture: the reason and Try again, which must take a tap. */
+[data-concept="a"] .a-print-note.a-print-note-action {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  pointer-events: auto;
+  z-index: 3;
+}
+
+[data-concept="a"] .a-print-note-action .a-control {
+  min-height: 44px;
+  padding-inline: 8px;
+}
+
 /* On the results the note sits at the foot of the print, clear of the zoom button, so it never lies over a face. */
 [data-concept="a"] .a-print-note.a-print-note-foot {
   top: auto;
@@ -1281,7 +1316,7 @@
 
   [data-concept="a"] .a-print-note {
     left: 32px;
-    top: 104px;
+    top: 24px;
     font-size: 13px;
   }
 

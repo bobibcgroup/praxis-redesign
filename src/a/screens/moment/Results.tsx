@@ -21,6 +21,7 @@ import { forOccasion, money, occasionLabel, resolveFromResponse, ROLE_LABEL } fr
 import { momentSpine } from "../../lib/spine";
 import { useStylingResponse, useStylingSpec } from "../../lib/styling";
 import { useSwipe } from "../../lib/swipe";
+import { useOutfitPicture, type OutfitPicture } from "../../lib/outfitPicture";
 import { Completion, CompletionActions } from "../../ui/Completion";
 import { LinkButton, PremiumMark, PrimaryButton, TextButton } from "../../ui/controls";
 import { LookViewer } from "../../ui/LookViewer";
@@ -64,6 +65,33 @@ function useTrackedSelection(selection: PieceSelection, outfitId: string | null,
   );
 }
 
+/**
+ * What the print shows, said on it: the picture made of these pieces, the reference photo while it is
+ * being made, or why it couldn't be, with a way to ask again. Silent for a library look.
+ */
+function PictureNote({ picture, reduced }: { picture: OutfitPicture & { retry: () => void }; reduced: boolean }) {
+  if (picture.state === "none") return null;
+  if (picture.state === "ready") return <p className="a-print-note a-print-note-foot" data-picture="ready">Made for these pieces. Product details may vary.</p>;
+  if (picture.state === "reference") return <p className="a-print-note a-print-note-foot" data-picture="reference">Reference photo, not these exact pieces.</p>;
+  if (picture.state === "working")
+    return (
+      <p className="a-print-note a-print-note-foot a-print-note-working" role="status" data-picture="working">
+        <span>Reference photo while I dress the model in these pieces.</span>
+        <span className="a-print-note-line" aria-hidden="true">
+          {reduced ? null : <motion.span initial={{ x: "-100%" }} animate={{ x: "340%" }} transition={{ duration: 1.6, ease: "easeInOut", repeat: Infinity }} />}
+        </span>
+      </p>
+    );
+  return (
+    <div className="a-print-note a-print-note-foot a-print-note-action" role="alert" data-picture="failed">
+      <span>{picture.message} Reference photo shown, not these exact pieces.</span>
+      <button type="button" className="a-control a-tertiary" onClick={picture.retry}>
+        Try again
+      </button>
+    </div>
+  );
+}
+
 /** Said when a save could not be written: storage is full or blocked in this browser. */
 export function SaveFailed() {
   return (
@@ -91,6 +119,9 @@ export function Results() {
   const selection = useTrackedSelection(usePieceSelection(hero), hero?.id ?? null, recommendationId);
   const label = occasionLabel(answers.occasion);
   const shared = params.get("via") !== null && !answers.done;
+  /* A composed look's picture of its very pieces, made when the look is shown. */
+  const outfit = useMemo(() => response?.outfits.find((o) => o.outfitId === hero?.id) ?? null, [response, hero?.id]);
+  const picture = useOutfitPicture(outfit, user?.id);
 
   const save = useCallback(() => {
     if (!hero || !response) return;
@@ -206,8 +237,9 @@ export function Results() {
   const fresh = href("", FRESH);
   const seeOnMe = () => gated("tryon", () => go("moment/tryon"));
   const none = selection.chosen.length === 0;
-  /* A look composed from a store and my references: its picture shows the styling, not these exact pieces. */
-  const visualized = hero.imageStatus === "mock" || hero.pieces.some((p) => p.reference || p.priceStatus === "live");
+  /* The print: the picture made of these pieces once it passes its checks, else the look's own photo. */
+  const printImage = picture.state === "ready" ? picture.url : hero.image;
+  const viewerLooks = picture.state === "ready" ? looks.map((l) => (l.id === hero.id ? { ...l, image: picture.url } : l)) : looks;
 
   return (
     <>
@@ -218,8 +250,8 @@ export function Results() {
         canvas={
           <Frame
             book
-            image={hero.image}
-            alt={`${hero.title}, the ${ROLE_LABEL[hero.role].toLowerCase()} look ${forOccasion(answers.occasion)}`}
+            image={printImage}
+            alt={`${hero.title}, the ${ROLE_LABEL[hero.role].toLowerCase()} look ${forOccasion(answers.occasion)}${picture.state === "ready" ? ", on the Praxis model in these pieces" : ""}`}
             reduced={reduced}
             aside={<Thumbs looks={looks} activeId={hero.id} onPick={(id) => show(id, undefined, "thumbnail")} reduced={reduced} vertical />}
             bleedDesktop
@@ -232,9 +264,9 @@ export function Results() {
                   <p className="a-print-note a-print-note-foot" aria-live="polite">
                     Original look, {left} {left === 1 ? "piece" : "pieces"} not included
                   </p>
-                ) : visualized ? (
-                  <p className="a-print-note a-print-note-foot">Styling visualization. Product details may vary.</p>
-                ) : null}
+                ) : (
+                  <PictureNote picture={picture} reduced={reduced} />
+                )}
                 <button
                   type="button"
                   className="a-enlarge"
@@ -347,7 +379,7 @@ export function Results() {
         <PiecesSheet look={hero} open={sheet} onClose={() => setSheet(false)} selection={selection} />
       </Stage>
       {/* Outside the stage, so the column's entry motion never holds it while it opens. */}
-      <LookViewer open={viewer} looks={looks} activeId={hero.id} onPick={(id, d) => show(id, d, "viewer")} onClose={() => setViewer(false)} reduced={reduced} />
+      <LookViewer open={viewer} looks={viewerLooks} activeId={hero.id} onPick={(id, d) => show(id, d, "viewer")} onClose={() => setViewer(false)} reduced={reduced} />
     </>
   );
 }

@@ -11,6 +11,7 @@
 import { readFileSync } from "node:fs";
 import { AI_SERVICES, FREE_DEFAULTS, providerName } from "./ai.mjs";
 import { readBody } from "./tryon.mjs";
+import { pictureSpend } from "./visuals.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
 const STARTED = new Date().toISOString();
@@ -32,6 +33,7 @@ export function health() {
     startedAt: STARTED,
     ai: { providersSet: configured, freeOn: free, billableAllowed: process.env.ALLOW_BILLABLE_AI === "true" },
     tryOn: { providerSet: Boolean((process.env.TRYON_PROVIDER ?? "").trim()), billableAllowed: process.env.ALLOW_BILLABLE_IMAGES === "true" },
+    pictures: { provider: providerName("outfit_visualization") || "none", ...pictureSpend() },
   };
 }
 

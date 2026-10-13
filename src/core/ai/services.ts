@@ -77,6 +77,8 @@ export interface VisualizationResult {
   /** exact: shows these very garments. representative: a similar look. */
   fidelity: "exact" | "representative";
   generated: boolean;
+  /** What the server's checks of a generated picture found. */
+  checks?: { check: string; ok: boolean; note?: string }[];
 }
 
 /* 4. Virtual try-on: see src/core/tryon.ts for the customer flow; this is its contract here. */
@@ -182,7 +184,7 @@ export const DEFINITIONS = {
   outfit_visualization: {
     service: "outfit_visualization",
     ...BASE,
-    timeoutMs: 30_000,
+    timeoutMs: 180_000,
     checkPayload: (p) => (isObj(p) && isStr(p.outfitId) && Array.isArray(p.garmentIds) && p.garmentIds.length > 0 ? null : "outfit or garments missing"),
     checkResult: (r) => (isObj(r) && isStr(r.outfitId) && isStr(r.imageUrl) && /^(https:|\/|data:image\/)/.test(r.imageUrl) && (r.fidelity === "exact" || r.fidelity === "representative") ? null : "not a picture of the outfit"),
   } satisfies ServiceDefinition<VisualizationPayload, VisualizationResult>,

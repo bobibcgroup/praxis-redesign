@@ -14,6 +14,11 @@
  * (real pieces from one store, for testing). GET /api/ai tells the page which services have a provider
  * that may run, and which of them only test browsers use.
  *
+ * One paid provider is approved by its owner within a budget: with GEMINI_API_KEY set, outfit_visualization
+ * is answered by gemini-image (server/providers/gemini-image.mjs), which runs only while the approved
+ * spend lasts (server/visuals.mjs: OUTFIT_IMAGE_BUDGET_USD, OUTFIT_IMAGE_DAILY_USD).
+ * AI_PROVIDER_OUTFIT_VISUALIZATION=off stops it at once.
+ *
  * Bodies are held in memory for the call only and never logged: only the service, request id,
  * status and time taken are.
  */
@@ -21,7 +26,7 @@ import { pathToFileURL, fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { readBody } from "./tryon.mjs";
-import { afterVisual, beforeVisual } from "./visuals.mjs";
+import { afterVisual, approval, beforeVisual } from "./visuals.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const AI_SERVICES = [
@@ -53,12 +58,18 @@ export function checkEnvelope(service, body) {
 /** Free providers that switch on by themselves when their key is set: service -> [provider, key variable]. */
 export const FREE_DEFAULTS = { styling_explanation: ["gemini-free", "GEMINI_API_KEY"], product_matching: ["shopify-feed", "RETAIL_SHOPIFY_STORE"] };
 
+/**
+ * Paid providers whose spend the owner approved, within the budget server/visuals.mjs enforces:
+ * service -> [provider, key variable]. Tarek approved 10 to 25 USD of outfit pictures on 2026-10-12.
+ */
+export const APPROVED_DEFAULTS = { outfit_visualization: ["gemini-image", "GEMINI_API_KEY"] };
+
 /** The provider named for a service, or the free default when its key is set. "off" switches it off. */
 export function providerName(service, env = process.env) {
   const named = (env[`AI_PROVIDER_${service.toUpperCase()}`] ?? "").trim();
   if (named === "off") return "";
   if (named) return named;
-  const free = FREE_DEFAULTS[service];
+  const free = FREE_DEFAULTS[service] ?? APPROVED_DEFAULTS[service];
   return free && (env[free[1]] ?? "").trim() ? free[0] : "";
 }
 
@@ -93,30 +104,36 @@ export async function handleAi(req, res, service) {
 
   const engine = await providerFor(service).catch(() => null);
   if (!engine) return reply(200, { status: "disabled", error: err("not_connected", "No provider is set up for this service.", false) });
-  if (engine.billable && process.env.ALLOW_BILLABLE_AI !== "true") return reply(200, { status: "disabled", error: err("billing_blocked", "Paid AI calls are switched off on the server.", false) });
+  if (engine.billable && !engine.budgeted && process.env.ALLOW_BILLABLE_AI !== "true") return reply(200, { status: "disabled", error: err("billing_blocked", "Paid AI calls are switched off on the server.", false) });
 
   const started = Date.now();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), Number(engine.timeoutMs) || AI_TIMEOUT_MS);
   req.on("close", () => {
     if (!res.writableEnded) controller.abort();
   });
   // Outfit pictures: the same composition comes from the cache, and each visitor has a daily ceiling.
   const visual = service === "outfit_visualization";
+  let go = null;
   if (visual) {
-    const early = beforeVisual(body);
-    if (early) {
+    const fwd = req.headers["x-forwarded-for"];
+    const address = (typeof fwd === "string" ? fwd.split(",")[0].trim() : "") || req.socket?.remoteAddress || "";
+    const early = beforeVisual(body, engine, Date.now(), address);
+    if (early.answer) {
       clearTimeout(timer);
       return reply(200, { ...early.answer, metadata: { ...(early.answer.metadata ?? {}), provider: engine.id, providerVersion: engine.version } });
     }
+    go = early.go;
   }
   try {
-    let out = await engine.run(body, { signal: controller.signal });
-    if (visual) out = afterVisual(body, engine, out);
+    let out = await engine.run(body, { signal: controller.signal, ...(go ? { visual: go } : {}) });
+    if (visual) out = afterVisual(body, engine, out, go);
     console.log(`ai ${service} ${body.requestId} ${out?.status ?? "unknown"} ${Date.now() - started}ms`);
     return reply(200, { ...out, metadata: { ...(out?.metadata ?? {}), provider: engine.id, providerVersion: engine.version } });
   } catch {
     const timedOut = controller.signal.aborted;
+    // A call cut off mid-way may still have been charged: the most it could cost is counted.
+    if (visual) afterVisual(body, engine, { status: "failed", metadata: { costUsd: timedOut ? (go?.hold ?? 0) : 0 } }, go);
     console.log(`ai ${service} ${body.requestId} ${timedOut ? "timed_out" : "failed"} ${Date.now() - started}ms`);
     return reply(timedOut ? 504 : 502, { status: "failed", error: err(timedOut ? "timeout" : "provider_error", "The provider did not answer.", true) });
   } finally {
@@ -131,9 +148,12 @@ export async function liveServices() {
     const engine = await providerFor(service).catch(() => null);
     if (!engine) continue;
     if (Array.isArray(engine.SERVICES) && !engine.SERVICES.includes(service)) continue;
-    if (engine.billable && process.env.ALLOW_BILLABLE_AI !== "true") continue;
+    if (engine.billable && !engine.budgeted && process.env.ALLOW_BILLABLE_AI !== "true") continue;
     const testOnly = typeof engine.testOnly === "function" && engine.testOnly();
-    live.push({ service, provider: engine.id, version: engine.version, billable: Boolean(engine.billable), ...(testOnly ? { testOnly: true } : {}) });
+    // A budgeted provider is listed while its approved spend lasts; the page then may call it.
+    const approved = engine.billable && engine.budgeted ? approval(engine).approved : undefined;
+    if (approved === false) continue;
+    live.push({ service, provider: engine.id, version: engine.version, billable: Boolean(engine.billable), ...(approved ? { approved: true } : {}), ...(testOnly ? { testOnly: true } : {}) });
   }
   return live;
 }

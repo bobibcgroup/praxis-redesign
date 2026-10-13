@@ -51,9 +51,12 @@ describe("the Gemini provider on the server", () => {
     expect(providerName("styling_recommendation", { GEMINI_API_KEY: "k" })).toBe("");
   });
 
-  it("is listed as live and free once the key is set", async () => {
+  it("is listed as live and free once the key is set, with outfit pictures inside the approved budget", async () => {
     vi.stubEnv("GEMINI_API_KEY", "k");
-    expect(await serverLive()).toEqual([{ service: "styling_explanation", provider: "gemini-free", version: gemini.MODEL, billable: false }]);
+    expect(await serverLive()).toEqual([
+      { service: "styling_explanation", provider: "gemini-free", version: gemini.MODEL, billable: false },
+      { service: "outfit_visualization", provider: "gemini-image", version: expect.any(String), billable: true, approved: true },
+    ]);
   });
 
   it("sends the brief and the looks in words, never ids, email or a photo", () => {

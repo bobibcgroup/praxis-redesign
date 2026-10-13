@@ -120,9 +120,11 @@ Environment, all optional and all off by default:
 | `COUNTRY_HEADER` | server | A trusted country header from a proxy |
 | `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | server | AI providers and paid calls (`off` switches a free provider off) |
 | `RETAIL_SHOPIFY_STORE`, `RETAIL_SHOPIFY_FOR` | server | Real pieces from one store for testing; only `?stock=live` tabs unless `everyone` |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | server | The free stylist's words (Gemini free tier, text only); unset means the rules engine's words |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | server | The stylist's words (free tier) and, with billing on its Google project, the outfit pictures inside the approved budget |
 | `TRYON_PROVIDER`, `ALLOW_BILLABLE_IMAGES` | server | Try-on provider and paid images |
-| `VISUALIZATION_DAILY_CAP` | server | New outfit pictures per visitor per day (default 20); see docs/CATALOGUE.md |
+| `OUTFIT_IMAGE_BUDGET_USD`, `OUTFIT_IMAGE_DAILY_USD` | server | Outfit picture budget (default 20 USD, as approved) and daily ceiling (default 6 USD) |
+| `VISUALIZATION_DAILY_CAP`, `VISUALIZATION_ADDRESS_DAILY_CAP` | server | New outfit pictures per visitor (12) and per address (30) per day |
+| `GEMINI_IMAGE_MODEL`, `GEMINI_CHECK_MODEL`, `VISUALS_DIR`, `VISUAL_PHOTO_HOSTS` | server | Picture models, storage and allowed photo hosts; see docs/CATALOGUE.md |
 | `VITE_AI_PROVIDERS`, `VITE_TRYON_ADAPTER`, `VITE_ALLOW_BILLABLE_IMAGES` | build | Page switches |
 | `VITE_INTERNAL_PAGE` | build | Shows the test mode page. Never set it on the live site. |
 | `RAILWAY_GIT_COMMIT_SHA` | server | Set by Railway, shown by `/api/health` |

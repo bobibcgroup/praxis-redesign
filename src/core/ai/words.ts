@@ -18,6 +18,8 @@ export interface LiveService {
   billable: boolean;
   /** Only browsers that asked for it use it (a store feed being tested). */
   testOnly?: boolean;
+  /** A paid provider whose spend the owner approved, within a budget the server enforces. */
+  approved?: boolean;
 }
 
 /** How long the looks may wait for the words. */

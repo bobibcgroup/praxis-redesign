@@ -44,7 +44,7 @@ export function Stage({ spine, back, wordmark, canvas, children, actions, band =
           </div>
           {actions ? <div className="a-actions">{actions}</div> : null}
         </section>
-        <aside className="a-canvas flex min-h-0 flex-col bg-[var(--surface)] px-5 pb-2 pt-2 lg:px-12 lg:pb-12 lg:pt-24" aria-label="Canvas">
+        <aside className="a-canvas flex min-h-0 flex-col bg-[var(--surface)] px-5 pb-2 pt-2 lg:px-12 lg:pb-12 lg:pt-12" aria-label="Canvas">
           {canvas}
         </aside>
       </div>

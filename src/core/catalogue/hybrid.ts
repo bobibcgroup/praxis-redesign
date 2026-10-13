@@ -3,7 +3,8 @@
  * feed this tab may use (see wantsRealStock in src/core/ai/stock.ts):
  *
  *   recommended looks -> styling spec per look -> store search for every part (one call)
- *   -> composition per look (store piece or Praxis reference, owned pieces kept) -> one picture per look
+ *   -> composition per look (store piece or Praxis reference, owned pieces kept)
+ *   -> each look marked for its own picture, made when it is shown (src/a/lib/outfitPicture.ts)
  *
  * Only the parts' kinds, colours and names go to the store search, never anything about the customer.
  * If the store can't be read, the looks stay as the engine sent them (example pieces) and say why.
@@ -16,17 +17,12 @@ import { liveServices } from "../ai/words";
 import { STOCK_TIMEOUT_MS, wantsRealStock } from "../ai/stock";
 import { compose, specFromLook, toOutfit, type ComposedLook } from "./compose";
 import { fromStoreProduct, type CatalogueGarment, type StoreProduct } from "./garment";
-import { visualizationProviderInUse, visualizeLooks, type OutfitVisualizationProvider } from "./visualize";
 
 export interface HybridOptions {
   signal?: AbortSignal;
   fetcher?: typeof fetch;
   /** Whether this tab asked for the test store (default: ?stock=live). */
   wanted?: () => boolean;
-  /** The picture provider (default: the server's when it has one that may run, else the mock). */
-  visualizer?: OutfitVisualizationProvider;
-  /** Where the tab keeps its pictures and ledger (tests). */
-  store?: Storage;
   /** Receives each look's composition record, for the history and tests. */
   onComposed?: (looks: ComposedLook[]) => void;
 }
@@ -67,12 +63,12 @@ export async function composeHybrid(response: StylingResponse, request: StylingR
   );
   options.onComposed?.(composed);
 
-  const outfits = response.outfits.flatMap((o, i) => (composed[i].status === "unavailable" ? [] : [toOutfit(o, composed[i])])).map((o, i) => ({ ...o, rank: i + 1 }));
+  // Each look's picture is still its library photograph, which shows other pieces: marked pending, so
+  // the results ask for a picture of these very pieces when the look is shown (src/a/lib/outfitPicture.ts).
+  const outfits = response.outfits
+    .flatMap((o, i) => (composed[i].status === "unavailable" ? [] : [toOutfit(o, composed[i])]))
+    .map((o, i) => ({ ...o, rank: i + 1, visualization: { ...o.visualization, fidelity: "representative" as const, status: "pending" as const } }));
   if (!outfits.length) return { ...response, status: "empty", outfits: [], fallback: { code: "no_complete_look", message: "I couldn’t complete a look from the store and my references." } };
   const status = outfits.length < response.outfits.length || composed.some((c) => c.status === "partial") ? "partial" : response.status;
-  const next: StylingResponse = { ...response, status, outfits };
-
-  if (options.signal?.aborted) return next;
-  const visualizer = options.visualizer ?? (await visualizationProviderInUse({ anonymousSessionId: request.anonymousSessionId, userId: request.userId }, options.fetcher));
-  return visualizeLooks(next, visualizer, { signal: options.signal, store: options.store });
+  return { ...response, status, outfits };
 }

@@ -3,7 +3,7 @@
 /* ---------- Structure: top bar plus the split, capped at 1600 px and centred. ---------- */
 .a-stage {
   display: grid;
-  grid-template-rows: 56px minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   height: 100dvh;
   min-height: 100dvh;
   max-width: 1600px;
@@ -40,7 +40,7 @@
 
 @media (min-width: 1024px) {
   .a-stage {
-    grid-template-rows: 80px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .a-split,
@@ -53,7 +53,7 @@
   .a-split > .a-col {
     order: 0;
     justify-content: center;
-    padding-top: 88px;
+    padding-top: 8px;
     padding-bottom: 48px;
   }
 
@@ -64,16 +64,12 @@
     margin-inline: auto;
   }
 
-  /* The bar floats over the split so the print can run the full height of the window. */
+  /* Image-safe: the bar takes its own row above the split, at whatever height it renders (larger
+     text, a second line), and the photos start under it. Nothing is laid over a photo, so no face
+     can sit under the links, whatever the picture or where its subject stands. */
   .a-stage:has(> .a-split) {
-    position: relative;
     max-width: none;
-    grid-template-rows: minmax(0, 1fr);
-  }
-
-  .a-stage:has(> .a-split) > header {
-    position: absolute;
-    inset: 0 0 auto 0;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .a-split > .a-canvas {
@@ -208,6 +204,18 @@
   background: var(--surface);
 }
 
+/* The soft fill behind a picture shown whole (see useSafeFit in Frame.tsx). */
+.a-frame-fill {
+  position: absolute;
+  inset: -24px;
+  width: calc(100% + 48px);
+  height: calc(100% + 48px);
+  object-fit: cover;
+  filter: blur(24px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 /* Full bleed: with nothing under it, the print fills the canvas edge to edge, like a lookbook page. */
 .a-canvas:has(> .a-frame-room[data-bleed="always"]) {
   padding: 0;
@@ -223,16 +231,10 @@
   height: 100%;
 }
 
-.a-frame-room[data-bleed="always"] .a-frame > div > img {
-  object-position: center 12%;
-}
-
-/* Results on desktop: the print runs full bleed below the bar; the looks ride on it instead of under it.
-   The bar's height (80 px, the header's lg:h-20) is kept clear above the print, on the page colour,
-   so the links never sit over a face, whatever the photo and however it is cropped. */
+/* Results on desktop: the print runs full bleed in its half, under the bar's own row; the looks ride on it. */
 @media (min-width: 1024px) {
   .a-canvas:has(> .a-frame-room[data-bleed="desktop"]) {
-    padding: 80px 0 0;
+    padding: 0;
     background: var(--bg);
   }
 
@@ -248,10 +250,6 @@
   .a-frame-room[data-bleed="desktop"] .a-frame {
     aspect-ratio: auto;
     height: 100%;
-  }
-
-  .a-frame-room[data-bleed="desktop"] .a-frame > div > img {
-    object-position: center 20%;
   }
 }
 
@@ -467,8 +465,8 @@
 }
 
 .a-frame-room[data-bleed="always"]:not([data-book]) .a-frame > div {
-  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
 }
 
 @media (min-width: 1024px) {

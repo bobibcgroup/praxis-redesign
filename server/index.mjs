@@ -21,6 +21,7 @@ import { gzipSync } from "node:zlib";
 import { countryForIp, geoReady, loadGeo } from "./geo.mjs";
 import { handleTryOn } from "./tryon.mjs";
 import { handleAi, liveServices } from "./ai.mjs";
+import { handleVisual } from "./visuals.mjs";
 import { handleClientError, health, logError, RELEASE } from "./monitor.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
@@ -180,6 +181,9 @@ function route(req, res) {
       .then((live) => send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "no-store" }, JSON.stringify({ live })));
     return;
   }
+  /* Outfit pictures made by the image provider (server/visuals.mjs). */
+  const picture = /^\/api\/visuals\/(img_[0-9a-f]{24})\.jpg$/.exec(pathname);
+  if (picture) return handleVisual(req, res, picture[1]);
   if (pathname === "/api/health") {
     return send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "no-store" }, JSON.stringify(health()));
   }

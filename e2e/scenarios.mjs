@@ -87,7 +87,7 @@ const LEGACY_SUITE = {
   S10: 8,
   S8: 9, S9: 9, P2A: 9, P2B: 9,
   WHY1: 3, WHY2: 3,
-  LAYOUT: 10, UX9: 10, FACE1: 10,
+  LAYOUT: 10, UX9: 10, FACE1: 10, FACE2: 10,
   A11Y: 11,
   P2C: 12,
   S12: 13,
@@ -759,6 +759,115 @@ for (const [w, h] of [[1920, 1080], [1440, 900], [1280, 800], [1024, 768], [768,
     }
     await shot("results");
   }, { viewport: { viewport: { width: w, height: h }, ...(w < 1024 ? { isMobile: true, hasTouch: true } : {}) } });
+}
+
+/*
+ * Image safe: on every page with a model photo, at the eight widths of the brief, the bar never covers a
+ * photo at rest; a photo that scrolls under it passes under an opaque bar; a resized window and every look
+ * keep it so; and a picture of any shape (a made picture can come back wide or tall) is never cut at the
+ * head or the shoes.
+ */
+const FACE_PAGES = ["/?mode=light", "/moment/venue?mode=light&occasion=DINNER", "/moment/time?mode=light&occasion=DINNER&venue=RESTAURANT", "/moment/you?mode=light&occasion=DINNER&venue=RESTAURANT&time=NIGHT&vibe=SHARP&budget=MID", "/moment/tryon?mode=light&occasion=DINNER&venue=RESTAURANT&time=NIGHT&vibe=SHARP&hero=dinner_sharper_01", "/dna?mode=light"];
+const faceMeasure = () => {
+  const bars = [...document.querySelectorAll("header, .a-topright")].filter((e) => {
+    const s = getComputedStyle(e);
+    return ["fixed", "sticky", "absolute"].includes(s.position) && e.getBoundingClientRect().height > 0;
+  });
+  const photos = [...document.querySelectorAll("img, video")].filter((i) => {
+    const r = i.getBoundingClientRect();
+    return r.width > 150 && r.height > 150 && r.bottom > 0 && r.top < innerHeight && !i.classList.contains("a-frame-fill") && getComputedStyle(i).visibility !== "hidden" && !i.closest("[role=dialog]");
+  });
+  const opaque = (el) => {
+    for (let e = el; e && e !== document.body; e = e.parentElement) {
+      const m = /rgba?\(([^)]+)\)/.exec(getComputedStyle(e).backgroundColor);
+      const a = m ? (m[1].split(",")[3] === undefined ? 1 : Number(m[1].split(",")[3])) : 0;
+      if (a >= 0.99) return true;
+    }
+    return false;
+  };
+  const over = [];
+  for (const b of bars) {
+    const a = b.getBoundingClientRect();
+    for (const i of photos) {
+      const r = i.getBoundingClientRect();
+      const ox = Math.min(a.right, r.right) - Math.max(a.left, r.left);
+      const oy = Math.min(a.bottom, r.bottom) - Math.max(a.top, r.top);
+      if (ox > 1 && oy > 1) over.push({ photo: (i.currentSrc || i.src || "").split("/").pop().slice(0, 40), by: Math.round(oy), opaque: opaque(b) });
+    }
+  }
+  const cut = [...document.querySelectorAll(".a-frame img[data-print]")]
+    .filter((i) => i.naturalWidth && i.getBoundingClientRect().width > 0)
+    .filter((i) => {
+      const r = i.getBoundingClientRect();
+      const fit = getComputedStyle(i).objectFit;
+      return fit === "cover" && r.width / r.height > (i.naturalWidth / i.naturalHeight) * 1.03;
+    })
+    .map((i) => i.getAttribute("src"));
+  return { over, cut };
+};
+const WIDE = await (await import("sharp")).default({ create: { width: 1600, height: 800, channels: 3, background: "#8a7a66" } }).jpeg().toBuffer();
+const TALL = await (await import("sharp")).default({ create: { width: 600, height: 1500, channels: 3, background: "#5a4a3a" } }).jpeg().toBuffer();
+for (const [w, h] of [[375, 667], [390, 844], [430, 932], [768, 1024], [1024, 768], [1280, 800], [1440, 900], [1920, 1080]]) {
+  await scenario("FACE2", `Image safe at ${w} px: every page, scrolled, resized, every look, any picture shape`, w < 1024 ? "phone" : "desktop", async (p, shot) => {
+    let scrolled = false;
+    const look = async (where) => {
+      const m = await p.evaluate(faceMeasure);
+      // At rest nothing may sit over a photo; scrolled, a photo may pass under the bar only if the bar is opaque.
+      const atRest = m.over.filter((o) => !scrolled || !o.opaque);
+      check(atRest.length === 0, `${where}: the bar covers no photo${atRest.length ? ` (${atRest.map((o) => `${o.photo} by ${o.by}px`).join(", ")})` : ""}`);
+      check(m.cut.length === 0, `${where}: no photo cut at the head or shoes${m.cut.length ? ` (${m.cut.join(", ")})` : ""}`);
+    };
+    for (const url of FACE_PAGES) {
+      await p.goto(`${BASE}${url}`);
+      await p.waitForTimeout(1100);
+      const name = new URL(url, BASE).pathname;
+      scrolled = false;
+      await look(`${name} at rest`);
+      await p.evaluate(() => window.scrollTo(0, 500));
+      await p.waitForTimeout(300);
+      scrolled = true;
+      await look(`${name} scrolled`);
+      await p.evaluate(() => window.scrollTo(0, 0));
+      await p.waitForTimeout(300);
+    }
+    await toResults(p, A);
+    const thumbs = p.locator(".a-thumb").filter({ visible: true });
+    for (let i = 0; i < 3; i += 1) {
+      await thumbs.nth(i).click();
+      await p.waitForTimeout(700);
+      scrolled = false;
+      await look(`results, look ${i + 1}`);
+    }
+    await p.evaluate(() => window.scrollTo(0, 600));
+    await p.waitForTimeout(300);
+    scrolled = true;
+    await look("results scrolled");
+    await p.evaluate(() => window.scrollTo(0, 0));
+    scrolled = false;
+    const resized = w >= 1024 ? [w === 1920 ? 1280 : 1920, w === 1920 ? 720 : 1080] : [w === 430 ? 375 : 430, w === 430 ? 667 : 932];
+    await p.setViewportSize({ width: resized[0], height: resized[1] });
+    await p.waitForTimeout(600);
+    await look(`results resized to ${resized[0]} px`);
+    await p.setViewportSize({ width: w, height: h });
+    await p.waitForTimeout(600);
+    await look(`results back at ${w} px`);
+    await shot("results");
+
+    // A wide and a tall picture in place of two looks' photographs, as a made picture might come back.
+    await p.route("**/images/dinner_sharper_01.jpg", (r) => r.fulfill({ status: 200, contentType: "image/jpeg", body: WIDE }));
+    await p.route("**/images/dinner_safest_01.jpg", (r) => r.fulfill({ status: 200, contentType: "image/jpeg", body: TALL }));
+    await p.reload();
+    await p.waitForTimeout(1200);
+    for (let i = 0; i < 2; i += 1) {
+      await thumbs.nth(i).click();
+      await p.waitForTimeout(800);
+      await look(`a ${i ? "tall" : "wide"} picture`);
+      const fit = await p.evaluate(() => [...document.querySelectorAll(".a-frame")].find((f) => f.getBoundingClientRect().width > 0)?.getAttribute("data-fit"));
+      // A wide picture fills the frame with its sides trimmed; a tall one narrower than the frame is shown whole.
+      if (i === 1) check(fit === "contain", `the tall picture is shown whole, head to shoes (${fit})`);
+    }
+    await shot("wide-tall");
+  }, { premium: true, viewport: { viewport: { width: w, height: h }, ...(w < 1024 ? { isMobile: true, hasTouch: true } : {}) } });
 }
 
 for (const device of ["desktop", "phone"]) {

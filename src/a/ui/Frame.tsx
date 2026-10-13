@@ -4,8 +4,43 @@
  * line, thumbnails, caption) is part of the same block so the print sizes
  * itself around them and never outgrows the column.
  */
-import type { CSSProperties, KeyboardEventHandler, ReactNode, RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEventHandler, type ReactNode, type RefObject, type SyntheticEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
+
+/**
+ * Image-safe fit for a model photograph: never crop it top or bottom, so the head and the shoes stay
+ * in, whatever the picture's shape (library squares, generated portraits) and whatever the frame's.
+ * A frame narrower than the picture crops only its sides (cover); a wider one shows it whole
+ * (contain), with a soft fill behind on result pages. Measured, not assumed, so it holds for any
+ * picture a provider sends back.
+ */
+export function useSafeFit() {
+  const frame = useRef<HTMLDivElement | null>(null);
+  const [frameRatio, setFrameRatio] = useState(0);
+  const [ratios, setRatios] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const el = frame.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width && r.height) setFrameRatio(r.width / r.height);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const onLoad = useCallback((e: SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget;
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    const ratio = img.naturalWidth / img.naturalHeight;
+    const src = img.getAttribute("src") ?? "";
+    setRatios((m) => (m[src] === ratio ? m : { ...m, [src]: ratio }));
+  }, []);
+  /** "contain" when the frame is wider than the picture (cover would cut the head or the feet). */
+  const fit = (src: string): "cover" | "contain" => (ratios[src] && frameRatio > ratios[src] * 1.02 ? "contain" : "cover");
+  return { frame, onLoad, fit };
+}
 
 export interface FrameProps {
   image: string | null;
@@ -48,6 +83,9 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
   const style = { "--below": `${belowHeight}px` } as CSSProperties;
   const framed = Boolean(below || aside);
   const shift = reduced ? 0 : SWAP_SHIFT * (swap?.dir ?? 0);
+  const safe = useSafeFit();
+  const fit = image ? safe.fit(image) : "cover";
+  const imgClass = `absolute inset-0 h-full w-full ${fit === "contain" ? "object-contain" : "object-cover"}`;
 
   return (
     <div
@@ -60,8 +98,10 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
       onKeyDown={onKeyDown}
     >
       <div className="a-print" style={style}>
-        <div className="a-frame">
+        <div className="a-frame" ref={safe.frame} data-fit={image && !live ? fit : undefined}>
           <div className="relative h-full w-full overflow-hidden bg-[var(--surface)]">
+            {/* Behind a picture shown whole on a result page: the same picture, soft, so the frame stays full. */}
+            {book && image && !live && fit === "contain" ? <img src={image} alt="" aria-hidden className="a-frame-fill" draggable={false} /> : null}
             <AnimatePresence initial={false} custom={shift}>
               {preview && !image && !live && (
                 <motion.div
@@ -90,7 +130,9 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
                   animate={{ opacity: 1, x: swap.drag }}
                   exit="leave"
                   transition={reduced ? { duration: 0 } : swap.drag !== 0 ? { x: { duration: 0 }, opacity: SWAP } : SWAP}
-                  className="absolute inset-0 h-full w-full object-cover object-top"
+                  className={imgClass}
+                  data-print=""
+                  onLoad={safe.onLoad}
                   draggable={false}
                 />
               ) : image && !live ? (
@@ -102,7 +144,9 @@ export function Frame({ image, alt, preview, night = false, golden = null, liveR
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={fade}
-                  className="absolute inset-0 h-full w-full object-cover object-top"
+                  className={imgClass}
+                  data-print=""
+                  onLoad={safe.onLoad}
                   draggable={false}
                 />
               ) : null}

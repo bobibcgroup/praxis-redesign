@@ -99,42 +99,22 @@ Everything else runs on a free, deterministic mock. `/api/health` reports `provi
 
 **Service:** `outfit_visualization`.
 
-**Provider interface:** `OutfitVisualizationAdapter` (`src/core/vision.ts`), plus the server provider module.
+**Status:** live for composed looks (`?stock=live` tabs) through `server/providers/gemini-image.mjs`, switched on by `GEMINI_API_KEY` inside the approved budget (20 USD). Needs billing on the key's Google Cloud project; until then it answers `billing_required` and the look keeps its reference photograph.
 
-**Request schema:** `{ outfitId, garmentIds[] }`.
+**Request schema:** `{ outfitId, garmentIds[], spec }`, spec version 3 (pieces with source, slot, layer, attributes, store photo or reference id; the model; the render). See docs/CATALOGUE.md.
 
-**Response schema:**
-- `{ outfitId, imageUrl, fidelity: "exact" | "representative", generated }`
-- The page sees it as a `GeneratedImage` (`vision.ts`): image id, kind, source garments, provider, model version, status, retention.
+**Response schema:** `{ outfitId, imageUrl: "/api/visuals/img_<key>.jpg", fidelity: "representative", generated: true, checks[] }`, `metadata: { costUsd, attempts, model, checkModel }`.
 
-**Mock provider:** for hybrid looks (`?stock=live` tabs), `mockVisualizationProvider` (`src/core/catalogue/visualize.ts`) answers with the look's library photograph, marked illustrative; on the server, `library-visualization` does the same at no cost. Elsewhere `mockVisualization` (`vision.ts`) and `MOCKS.outfit_visualization` answer `disabled` / `not_connected`, and no picture is made.
+**Frontend:** `src/a/lib/outfitPicture.ts` (`useOutfitPicture`) and the print note in `Results.tsx`.
 
-**Hybrid path (current):** the composed look's `OutfitVisualizationSpec` (pieces, one fixed model, `cacheKey`) goes to the server as `payload.spec`; `server/visuals.mjs` caches by `cacheKey`, caps each visitor per day (`VISUALIZATION_DAILY_CAP`) and records `costPerImageUsd`. Full guide, including connecting Gemini: `docs/CATALOGUE.md`.
+**Guards:** `server/visuals.mjs` (canonical spec, cache, budget, ceilings), `server/visual-check.mjs` (checks). `AI_PROVIDER_OUTFIT_VISUALIZATION=off` stops it.
 
-**Configuration:**
-- `AI_PROVIDER_OUTFIT_VISUALIZATION=<name>`
-- `ALLOW_BILLABLE_AI=true`
-- `VITE_AI_PROVIDERS=outfit_visualization`
-- `VITE_ALLOW_BILLABLE_IMAGES=true`
-
-**Error handling:**
-- Time limit 30 s, one retry.
-- On failure the look keeps its library photo, so a generated image is never required.
-
-**Frontend components:** `Frame.tsx` and `LookViewer.tsx` show the look's photo. Today they show library photos from `src/a/lib/looks.ts`.
-
-**Backend changes needed:**
-- Write a provider module.
-- Store generated images, with retention and deletion.
-- Wire `imageServices().visualize` into Results, with the label "A picture of this look, made for you" when `generated` is true.
-
-**Tests:** `ai-services.test.ts` (visualization contract), `phase2-privacy.test.ts` (billable guard).
+**Tests:** `outfit-images.test.ts`, `hybrid.test.ts`, suite 14 with `e2e/fixtures/fake-gemini.mjs`.
 
 **Remaining dependencies:**
-- Approval and a provider.
-- Image storage.
-- Copy for the generated-picture label.
-- Image accuracy has not been validated.
+- Billing on the Google Cloud project of `GEMINI_API_KEY`.
+- A Railway volume, so pictures and the spend survive a redeploy.
+- The store's permission to use its product photos for generated images, before customers.
 
 ## 3. Virtual try-on
 

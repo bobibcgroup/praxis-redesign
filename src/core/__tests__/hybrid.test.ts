@@ -1,5 +1,8 @@
 /** The hybrid catalogue: reference pieces, composing looks from a store and the references, and the outfit pictures. */
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockRecommend } from "../adapters/mock";
 import { buildStylingRequest } from "../request";
 import { validateStylingResponse } from "../validate";
@@ -14,7 +17,7 @@ import { ANON, SCENARIO_A, memoryStorage } from "./helpers";
 // @ts-expect-error plain JavaScript module
 import * as library from "../../../server/providers/library-visualization.mjs";
 // @ts-expect-error plain JavaScript module
-import { afterVisual, beforeVisual, ledger as serverLedger, resetVisuals } from "../../../server/visuals.mjs";
+import { afterVisual, beforeVisual, ledger as serverLedger, resetVisuals, storeImage } from "../../../server/visuals.mjs";
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const request = () => buildStylingRequest(SCENARIO_A, { anonymousSessionId: ANON });
@@ -151,10 +154,12 @@ describe("the outfit picture", () => {
     const spec = visualizationSpec(o, mockVisualizationProvider());
     expect(spec.garments.map((g) => g.garmentId)).toEqual(o.garments.map((g) => g.garmentId));
     expect(spec.garments.map((g) => g.source)).toEqual(["shopify", "reference", "reference", "reference"]);
-    expect(spec.garments[0]).toMatchObject({ retailerProductId: "shopify_test_blazer", imageUrl: expect.stringMatching(/^https:/) });
-    expect(spec.model.modelId).toBe("praxis-model-01");
-    const owned = { ...o, garments: [{ garmentId: "own", slot: "top" as const, name: "Your navy overshirt", source: "wardrobe" as const, wardrobeItemId: "w1" }, ...o.garments.slice(1)] };
-    expect(visualizationSpec(owned, mockVisualizationProvider()).garments[0]).toEqual({ garmentId: "own", slot: "top", name: "Your navy overshirt", source: "wardrobe" });
+    expect(spec.garments[0]).toMatchObject({ retailerProductId: "shopify_test_blazer", imageUrl: expect.stringMatching(/^https:/), attributes: { subcategory: "blazer" } });
+    expect(spec.garments[1]).toMatchObject({ source: "reference", referenceId: expect.stringMatching(/^ref_/), attributes: { subcategory: expect.any(String), colour: expect.any(String) } });
+    expect(spec.garments[1].imageUrl).toBeUndefined();
+    expect(spec).toMatchObject({ version: 3, model: { modelId: "praxis-model-01", baseImage: "praxis-model-01@1" }, render: { aspectRatio: "3:4", imageSize: "1K" } });
+    const owned = { ...o, garments: [{ garmentId: "own", slot: "top" as const, layer: "outer" as const, name: "Your navy overshirt", source: "wardrobe" as const, wardrobeItemId: "w1" }, ...o.garments.slice(1)] };
+    expect(visualizationSpec(owned, mockVisualizationProvider()).garments[0]).toEqual({ garmentId: "own", slot: "top", layer: "outer", name: "Your navy overshirt", source: "wardrobe" });
   });
 
   it("names each composition: the same pieces give the same key, any other piece a new one", () => {
@@ -163,6 +168,11 @@ describe("the outfit picture", () => {
     const other = { ...mixed(), garments: mixed().garments.map((g, i) => (i === 0 && g.source === "retail" ? { ...g, product: { ...g.product, productId: "shopify_test_other" } } : g)) };
     expect(visualizationSpec(other, p).cacheKey).not.toBe(visualizationSpec(mixed(), p).cacheKey);
     expect(visualizationSpec(mixed(), p, { ...visualizationSpec(mixed(), p).model, pose: "walking" }).cacheKey).not.toBe(visualizationSpec(mixed(), p).cacheKey);
+    const variant = { ...mixed(), garments: mixed().garments.map((g, i) => (i === 0 && g.source === "retail" ? { ...g, retailerVariantId: "v2" } : g)) };
+    expect(visualizationSpec(variant, p).cacheKey).not.toBe(visualizationSpec(mixed(), p).cacheKey);
+    const photo = { ...mixed(), garments: mixed().garments.map((g, i) => (i === 0 && g.source === "retail" ? { ...g, product: { ...g.product, imageUrl: "https://cdn.shopify.com/new.jpg" } } : g)) };
+    expect(visualizationSpec(photo, p).cacheKey).not.toBe(visualizationSpec(mixed(), p).cacheKey);
+    expect(visualizationSpec(mixed(), { id: p.id, version: "9" }).cacheKey).not.toBe(visualizationSpec(mixed(), p).cacheKey);
   });
 
   it("mock: the look's library photograph, marked mock and illustrative, tied to the outfit", async () => {
@@ -223,6 +233,15 @@ describe("the outfit picture", () => {
     expect((await visualize(visualizationSpec(mixed(), free), free, { store })).error).toMatch(/Too many/);
   });
 
+  it("a paid provider the server approved runs without the build switch, once per request", async () => {
+    const approved = { id: "paid", version: "1", billable: true, approved: true, visualize: vi.fn(async (spec: { cacheKey: string }) => ({ status: "failed" as const, fidelity: "unknown" as const, provider: "paid", cacheKey: spec.cacheKey, costUsd: 0.27 })) };
+    const store = memoryStorage();
+    const out = await visualize(visualizationSpec(mixed(), approved), approved, { store });
+    expect(out.status).toBe("failed");
+    expect(approved.visualize).toHaveBeenCalledTimes(1);
+    expect(visualizationLedger(store)).toMatchObject({ requests: 1, costUsd: 0.27 });
+  });
+
   it("pictures all three looks of a response, each for its own outfit", async () => {
     const r = looks();
     const out = await visualizeLooks(r, mockVisualizationProvider(), { store: memoryStorage() });
@@ -232,25 +251,35 @@ describe("the outfit picture", () => {
 });
 
 describe("on the server", () => {
-  afterEach(() => resetVisuals());
-  const body = (outfitId: string, key = "vis_0123abcd", who = "anon_a") => ({ requestId: "req_1", anonymousSessionId: who, payload: { outfitId, garmentIds: ["a"], spec: { cacheKey: key } } });
+  beforeEach(() => {
+    vi.stubEnv("VISUALS_DIR", mkdtempSync(join(tmpdir(), "praxis-visuals-test-")));
+  });
+  afterEach(() => {
+    resetVisuals();
+    vi.unstubAllEnvs();
+  });
+  const spec = { garments: [{ garmentId: "g1", source: "reference", slot: "top", name: "x", referenceId: "ref_dinner_sharper_01_base" }, { garmentId: "g2", source: "reference", slot: "bottom", name: "x", referenceId: "ref_dinner_sharper_01_bottom" }] };
+  const body = (outfitId: string, who = "anon_a", s: unknown = spec) => ({ requestId: "req_1", anonymousSessionId: who, payload: { outfitId, garmentIds: ["g1", "g2"], spec: s } });
 
   it("the library stand-in answers with the look's photograph, not generated and free", async () => {
     expect(library).toMatchObject({ billable: false, costPerImageUsd: 0 });
     expect(await library.run({ payload: { outfitId: "dinner_sharper_01" } })).toEqual({ status: "succeeded", result: { outfitId: "dinner_sharper_01", imageUrl: "/images/dinner_sharper_01.jpg", fidelity: "representative", generated: false } });
   });
 
-  it("caches by composition, refuses a picture for another outfit, counts cost, and has a daily ceiling", () => {
-    const engine = { id: "paid-model", costPerImageUsd: 0.04 };
-    expect(beforeVisual(body("dinner_sharper_01"))).toBeNull();
-    const answer = afterVisual(body("dinner_sharper_01"), engine, { status: "succeeded", result: { outfitId: "dinner_sharper_01", imageUrl: "https://img.example.com/a.png", fidelity: "representative", generated: true } });
+  it("refuses a spec it can't make, caches by its own key, refuses a picture for another outfit, counts cost, and has a daily ceiling", () => {
+    const engine = { id: "paid-model", version: "1", costPerImageUsd: 0.04 };
+    expect(beforeVisual(body("dinner_sharper_01", "anon_a", { garments: [] }), engine).answer?.error.code).toBe("validation_error");
+    const first = beforeVisual(body("dinner_sharper_01"), engine);
+    expect(first.go?.key).toMatch(/^img_[0-9a-f]{24}$/);
+    storeImage(first.go!.key, Buffer.from("jpeg"));
+    const answer = afterVisual(body("dinner_sharper_01"), engine, { status: "succeeded", result: { outfitId: "dinner_sharper_01", imageUrl: `/api/visuals/${first.go!.key}.jpg`, fidelity: "representative", generated: true } }, first.go);
     expect(answer.metadata.costUsd).toBe(0.04);
-    expect(beforeVisual(body("dinner_sharper_01"))?.answer.metadata).toMatchObject({ cached: true, costUsd: 0 });
+    expect(beforeVisual(body("dinner_sharper_01"), engine).answer?.metadata).toMatchObject({ cached: true, costUsd: 0 });
     expect(afterVisual(body("x"), engine, { status: "succeeded", result: { outfitId: "y" } })).toMatchObject({ status: "failed" });
-    expect(serverLedger).toMatchObject({ requests: 2, cacheHits: 1, failures: 1, costUsd: 0.04 });
+    expect(serverLedger).toMatchObject({ requests: 2, cacheHits: 1, failures: 1, costUsd: 0.08 });
     vi.stubEnv("VISUALIZATION_DAILY_CAP", "1");
-    expect(beforeVisual(body("work_safest_01", "vis_ffff0000", "anon_b"))).toBeNull();
-    expect(beforeVisual(body("work_safest_01", "vis_ffff0001", "anon_b"))?.answer.error.code).toBe("rate_limited");
+    expect(beforeVisual(body("work_safest_01", "anon_b"), engine).go).toBeTruthy();
+    expect(beforeVisual(body("work_safest_01", "anon_b", { garments: [...spec.garments, { garmentId: "g3", source: "wardrobe", slot: "shoes", name: "Your boots" }] }), engine).answer?.error.code).toBe("rate_limited");
   });
 });
 
@@ -265,7 +294,7 @@ describe("the hybrid step", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
-  it("composes all three looks from the store and the references, sending only the parts, then pictures them", async () => {
+  it("composes all three looks from the store and the references, sending only the parts, and marks each for its own picture", async () => {
     const r = looks();
     let sent: { garments: Record<string, unknown>[] } | null = null;
     const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
@@ -282,13 +311,13 @@ describe("the hybrid step", () => {
       });
     });
     const composed: unknown[] = [];
-    const out = await composeHybrid(r, request(), { fetcher: fetcher as unknown as typeof fetch, wanted: () => true, visualizer: mockVisualizationProvider(), store: memoryStorage(), onComposed: (c) => composed.push(...c) });
+    const out = await composeHybrid(r, request(), { fetcher: fetcher as unknown as typeof fetch, wanted: () => true, onComposed: (c) => composed.push(...c) });
     expect(Object.keys(sent!.garments[0]).sort()).toEqual(["formality", "garmentId", "layer", "name", "slot", "subcategory", "colour"].sort());
     expect(JSON.stringify(sent)).not.toContain(ANON);
     expect(composed).toHaveLength(3);
     expect(out.outfits).toHaveLength(3);
     for (const o of out.outfits) {
-      expect(o.visualization).toMatchObject({ outfitId: o.outfitId, status: "mock", fidelity: "representative" });
+      expect(o.visualization).toMatchObject({ outfitId: o.outfitId, status: "pending", fidelity: "representative", url: `/images/${o.outfitId}.jpg` });
       expect(o.garments.every((g) => g.source === "reference" || (g.source === "retail" && g.product.priceStatus === "live"))).toBe(true);
     }
     const knitLook = out.outfits.find((o) => o.garments.some((g) => g.source === "retail"))!;
@@ -298,7 +327,7 @@ describe("the hybrid step", () => {
   it("says so, and keeps the looks, when the store can't be read", async () => {
     const r = looks();
     const fetcher = vi.fn(async (url: string) => (url === "/api/ai" ? live() : json(200, { status: "failed", error: { code: "provider_error", message: "The store answered 503.", retryable: true } })));
-    const out = await composeHybrid(r, request(), { fetcher: fetcher as unknown as typeof fetch, wanted: () => true, store: memoryStorage() });
+    const out = await composeHybrid(r, request(), { fetcher: fetcher as unknown as typeof fetch, wanted: () => true });
     expect(out.outfits).toBe(r.outfits);
     expect(out.fallback?.code).toBe("store_unavailable");
   });

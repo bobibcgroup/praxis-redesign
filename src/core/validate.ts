@@ -9,6 +9,7 @@ import {
   type Availability,
   type FactorKind,
   type Garment,
+  type GarmentAttributes,
   type Layer,
   type OutfitRecommendation,
   type ReferenceImage,
@@ -21,6 +22,7 @@ import {
   type StylingRequest,
   type StylingResponse,
   type Visualization,
+  type VisualizationCheck,
 } from "./contracts";
 
 /** How many looks a complete answer has. Fewer is partial, never padded. */
@@ -69,7 +71,8 @@ function factor(v: unknown): RecommendationFactor | null {
 
 function garment(v: unknown): Garment | null {
   if (!isObj(v) || !isStr(v.garmentId, 200) || !oneOf(v.slot, SLOTS) || !isStr(v.name, 200)) return null;
-  const base = { garmentId: v.garmentId, slot: v.slot, name: v.name, ...(oneOf(v.layer, LAYERS) ? { layer: v.layer } : {}) };
+  const attributes = garmentAttributes(v.attributes);
+  const base = { garmentId: v.garmentId, slot: v.slot, name: v.name, ...(oneOf(v.layer, LAYERS) ? { layer: v.layer } : {}), ...(attributes ? { attributes } : {}) };
   if (v.source === "wardrobe") return isStr(v.wardrobeItemId, 200) ? { ...base, source: "wardrobe", wardrobeItemId: v.wardrobeItemId } : null;
   // A reference piece completes the styling only: whatever price or link came with it is dropped.
   if (v.source === "reference") {
@@ -84,6 +87,7 @@ function garment(v: unknown): Garment | null {
   return {
     ...base,
     source: "retail",
+    ...(optStr(v.retailerVariantId, 80) ? { retailerVariantId: optStr(v.retailerVariantId, 80) } : {}),
     product: {
       productId: p.productId,
       retailerId: p.retailerId,
@@ -103,6 +107,23 @@ function garment(v: unknown): Garment | null {
       deliveryEstimate: optStr(p.deliveryEstimate, 60),
     },
   };
+}
+
+function garmentAttributes(v: unknown): GarmentAttributes | undefined {
+  if (!isObj(v)) return undefined;
+  const out: GarmentAttributes = {};
+  for (const k of ["subcategory", "colour", "material", "fit", "silhouette"] as const) {
+    const t = optStr(v[k], 60);
+    if (t) out[k] = t;
+  }
+  if (isNum(v.formality) && v.formality >= 1 && v.formality <= 5) out.formality = v.formality;
+  return Object.keys(out).length ? out : undefined;
+}
+
+function checks(v: unknown): VisualizationCheck[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v.filter((c): c is Obj => isObj(c) && isStr(c.check, 80) && typeof c.ok === "boolean").slice(0, 24).map((c) => ({ check: c.check as string, ok: c.ok as boolean, ...(optStr(c.note, 160) ? { note: optStr(c.note, 160) } : {}) }));
+  return out.length ? out : undefined;
 }
 
 function referenceImage(v: unknown): ReferenceImage | undefined {
@@ -153,6 +174,7 @@ function visualization(v: unknown, outfitId: string): Visualization | null {
     width: isNum(v.width) ? v.width : undefined,
     height: isNum(v.height) ? v.height : undefined,
     createdAt: optStr(v.createdAt, 40),
+    checks: checks(v.checks),
   };
 }
 

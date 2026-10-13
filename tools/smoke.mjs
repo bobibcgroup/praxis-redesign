@@ -89,7 +89,10 @@ await step("ai", async () => {
   const t = await (await post("/api/tryon", { requestId: "smoke", outfitId: "o", garmentIds: ["g"], person: { image: "data:image/jpeg;base64,AAAA", width: 720, height: 960, consentVersion: "tryon-server-2026-10-11" } })).json();
   check(t.status === "disabled", "try-on plug-in point makes nothing");
   const live = await (await get("/api/ai")).json();
-  check(Array.isArray(live.live) && live.live.every((s) => s.billable === false), `only free AI answers (${live.live?.map((s) => s.provider).join(", ") || "none"})`);
+  check(Array.isArray(live.live) && live.live.every((s) => s.billable === false || (s.service === "outfit_visualization" && s.approved === true)), `only free AI answers, and outfit pictures only inside the approved budget (${live.live?.map((s) => s.provider).join(", ") || "none"})`);
+  const health = await (await get("/api/health")).json();
+  const pics = health.pictures ?? {};
+  check(typeof pics.spentUsd === "number" && pics.spentUsd <= pics.budgetUsd, `outfit pictures spend ${pics.spentUsd} of ${pics.budgetUsd} USD (today ${pics.todayUsd}, provider ${pics.provider}, made ${pics.made}, kept on a volume: ${pics.keptOnVolume})`);
   if (live.live?.some((s) => s.service === "styling_explanation")) {
     // The free writer is on: one look, in words only, and its answer must keep the voice rules.
     const look = { outfitId: "smoke-look", role: "SHARPER", title: "Navy evening", pieces: [{ slot: "top", name: "Navy merino knit" }, { slot: "outer", name: "Charcoal wool blazer" }, { slot: "bottom", name: "Grey flannel trousers" }, { slot: "shoes", name: "Dark brown suede loafers" }] };

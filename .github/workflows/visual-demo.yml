@@ -1,0 +1,40 @@
+# Makes the three demonstration outfits on the live site (tools/visual-demo.mjs) and keeps the source
+# pictures, the made pictures and a summary as a downloadable artifact. Run by hand only: each run can
+# make up to three paid pictures on the live server, inside its approved budget. No secrets are used here;
+# the key stays on the server.
+name: Visualization demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Site to use
+        default: https://praxis-redesign-production.up.railway.app
+      outfits:
+        description: Which outfits (A, B, C)
+        default: A,B,C
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Make the outfits
+        env:
+          DEMO_URL: ${{ github.event.inputs.url }}
+          DEMO_OUTFITS: ${{ github.event.inputs.outfits }}
+        run: node tools/visual-demo.mjs "$DEMO_URL" visual-demo "$DEMO_OUTFITS"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-demo
+          path: visual-demo
