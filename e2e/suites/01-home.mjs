@@ -124,4 +124,31 @@ export default async function (H) {
       check((await button.getAttribute("aria-label")) === "Pause the film", "Play starts it, and the control offers Pause");
     }, { reducedMotion: "reduce" });
   }
+
+  /*
+   * Above the fold: on a 1440 x 900 screen the window under the browser's bars is about 760 to 790 px tall,
+   * and the hero with every step of how it works fits in it. Smaller windows keep the whole hero and its five
+   * occasions in view and scroll for the rest. Nothing is clipped.
+   */
+  for (const [w, h, all] of [[1920, 1080, true], [1440, 900, true], [1440, 790, true], [1440, 760, true], [1366, 768, true], [1280, 800, true], [1024, 768, true], [1366, 660, false], [1280, 690, false]]) {
+    await scenario("P5-1h", `Home above the fold at ${w} x ${h}`, "desktop", async (p, shot) => {
+      await p.goto(`${BASE}/?mode=light`);
+      await p.waitForTimeout(900);
+      const m = await p.evaluate(() => {
+        const r = (s) => document.querySelector(s)?.getBoundingClientRect();
+        const steps = [...document.querySelectorAll(".a-steps li")].map((li) => li.getBoundingClientRect().bottom);
+        const cards = [...document.querySelectorAll(".a-cards [role=radio]")].map((c) => c.getBoundingClientRect().bottom);
+        return { steps: Math.max(...steps), strip: r(".a-steps").bottom, cards: Math.max(...cards), demo: r(".a-demo").bottom, title: r(".a-hero-title").top, header: r("header").bottom, sideways: document.documentElement.scrollWidth > innerWidth + 1 };
+      });
+      check(m.cards <= h && m.demo <= h, `the hero, its five occasions and the film are in view (cards end ${Math.round(m.cards)}, film ${Math.round(m.demo)})`);
+      if (all) check(m.strip <= h, `every step of how it works is in view (ends at ${Math.round(m.strip)} of ${h})`);
+      check(m.title - m.header >= 16, `the headline keeps its room under the bar (${Math.round(m.title - m.header)} px)`);
+      check(!m.sideways, "nothing scrolls sideways");
+      if (w === 1440 && h === 790) {
+        const cards = p.locator(".a-cards [role=radio]");
+        for (let i = 0; i < 5; i += 1) check(await cards.nth(i).isVisible(), `occasion ${i + 1} visible`);
+        await shot("fold");
+      }
+    }, { viewport: { viewport: { width: w, height: h } } });
+  }
 }
