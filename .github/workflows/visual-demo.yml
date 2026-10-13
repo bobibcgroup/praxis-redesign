@@ -1,10 +1,14 @@
 # Makes the three demonstration outfits on the live site (tools/visual-demo.mjs) and keeps the source
-# pictures, the made pictures and a summary as a downloadable artifact. Run by hand only: each run can
-# make up to three paid pictures on the live server, inside its approved budget. No secrets are used here;
-# the key stays on the server.
+# pictures, the made pictures and a summary as a downloadable artifact. Runs by hand, or when
+# .github/visual-demo-request.txt changes on main (after the deploy of that commit is live). Each run can
+# make up to three paid pictures on the live server, inside its approved budget; outfits already made come
+# from the cache at no cost. No secrets are used here; the key stays on the server.
 name: Visualization demo
 
 on:
+  push:
+    branches: [main]
+    paths: [.github/visual-demo-request.txt]
   workflow_dispatch:
     inputs:
       url:
@@ -28,10 +32,22 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Wait for this commit to be live
+        if: github.event_name == 'push'
+        env:
+          DEMO_URL: https://praxis-redesign-production.up.railway.app
+          SHA: ${{ github.sha }}
+        run: |
+          for i in $(seq 1 60); do
+            live=$(curl -fsS "$DEMO_URL/api/health" | jq -r .commit || true)
+            [ "$live" = "${SHA:0:7}" ] && sleep 20 && exit 0
+            sleep 15
+          done
+          echo "The deploy of ${SHA:0:7} did not go live in time" && exit 1
       - name: Make the outfits
         env:
-          DEMO_URL: ${{ github.event.inputs.url }}
-          DEMO_OUTFITS: ${{ github.event.inputs.outfits }}
+          DEMO_URL: ${{ github.event.inputs.url || 'https://praxis-redesign-production.up.railway.app' }}
+          DEMO_OUTFITS: ${{ github.event.inputs.outfits || 'A,B,C' }}
         run: node tools/visual-demo.mjs "$DEMO_URL" visual-demo "$DEMO_OUTFITS"
       - uses: actions/upload-artifact@v4
         if: always()
