@@ -151,4 +151,36 @@ export default async function (H) {
       }
     }, { viewport: { viewport: { width: w, height: h } } });
   }
+
+  // The Style DNA banner: his whole face is in the picture and no line of the copy sits over it.
+  // Face boxes are in the source pictures' own pixels (wide 2400 x 840, phone 800 x 600).
+  for (const [w, h, device] of [[1920, 1080, "desktop"], [1440, 900, "desktop"], [1280, 800, "desktop"], [1024, 768, "desktop"], [768, 1024, "desktop"], [390, 844, "phone"]]) {
+    await scenario("P5-1i", `Style DNA banner face clear at ${w} x ${h}`, device, async (p, shot) => {
+      await p.goto(`${BASE}/?mode=light`);
+      await p.locator(".a-dna").scrollIntoViewIfNeeded();
+      await p.waitForFunction(() => document.querySelector(".a-dna-image img")?.complete && document.querySelector(".a-dna-image img").naturalWidth > 0);
+      const m = await p.evaluate(() => {
+        const img = document.querySelector(".a-dna-image img");
+        const r = img.getBoundingClientRect();
+        const nw = img.naturalWidth, nh = img.naturalHeight, wide = nw / nh > 2;
+        const f = wide ? { x0: 490 / 2400, x1: 770 / 2400, y0: 110 / 840, y1: 480 / 840 } : { x0: 350 / 800, x1: 560 / 800, y0: 95 / 600, y1: 370 / 600 };
+        const fit = getComputedStyle(img).objectPosition.split(" ").map((v) => parseFloat(v) / 100);
+        const s = Math.max(r.width / nw, r.height / nh), dw = nw * s, dh = nh * s;
+        const ox = (r.width - dw) * fit[0], oy = (r.height - dh) * fit[1];
+        const face = { l: r.left + ox + f.x0 * dw, r: r.left + ox + f.x1 * dw, t: r.top + oy + f.y0 * dh, b: r.top + oy + f.y1 * dh };
+        const lines = [...document.querySelectorAll(".a-dna-copy > *")].map((e) => e.getBoundingClientRect());
+        return {
+          wide,
+          whole: face.l >= r.left - 1 && face.r <= r.right + 1 && face.t >= r.top - 1 && face.b <= r.bottom + 1,
+          over: lines.some((t) => t.left < face.r && t.right > face.l && t.top < face.b && t.bottom > face.t),
+          sideways: document.documentElement.scrollWidth > innerWidth + 1,
+        };
+      });
+      check(m.wide === (w >= 768), `the ${w >= 768 ? "wide" : "phone"} picture is used`);
+      check(m.whole, "his whole face is in the picture");
+      check(!m.over, "no line of the copy sits over his face");
+      check(!m.sideways, "nothing scrolls sideways");
+      if (w === 1440 || w === 390) await shot("dna");
+    }, { viewport: { viewport: { width: w, height: h } } });
+  }
 }

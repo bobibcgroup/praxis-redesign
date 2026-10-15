@@ -1029,7 +1029,8 @@
   [data-concept="a"] .a-dna-image img {
     height: 100%;
     aspect-ratio: auto;
-    object-position: left center;
+    /* Wide screens trim the photo top and bottom; keep more above his head than below. */
+    object-position: left 30%;
     -webkit-mask-image: none;
     mask-image: none;
   }
