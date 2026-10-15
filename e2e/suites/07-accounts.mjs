@@ -13,6 +13,14 @@ export default async function (H) {
       await p.waitForTimeout(700);
       await p.goto(`${BASE}/looks?mode=light`);
       await p.waitForTimeout(800);
+      const fit = await p.evaluate(() => {
+        const W = innerWidth;
+        const outside = [...document.querySelectorAll("header, header *, h1")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > W + 1 || r.left < -1); }).length;
+        const first = document.querySelector("a.a-rail-card")?.getBoundingClientRect().left ?? 0;
+        return { outside, first, stage: document.querySelector(".a-stage")?.scrollWidth ?? 0, W };
+      });
+      check(fit.outside === 0 && fit.stage <= fit.W, `the page is the window's width; only the row of looks slides (stage ${fit.stage} of ${fit.W})`);
+      check(fit.first >= 16, `the first look keeps its margin (${Math.round(fit.first)} px)`);
       await p.locator("a.a-rail-card").first().click();
       await p.waitForURL(/\/looks\/.+/);
       await p.waitForTimeout(600);
@@ -83,4 +91,39 @@ export default async function (H) {
     check(/No saved looks yet/.test(await o.locator("body").innerText()), "another device has nothing: saved looks live in this browser until accounts have a server (known limit)");
     await other.close();
   });
+
+  /* Several saved looks make a row wider than the window. Only that row may slide: the page, its bar and
+     its heading stay the window's width (Tarek found the whole page sliding and the menu off screen). */
+  for (const device of ["phone", "desktop"]) {
+    await scenario("P3-7d", "Signed in with three saved looks, only the row of looks slides sideways", device, async (p, shot) => {
+      await p.goto(`${BASE}/?mode=light`);
+      await menuClick(p, /^Sign in$/);
+      await p.waitForTimeout(400);
+      await p.locator("#gate-email").fill("rail@example.com");
+      await button(p, /Continue with email/).click();
+      await p.waitForTimeout(1400);
+      await toResults(p, A);
+      for (let i = 0; i < 3; i += 1) {
+        await p.locator(".a-thumbs button").filter({ visible: true }).nth(i).click();
+        await p.waitForTimeout(500);
+        await button(p, /^Save/).click();
+        await p.waitForTimeout(500);
+      }
+      await p.goto(`${BASE}/looks?mode=light`);
+      await p.waitForTimeout(900);
+      const m = await p.evaluate(() => {
+        const W = innerWidth;
+        const outside = [...document.querySelectorAll("header, header *, h1")].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.right > W + 1 || r.left < -1); }).length;
+        const rail = document.querySelector("ul.a-rail");
+        return { W, cards: document.querySelectorAll("a.a-rail-card").length, outside, stage: document.querySelector(".a-stage").scrollWidth, doc: document.documentElement.scrollWidth, rail: rail.scrollWidth > rail.clientWidth };
+      });
+      check(m.cards === 3, `three saved looks (${m.cards})`);
+      check(m.outside === 0, "the bar, the menu and the heading are inside the window");
+      check(m.stage <= m.W && m.doc <= m.W, `the page is the window's width (${m.stage} of ${m.W})`);
+      if (device === "phone") check(m.rail, "the row of looks slides inside itself");
+      await p.evaluate(() => window.scrollTo(300, 0));
+      check((await p.evaluate(() => scrollX)) === 0, "the page itself does not move sideways");
+      await shot("saved");
+    });
+  }
 }

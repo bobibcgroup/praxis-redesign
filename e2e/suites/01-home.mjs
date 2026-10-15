@@ -127,11 +127,14 @@ export default async function (H) {
 
   /*
    * Above the fold: on a 1440 x 900 screen the window under the browser's bars is about 760 to 790 px tall,
-   * and the hero with every step of how it works fits in it. Smaller windows keep the whole hero and its five
+   * and on a laptop with a bookmarks bar and the dock about 700; the hero with every step of how it works
+   * fits in it. Smaller windows keep the whole hero and its five
    * occasions in view and scroll for the rest. Nothing is clipped.
    */
-  for (const [w, h, all] of [[1920, 1080, true], [1440, 900, true], [1440, 790, true], [1440, 760, true], [1366, 768, true], [1280, 800, true], [1024, 768, true], [1366, 660, false], [1280, 690, false]]) {
+  for (const [w, h, all] of [[1920, 1080, true], [1440, 900, true], [1440, 790, true], [1440, 760, true], [1470, 712, true], [1440, 680, true], [1366, 768, true], [1280, 800, true], [1024, 768, true], [1366, 660, false], [1280, 690, false]]) {
     await scenario("P5-1h", `Home above the fold at ${w} x ${h}`, "desktop", async (p, shot) => {
+      // With a country's photos, so the "Photographed in" line under the prints takes its room too.
+      await p.addInitScript(() => { try { localStorage.setItem("praxis_country", "AT"); } catch {} });
       await p.goto(`${BASE}/?mode=light`);
       await p.waitForTimeout(900);
       const m = await p.evaluate(() => {
