@@ -163,7 +163,7 @@ export default async function (H) {
         const img = document.querySelector(".a-dna-image img");
         const r = img.getBoundingClientRect();
         const nw = img.naturalWidth, nh = img.naturalHeight, wide = nw / nh > 2;
-        const f = wide ? { x0: 490 / 2400, x1: 770 / 2400, y0: 110 / 840, y1: 480 / 840 } : { x0: 350 / 800, x1: 560 / 800, y0: 95 / 600, y1: 370 / 600 };
+        const f = wide ? { x0: 430 / 2400, x1: 600 / 2400, y0: 105 / 840, y1: 305 / 840 } : { x0: 350 / 800, x1: 480 / 800, y0: 85 / 600, y1: 245 / 600 };
         const fit = getComputedStyle(img).objectPosition.split(" ").map((v) => parseFloat(v) / 100);
         const s = Math.max(r.width / nw, r.height / nh), dw = nw * s, dh = nh * s;
         const ox = (r.width - dw) * fit[0], oy = (r.height - dh) * fit[1];

@@ -13,7 +13,7 @@ Free photos from Unsplash, used under the Unsplash License (free for commercial 
 
 ## Style DNA banner
 
-`style-dna-wide-{1600,2400}.webp` and `style-dna-phone-{800,1200}.webp` are made from one free Unsplash photo by Batuhan Doğan, used under the Unsplash License: https://unsplash.com/photos/lg9R_2r-vAs
+`style-dna-wide-{1600,2400}.webp` and `style-dna-phone-{800,1200}.webp` are made from Tarek Hassoun's own portrait (https://www.mrtarek.com/tarek.jpg, 896 x 1200), used at his request.
 
-- Wide (20:7): the man, head to chest, on the left; the photo's own sunlit stone, out of focus and lightened, continues to the right behind the copy.
-- Phone (4:3): the same photo, head to chest, with the copy below it.
+- Wide (20:7): head to knee on the left; the photo's own window light, out of focus and warmed, continues to the right behind the copy.
+- Phone (4:3): the same photo, head to waist, with the copy below it.

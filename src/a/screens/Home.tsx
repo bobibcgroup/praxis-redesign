@@ -31,7 +31,7 @@ const STEPS = [
 const DNA_BANNER = {
   wide: "/images/home/style-dna-wide-1600.webp 1600w, /images/home/style-dna-wide-2400.webp 2400w",
   phone: "/images/home/style-dna-phone-800.webp 800w, /images/home/style-dna-phone-1200.webp 1200w",
-  alt: "A man in a white linen shirt and dark sunglasses on a sunlit stone street",
+  alt: "A man in a camel double breasted overcoat and dark roll neck by a sunlit office window",
 };
 
 function StyleDna() {
