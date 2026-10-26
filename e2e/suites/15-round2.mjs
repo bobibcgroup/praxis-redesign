@@ -178,4 +178,26 @@ export default async function (H) {
       await shot("results");
     }, vp(w, h));
   }
+
+  await scenario("P5-15i", "Prices: the total, Check out and the checkout sheet agree; unticking updates all three; example prices say so", "desktop", async (p, shot) => {
+    await p.goto(results("occasion=WORK&venue=CLIENT&time=DAY&vibe=SHARP&spend=ELEVATED"));
+    await p.waitForTimeout(1200);
+    const money = (t) => Number(String(t).replace(/[^0-9.]/g, ""));
+    const prices = await p.locator(".a-piece .price").filter({ visible: true }).allInnerTexts();
+    const sum = prices.map(money).reduce((a, b) => a + b, 0);
+    const total = async () => money(await p.locator(".a-total .a-mono").filter({ visible: true }).first().innerText());
+    const hint = async () => money(await p.getByRole("button", { name: /^Check out/ }).locator(".hint").innerText());
+    check((await total()) === sum && (await hint()) === sum, `the total and Check out are the sum of the pieces ($${sum})`);
+    check(/for illustration/.test(await body(p)), "example prices are labelled as illustration");
+    await p.locator(".a-piece.a-pick").filter({ visible: true }).first().click();
+    await p.waitForTimeout(300);
+    const less = sum - money(prices[0]);
+    check((await total()) === less && (await hint()) === less, `unticking a piece takes it off both ($${less})`);
+    await p.getByRole("button", { name: /^Check out/ }).click();
+    await p.waitForTimeout(700);
+    const sheet = p.getByRole("dialog", { name: "Check out" });
+    check(money(await sheet.locator(".a-mono").last().innerText()) === less, "the checkout sheet shows the same total");
+    check(/Prices are examples/.test(await sheet.innerText()) && (await sheet.getByRole("button", { name: /Buying isn’t open yet/ }).count()) === 1, "no purchase is offered for example pieces");
+    await shot("checkout");
+  });
 }
