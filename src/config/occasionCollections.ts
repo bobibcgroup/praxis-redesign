@@ -44,15 +44,15 @@ export const OCCASION_FILES: Record<OccasionId, string> = {
   PARTY: "party",
 };
 
-/** The international collection: the photos the home has always used (public/images/home/CREDITS.md). */
+/** The international collection, one campaign from the Round 2 review's reference board (public/images/home/CREDITS.md). */
 export const DEFAULT_COLLECTION: { version: number; photos: Record<OccasionId, OccasionPhoto> } = {
-  version: 1,
+  version: 2,
   photos: {
-    DINNER: { base: "/images/home/dinner", alt: "A candlelit restaurant table" },
-    WORK: { base: "/images/home/work", alt: "A man in a tailored suit in the city" },
-    DATE: { base: "/images/home/date", alt: "Two glasses raised in a toast" },
-    WEDDING: { base: "/images/home/wedding", alt: "White roses in a wedding bouquet" },
-    PARTY: { base: "/images/home/party", alt: "A martini on a bar at night" },
+    DINNER: { base: "/images/home/dinner", alt: "A candlelit table with cut glass goblets under soft warm light" },
+    WORK: { base: "/images/home/work", alt: "A man in a taupe double breasted suit in front of an arched doorway" },
+    DATE: { base: "/images/home/date", alt: "A couple sharing coffee by candlelight under string lights" },
+    WEDDING: { base: "/images/home/wedding", alt: "A long wedding table with white flowers beneath tall arched windows" },
+    PARTY: { base: "/images/home/party", alt: "A lounge bar in burgundy velvet lit by small table lamps" },
   },
 };
 

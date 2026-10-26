@@ -1,14 +1,11 @@
 # Home photographs
 
-Free photos from Unsplash, used under the Unsplash License (free for commercial use, no attribution required). Cropped and saved as WebP at 480 and 960 wide.
+Occasion cards (dinner, work, date, wedding, party), since 2026-10-26: cropped from the photography reference board in Ola's Round 2 review (Tarek's document "Fashion Project Feedback no.2"), used at Tarek's request. The board's own source and licence are to be confirmed with Ola. The board is small, so each crop is about 400 px wide, enlarged to 480 and 960. The Unsplash photos they replace are in git history before this change.
+
+The Style DNA cloth photo is free from Unsplash, under the Unsplash License (free for commercial use, no attribution required).
 
 | File | Photo |
 |---|---|
-| dinner | https://unsplash.com/photos/a-formal-dining-table-set-with-wine-glasses-and-candles-ZLsmvlmXcLg |
-| work | https://unsplash.com/photos/man-in-black-suit-standing-on-sidewalk-during-daytime-5sYQ1uD4pHU |
-| date | https://unsplash.com/photos/people-toasting-with-white-wine-glasses-ePPEDO9EeeI |
-| wedding | https://unsplash.com/photos/white-flower-arrangement-i4NqeIHNbTI |
-| party | https://unsplash.com/photos/clear-martini-glass-on-brown-wooden-table-QjUY7auDzUQ |
 | dna (Style DNA) | https://unsplash.com/photos/a-close-up-of-a-brown-and-black-fabric-t3mSDMjd9ZY |
 
 ## Style DNA banner
