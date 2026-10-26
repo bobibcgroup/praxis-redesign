@@ -113,9 +113,9 @@ export const TIME_LINE: Record<string, Record<string, string>> = {
 
   work_safest_01: { DAY: "Built for a full working day, comfortable from the first meeting to the last.", NIGHT: "A clean shirt carries into an evening work commitment, such as a dinner or an event." },
   work_sharper_01: { DAY: "Crisp enough for the most important meeting of the day.", NIGHT: "A blazer and a crisp shirt are refined for evening commitments." },
-  work_relaxed_01: { DAY: "Comfortable from morning to evening and still neat.", NIGHT: "A fine knit polo is relaxed enough for drinks after work and still professional." },
+  work_relaxed_01: { DAY: "Light enough for a long working day and still neat.", NIGHT: "A fine knit polo is relaxed enough for drinks after work and still professional." },
 
-  date_safest_01: { DAY: "Fresh and easy for a daytime date, and the white sneakers keep it light.", SUNSET: "Easy for an early evening, and the overshirt helps when it cools.", NIGHT: "Dark jeans and a neutral overshirt carry well into the night." },
+  date_safest_01: { DAY: "Fresh and easy for a daytime date, and the white sneakers keep it light.", SUNSET: "Suited to an early evening, and the overshirt helps when it cools.", NIGHT: "Dark jeans and a neutral overshirt carry well into the night." },
   date_sharper_01: { DAY: "Navy and a fine knit feel fresh in daylight, not like office wear.", SUNSET: "Polished for an early evening, with a blazer for when the air cools.", NIGHT: "A navy blazer is refined for a night out." },
   date_relaxed_01: { DAY: "A plain t-shirt and a light jacket are easy for daytime.", SUNSET: "Easy to wear into the evening, with a jacket for later.", NIGHT: "Ready for a relaxed night out." },
 
@@ -138,24 +138,24 @@ export const TIME_LINE: Record<string, Record<string, string>> = {
     NIGHT: "An open collar keeps a night reception relaxed and elegant.",
   },
 
-  party_safest_01: { DAY: "A clean jacket over black works for a daytime event without looking like evening wear.", SUNSET: "Ready for an early evening, and the jacket stays on as it cools.", NIGHT: "Black and a clean jacket work in any room after dark." },
-  party_sharper_01: { DAY: "All black looks graphic and modern in daylight, right for a daytime opening.", SUNSET: "A blazer over black is ready for an early evening event.", NIGHT: "All black with a blazer is confident for the night." },
+  party_safest_01: { DAY: "A clean jacket over black works for a daytime event without looking like evening wear.", SUNSET: "Ready for an early evening, and the jacket stays on as it cools.", NIGHT: "Dark tones and leather feel right after dark." },
+  party_sharper_01: { DAY: "All black looks graphic and modern in daylight, right for a daytime opening.", SUNSET: "A blazer over black is ready for an early evening event.", NIGHT: "All black with a blazer holds its own after dark." },
   party_relaxed_01: { DAY: "A bomber over a plain t-shirt is easy for a daytime party.", SUNSET: "A bomber is the right weight as the evening begins.", NIGHT: "Easy to move in and right for the night." },
 };
 
 /** Feel: how the pieces give the feel the customer asked for. */
 export const FEEL_LINE: Record<string, string> = {
   dinner_safest_01: "Clean and understated, the classic feel you asked for.",
-  dinner_sharper_01: "The blazer and boots give it the sharp, defined finish you asked for.",
+  dinner_sharper_01: "Clean, defined lines, the sharp finish you asked for.",
   dinner_relaxed_01: "Relaxed, as you asked, and still put together.",
   work_safest_01: "Timeless and professional, the classic feel you asked for.",
   work_sharper_01: "Defined lines and a confident finish, the sharp feel you asked for.",
   work_relaxed_01: "Comfortable and still considered, the relaxed feel you asked for.",
-  date_safest_01: "Understated and easy, the classic feel you asked for.",
-  date_sharper_01: "The blazer gives it the polished, confident finish you asked for.",
+  date_safest_01: "Understated and natural, the classic feel you asked for.",
+  date_sharper_01: "Polished and confident, the sharp feel you asked for.",
   date_relaxed_01: "Comfortable and naturally put together, as you asked.",
-  wedding_safest_01: "Timeless and right for the day, the classic feel you asked for.",
-  wedding_sharper_01: "Defined tailoring and a tie give it the sharp finish you asked for.",
+  wedding_safest_01: "Timeless and right for the occasion, the classic feel you asked for.",
+  wedding_sharper_01: "Defined tailoring, the sharp finish you asked for.",
   wedding_relaxed_01: "Effortless elegance with an open collar, the relaxed feel you asked for.",
   party_safest_01: "Clean and simple, the classic feel you asked for.",
   party_sharper_01: "Bold, defined and confident, the sharp feel you asked for.",
