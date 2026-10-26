@@ -1,6 +1,8 @@
 /**
  * Why this look: the answers that shaped it, each with what it did, exactly as the recommendation
- * service gave them. The screen never writes a reason of its own.
+ * service gave them. The screen never writes a reason of its own; it only gathers them into three
+ * short groups (the occasion and setting, the time and feel, the budget), then anything else that
+ * moved the look, such as an owned piece, the Style DNA or earlier feedback.
  *
  * A real disclosure: the whole header is the button, and the reasons fold away entirely (height to
  * nothing, then hidden, so they leave the reading and tab order and what follows moves up). Open at
@@ -14,6 +16,27 @@ import type { RecommendationFactor } from "../../core/contracts";
 import { useJourney } from "../lib/journeyContext";
 
 const ORDER: RecommendationFactor["factor"][] = ["occasion", "venue", "time", "style", "budget", "wardrobe", "style_dna", "feedback", "colour", "body", "weather"];
+/** Factors read together: one label and the reasons of each, in this order. */
+const GROUPS: RecommendationFactor["factor"][][] = [["occasion", "venue"], ["time", "style"], ["budget"]];
+
+interface Row {
+  key: string;
+  label: string;
+  text: string;
+}
+
+/** The three groups first, then every other factor on its own row, in ORDER. Rows with nothing to say are left out. */
+export function whyRows(factors: RecommendationFactor[]): Row[] {
+  const grouped = GROUPS.map((kinds) => {
+    const members = kinds.flatMap((k) => factors.filter((f) => f.factor === k));
+    return { key: kinds.join("-"), label: members.map((f) => f.value).join(", "), text: members.map((f) => f.influence ?? "").filter(Boolean).join(" ") };
+  });
+  const rest = factors
+    .filter((f) => !GROUPS.flat().includes(f.factor))
+    .sort((a, b) => ORDER.indexOf(a.factor) - ORDER.indexOf(b.factor))
+    .map((f) => ({ key: `${f.factor}-${f.value}`, label: f.value, text: f.influence ?? "" }));
+  return [...grouped, ...rest].filter((r) => r.label && r.text);
+}
 const FOLD = { duration: 0.25, ease: [0.22, 0.61, 0.36, 1] as const };
 
 /** The customer's own choice for this tab; null until they make one. Each look mounts afresh, so it lives here. */
@@ -31,8 +54,8 @@ export function LookWhy({ factors, lookId }: { factors: RecommendationFactor[]; 
   /* Hidden once folded, so the reasons leave the page's reading and tab order; shown again before unfolding. */
   const [gone, setGone] = useState(() => !open);
   const id = useId();
-  if (factors.length === 0) return null;
-  const sorted = [...factors].sort((a, b) => ORDER.indexOf(a.factor) - ORDER.indexOf(b.factor));
+  const rows = whyRows(factors);
+  if (rows.length === 0) return null;
   const toggle = () => {
     chosen = !open;
     if (!open) setGone(false);
@@ -54,10 +77,10 @@ export function LookWhy({ factors, lookId }: { factors: RecommendationFactor[]; 
         onAnimationComplete={() => setGone(!open)}
       >
         <dl className="a-why-list">
-          {sorted.map((f) => (
-            <div key={`${f.factor}-${f.value}`}>
-              <dt className="a-label">{f.value}</dt>
-              <dd>{f.influence ?? ""}</dd>
+          {rows.map((r) => (
+            <div key={r.key}>
+              <dt className="a-label">{r.label}</dt>
+              <dd>{r.text}</dd>
             </div>
           ))}
         </dl>

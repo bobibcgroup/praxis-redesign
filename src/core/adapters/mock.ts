@@ -12,10 +12,14 @@
  * - The place must be one the outfit is tagged for (+2), and nudges formality: a casual place
  *   favours the relaxed look, a formal one the sharper look (+1).
  * - The time of day must match the outfit's day or night tag (+1, or -1 when it does not).
+ *   The place and time tags follow the pieces in each photograph (reviewed 2026-10-26): a blazer
+ *   and a crisp shirt suit an evening client meeting, a black tee and a clean jacket suit a club.
  * - The budget favours outfits tagged for that spend (+1); every example price is drawn from the band.
  * - A piece the customer owns replaces that slot in every look. The photo still shows the original.
  * - Style DNA: the customer's tastes and week lean towards a tier (+1). Fit and colours are passed
  *   on in the explanation but cannot change a photographed outfit.
+ * - The reasons come from the same rules, in the stylist's words, one line per look for the place,
+ *   the hour and the feel (mockWords.ts), so they are always about the pieces actually shown.
  * - Feedback: a look marked More like this is favoured (+2); a look marked Not for me drops to the
  *   end (-6); "too formal" or "too casual" twice or more moves away from the sharper or relaxed tier (-1).
  * - Budget is a limit, not a hint: example prices are drawn inside the band, and a look whose example
@@ -27,6 +31,7 @@ import type { BudgetType, LocationType, TimeType } from "../../types/praxis";
 import { OCCASIONS, SPEND, TIMES, VIBES } from "../../shared/catalog";
 import { CONTRACT_VERSION, type BudgetBand, type Garment, type OutfitRecommendation, type OutfitRole, type RecommendationFactor, type Slot, type StylingRequest, type StylingResponse, type Vibe } from "../contracts";
 import type { RecommendationAdapter } from "../service";
+import { FEEL_LINE, OPTION_LINE, SETTING_LINE, TIME_LINE } from "./mockWords";
 
 export const MOCK_ADAPTER = { id: "mock", version: "1.0.0" } as const;
 
@@ -239,62 +244,63 @@ const VENUE_NOUN: Record<string, string> = {
   HOUSE: "a house party",
   LAUNCH: "a launch or gallery",
 };
-const TIME_AT: Record<StylingRequest["timeOfDay"], string> = { SUNRISE: "at sunrise", DAY: "in the day", SUNSET: "at sunset", NIGHT: "at night" };
+const TIME_AT: Record<StylingRequest["timeOfDay"], string> = { SUNRISE: "at sunrise", DAY: "during the day", SUNSET: "in the early evening", NIGHT: "at night" };
 const FEEL_WORD: Record<Vibe, string> = { SAFE: "Classic", SHARP: "Sharp", RELAXED: "Relaxed" };
-const ALTERNATIVE: Record<TierType, string> = { SAFEST: "A classic alternative", SHARPER: "A sharper alternative", RELAXED: "A more relaxed alternative" };
+const OPTION: Record<TierType, string> = { SAFEST: "The classic option", SHARPER: "The sharper option", RELAXED: "The easier option" };
 
 function label<T extends string>(list: readonly { id: T; label: string }[], id: T): string {
   return list.find((o) => o.id === id)?.label ?? id;
 }
 
+const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
+
+/** The budget line states the example total itself, and what it covers, against the band chosen. */
 function budgetInfluence(req: StylingRequest, total: number): string {
-  if (req.budget.band === "OPEN") return "Example prices, with no limit set";
+  const owned = req.wardrobeItems.length > 0;
+  const covers = owned ? "for the pieces to buy" : "for the whole look";
+  const head = `Example prices, ${usd(total)} ${covers}`;
+  if (req.budget.band === "OPEN") return `${head}. You set no limit.`;
   const min = req.budget.minimum;
-  if (min !== undefined && total < min && req.wardrobeItems.length) return "Under your budget, because one piece is already yours";
-  return "Example prices inside your budget";
+  if (min !== undefined && total < min && owned) return `${head}, under your range because a piece is already yours.`;
+  return req.budget.band === "SENSIBLE" ? `${head}, inside your budget of under $300.` : `${head}, inside your $300 to $900 range.`;
 }
 
+/**
+ * The reasons, from the same rules that ranked the look. Each line comes from what the pieces in
+ * this photograph do for the place, the hour and the feel (mockWords.ts). The occasion carries no
+ * line of its own: the setting line already says why the look suits it. When a look does not match
+ * the place or the hour the rules say so in plain words, so a weak pick is never hidden.
+ */
 function explain(s: Scored, req: StylingRequest, total: number): OutfitRecommendation["explanation"] {
+  const id = s.entry.id;
   const at = VENUE_AT[req.venue.type] ?? "";
   const context = `for ${OCCASION_PHRASE[req.occasion]} ${at} ${TIME_AT[req.timeOfDay]}`.replace(/\s+/g, " ").trim();
-  const lead = s.feel ? `${FEEL_WORD[req.preferredVibe]}, as you asked, ${context}.` : `${ALTERNATIVE[s.entry.tier]} ${context}.`;
+  const lead = s.feel ? `${FEEL_WORD[req.preferredVibe]}, as you asked, ${context}.` : `${OPTION[s.entry.tier]} ${context}.`;
   const noun = VENUE_NOUN[req.venue.type] ?? req.venue.label.toLowerCase();
-  const caveats = [!s.place ? `Less usual for ${noun}.` : "", !s.time ? (TIME_TAG[req.timeOfDay] === "NIGHT" ? "More of a daytime look." : "More of an evening look.") : ""].filter(Boolean);
+  const night = TIME_TAG[req.timeOfDay] === "NIGHT";
 
-  const tag = TIME_TAG[req.timeOfDay];
+  const setting = SETTING_LINE[id]?.[req.venue.type] ?? (s.place ? `Suited to ${noun}.` : `Not one I’d usually choose for ${noun}.`);
+  const time = s.time ? (TIME_LINE[id]?.[req.timeOfDay] ?? (night ? "Right for the evening." : "Right for the day.")) : night ? "Cut more for the day than the evening." : "Cut more for the evening than the day.";
+  const feel = s.feel ? (FEEL_LINE[id] ?? `The ${label(VIBES, req.preferredVibe).toLowerCase()} feel you asked for.`) : (OPTION_LINE[id] ?? `${OPTION[s.entry.tier]}.`);
+
   const factors: RecommendationFactor[] = [
-    { factor: "occasion", value: label(OCCASIONS, req.occasion), influence: `One of my ${label(OCCASIONS, req.occasion).toLowerCase()} looks` },
-    { factor: "venue", value: req.venue.label, influence: s.place ? `Right for ${noun}` : `Less usual for ${noun}` },
-    {
-      factor: "time",
-      value: label(TIMES, req.timeOfDay),
-      influence: s.bothTimes ? "Works day or night" : s.time ? (tag === "NIGHT" ? "Made for the evening" : "Made for the day") : tag === "NIGHT" ? "More of a daytime look" : "More of an evening look",
-    },
-    {
-      factor: "style",
-      value: label(VIBES, req.preferredVibe),
-      influence: s.feel ? `The ${label(VIBES, req.preferredVibe).toLowerCase()} feel you asked for` : ALTERNATIVE[s.entry.tier],
-    },
-    {
-      factor: "budget",
-      value: label(SPEND, req.budget.band),
-      influence: budgetInfluence(req, total),
-    },
-    ...(req.styleProfile
-      ? [
-          {
-            factor: "style_dna" as const,
-            value: "Your Style DNA",
-            influence: s.dna ? "Close to the taste in your Style DNA" : dnaTier(req.styleProfile) ? "A step away from your usual taste, for this occasion" : "Your Style DNA was read; it doesn’t lean either way here",
-          },
-        ]
-      : []),
-    ...(s.liked ? [{ factor: "feedback" as const, value: "More like this", influence: "You liked this look before" }] : []),
-    ...(s.rejected ? [{ factor: "feedback" as const, value: "Not for me", influence: "You passed on this look before, so it comes last" }] : []),
-    ...(s.steered ? [{ factor: "feedback" as const, value: "Your notes", influence: "Placed lower, after your notes on formality" }] : []),
+    { factor: "occasion", value: label(OCCASIONS, req.occasion) },
+    { factor: "venue", value: req.venue.label, influence: setting },
+    { factor: "time", value: label(TIMES, req.timeOfDay), influence: time },
+    { factor: "style", value: label(VIBES, req.preferredVibe), influence: feel },
+    { factor: "budget", value: label(SPEND, req.budget.band), influence: budgetInfluence(req, total) },
     ...req.wardrobeItems.map((w): RecommendationFactor => ({ factor: "wardrobe", value: w.label, influence: "Kept in the look. The photo shows a similar piece." })),
+    // Style DNA only when it moved this look: towards it, or away from it for this occasion.
+    ...(s.dna
+      ? [{ factor: "style_dna" as const, value: "Your Style DNA", influence: "Close to the taste in your Style DNA." }]
+      : dnaTier(req.styleProfile)
+        ? [{ factor: "style_dna" as const, value: "Your Style DNA", influence: "A step away from your usual taste, chosen for this occasion." }]
+        : []),
+    ...(s.liked ? [{ factor: "feedback" as const, value: "More like this", influence: "You liked this look before." }] : []),
+    ...(s.rejected ? [{ factor: "feedback" as const, value: "Not for me", influence: "You passed on this look before, so it comes last." }] : []),
+    ...(s.steered ? [{ factor: "feedback" as const, value: "Your notes", influence: "Placed lower, after your notes on formality." }] : []),
   ];
-  return { summary: [lead, ...caveats].join(" "), contributingFactors: factors, source: "mock_rules" };
+  return { summary: lead, contributingFactors: factors, source: "mock_rules" };
 }
 
 /* ---------------------------------------------------------- the answer */

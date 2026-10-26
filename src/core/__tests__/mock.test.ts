@@ -27,10 +27,14 @@ describe("mock adapter", () => {
     expect(a.outfits[0].pricing.total).toBeGreaterThan(b.outfits[0].pricing.total);
   });
 
-  it("lets the place and the time change the order, not only the feel", () => {
-    const dateWalkDay = mockRecommend(req({ occasion: "DATE", venue: "WALK", time: "DAY", vibe: "SAFE", spend: "SENSIBLE" }));
-    const dateBarNight = mockRecommend(req({ occasion: "DATE", venue: "BAR", time: "NIGHT", vibe: "SAFE", spend: "SENSIBLE" }));
-    expect(dateWalkDay.outfits.map((o) => o.outfitId)).not.toEqual(dateBarNight.outfits.map((o) => o.outfitId));
+  it("lets the place change the order, not only the feel, and the time change the words", () => {
+    const dateWalkDay = mockRecommend(req({ occasion: "DATE", venue: "WALK", time: "DAY", vibe: "SHARP", spend: "SENSIBLE" }));
+    const dateRestaurantNight = mockRecommend(req({ occasion: "DATE", venue: "RESTAURANT", time: "NIGHT", vibe: "SHARP", spend: "SENSIBLE" }));
+    expect(dateWalkDay.outfits.map((o) => o.outfitId)).not.toEqual(dateRestaurantNight.outfits.map((o) => o.outfitId));
+    const workDay = mockRecommend(req({ occasion: "WORK", venue: "OFFICE", time: "DAY", vibe: "SAFE", spend: "ELEVATED" }));
+    const workNight = mockRecommend(req({ occasion: "WORK", venue: "OFFICE", time: "NIGHT", vibe: "SAFE", spend: "ELEVATED" }));
+    const timeLine = (r: typeof workDay) => r.outfits[0].explanation.contributingFactors.find((f) => f.factor === "time")?.influence;
+    expect(timeLine(workDay)).not.toBe(timeLine(workNight));
   });
 
   it("explains each look with the factors it used, never with a model's reasoning", () => {
@@ -38,18 +42,19 @@ describe("mock adapter", () => {
     for (const o of r.outfits) {
       expect(o.explanation.source).toBe("mock_rules");
       expect(o.explanation.contributingFactors.map((f) => f.factor)).toEqual(["occasion", "venue", "time", "style", "budget"]);
-      expect(o.explanation.contributingFactors.every((f) => f.influence && f.influence.length > 0)).toBe(true);
+      // The occasion carries no line of its own: the setting line says why the look suits it.
+      expect(o.explanation.contributingFactors.filter((f) => f.factor !== "occasion").every((f) => f.influence && f.influence.length > 0)).toBe(true);
     }
     expect(r.outfits[0].explanation.summary).toBe("Sharp, as you asked, for dinner at a restaurant at night.");
-    // The relaxed dinner look is not tagged for evenings out at its budget, and the explanation says what it is.
-    expect(r.outfits[2].explanation.summary).toMatch(/^A more relaxed alternative/);
+    expect(r.outfits[0].explanation.contributingFactors.find((f) => f.factor === "venue")?.influence).toBe("A blazer over a fitted knit is refined for a restaurant without feeling stiff.");
+    // The other looks say what they offer instead of the feel asked for.
+    expect(r.outfits[2].explanation.summary).toMatch(/^The (easier|classic) option/);
   });
 
-  it("says when a look is less usual for the place, instead of hiding it", () => {
+  it("says plainly when a look is dressier than the place, instead of hiding it", () => {
     const r = mockRecommend(req(SCENARIO_B));
     const sharper = r.outfits.find((o) => o.outfitId === "dinner_sharper_01");
-    expect(sharper?.explanation.summary).toContain("Less usual for someone’s home.");
-    expect(sharper?.explanation.contributingFactors.find((f) => f.factor === "venue")?.influence).toBe("Less usual for someone’s home");
+    expect(sharper?.explanation.contributingFactors.find((f) => f.factor === "venue")?.influence).toMatch(/^Dressier than most dinners at home\./);
   });
 
   it("is a demonstration with example prices and unknown stock", () => {
