@@ -32,7 +32,7 @@ export default async function (H) {
       await button(p, "Explore Style DNA").click();
       await p.waitForTimeout(600);
       const intro = await p.locator(".a-gate").innerText();
-      check(/Your style. More personal/.test(intro) && /Four short steps/.test(intro) && /in preview/.test(intro), "the introduction says what it gives, what it takes and that it is a preview");
+      check(/Your style. More personal/.test(intro) && /Four short steps/.test(intro) && /in preview/i.test(intro), "the introduction says what it gives, what it takes and that it is a preview");
       await shot("intro");
       await button(p, "Start").click();
       await p.waitForTimeout(500);

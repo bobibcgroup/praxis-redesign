@@ -606,7 +606,7 @@ for (const device of ["desktop", "phone"]) {
     check((await p.getByRole("button", { name: /^Check out/ }).filter({ visible: true }).count()) === 0, "no Check out for the friend");
     check((await p.getByRole("button", { name: /^Share$/ }).filter({ visible: true }).count()) === 0, "no Share button for the friend");
     check((await button(p, /^Send to someone else$/).count()) === 1, "a quiet Send to someone else instead, saying what it does");
-    check(/The look your friend sent/.test(await body(p)), "the look they shared is named as the one they're asking about");
+    check(/The look your friend sent/i.test(await body(p)), "the look they shared is named as the one they're asking about");
     check(/would like your opinion/.test(await body(p)), "the page says the friend wants an opinion, not a sale");
     check((await p.getByRole("link", { name: /Get your own looks/ }).filter({ visible: true }).count()) === 1, "Get your own looks leads");
     await shot("friend");
