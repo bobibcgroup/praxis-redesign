@@ -16,13 +16,8 @@ const PAY_MS = 1200;
 
 export type PremiumFeature = "style_dna" | "tryon";
 
-const DNA_GETS = [
-  "Looks shaped around you, not only the occasion",
-  "Your colours, kept with your profile",
-  "Your fit and taste, remembered",
-  "One profile you can review and change",
-  "Your own pieces, worked into your looks",
-];
+/** Only what Style DNA does today. Using your own pieces is open to everyone, so it isn't listed here. */
+const DNA_GETS = ["Your style preferences, saved", "Your fit and colours, remembered", "A profile you can revisit and update"];
 
 function Gets({ items }: { items: string[] }) {
   return (
@@ -51,7 +46,7 @@ function IntroHead({ eyebrow, title }: { eyebrow: string; title: string }) {
 
 function IntroFoot({ onStart, onLater, start }: { onStart: () => void; onLater: () => void; start: string }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       <p className="flex items-baseline gap-2">
         <span className="text-[15px]">{PREMIUM.name}</span>
         <span className="a-mono text-[15px] text-[var(--muted)]">{premiumPrice()}</span>
@@ -68,14 +63,15 @@ function IntroFoot({ onStart, onLater, start }: { onStart: () => void; onLater: 
 /** Style DNA, explained before anything is asked: what it gives, what it takes, how long, the price. */
 export function DnaIntro({ onStart, onLater }: { onStart: () => void; onLater: () => void }) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <IntroHead eyebrow="Style DNA" title="Your style. More personal." />
+      <p className="text-[15px] leading-6">Go beyond the occasion. A personal style profile that remembers your fit, colours, lifestyle and preferences.</p>
       <Gets items={DNA_GETS} />
-      <div>
-        <p className="a-label text-[var(--muted)]">What it takes</p>
-        <p className="mt-2 text-[15px] leading-6">Four short steps: a photo of your face, or a sample instead, then your fit, your week and your taste. About two minutes.</p>
+      <div className="a-preview-note">
+        <p className="a-label text-[var(--muted)]">In preview</p>
+        <p className="mt-1 text-[15px] leading-6">Today I save your profile and lean your looks towards your taste. Looks built around your colours and fit come next.</p>
       </div>
-      <p className="text-[13px] leading-5 text-[var(--muted)]">Style DNA is in preview. It keeps your profile today; looks built on it come next.</p>
+      <p className="text-[13px] leading-5 text-[var(--muted)]">Four short steps: a photo of your face, or a sample instead, then your fit, your lifestyle and your personal taste. About two minutes.</p>
       <IntroFoot onStart={onStart} onLater={onLater} start="Start" />
     </div>
   );

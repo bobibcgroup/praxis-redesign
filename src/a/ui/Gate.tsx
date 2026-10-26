@@ -150,7 +150,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
         animate={{ opacity: 1, y: 0 }}
         exit={hidden}
         transition={{ duration: reduced ? 0 : 0.24, ease: [0.16, 1, 0.3, 1] }}
-        className="a-gate relative"
+        className={`a-gate relative ${!success && step === "intro" ? "a-gate-wide" : ""}`}
       >
         <div className="flex h-14 shrink-0 items-center justify-between pl-5 pr-2 lg:pl-8 lg:pr-4">
           <span className="a-label text-[var(--muted)]" aria-live="polite">
@@ -169,7 +169,7 @@ function GateDialog({ kind, onClose }: { kind: GateKind; onClose: () => void }) 
             <p className="mt-4 leading-6">{PREMIUM.name} is on your account.</p>
           </div>
         ) : step === "intro" ? (
-          <div className="a-gate-scroll px-5 pb-6 pt-2 lg:px-8 lg:pb-8">
+          <div className="a-gate-scroll px-5 pb-6 pt-2 lg:px-8">
             {kind === "dna" ? (
               <DnaIntro
                 onStart={() => {

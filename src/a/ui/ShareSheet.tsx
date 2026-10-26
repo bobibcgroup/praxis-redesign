@@ -105,7 +105,7 @@ export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, on
             <QuietButton onClick={ask} className="w-full justify-center">
               Ask a friend to choose
             </QuietButton>
-            <p className="a-share-what">Sends a link to all three looks, with the pieces and example prices.</p>
+            <p className="a-share-what">Sends a link to all three looks and their pieces.</p>
           </div>
           <div className="mt-1 flex items-center justify-center gap-2">
             <TextButton onClick={save} disabled={!card}>
@@ -121,7 +121,7 @@ export function ShareSheet({ look, eyebrow, occasion, recommendationId, open, on
               )}
             </TextButton>
           </div>
-          <p className="a-share-what -mt-1">No account needed. The image is the look only; the link shows the details.</p>
+          <p className="a-share-what -mt-1">No account needed.</p>
         </div>
       }
     >

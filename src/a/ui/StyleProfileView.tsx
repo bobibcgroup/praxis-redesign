@@ -78,7 +78,7 @@ export function StyleProfileView({ profile }: { profile: StyleProfile }) {
         <Row name="Undertone" attr={profile.undertone} labels={UNDERTONE_LABEL} />
         <Row name="Contrast" attr={profile.contrast} labels={CONTRAST_LABEL} />
         <Row name="Fit" attr={profile.fit} labels={FIT_LABEL} />
-        <Row name="Your week" attr={profile.week} labels={WEEK_LABEL} />
+        <Row name="Your lifestyle" attr={profile.week} labels={WEEK_LABEL} />
       </div>
     </div>
   );
@@ -144,7 +144,7 @@ export function StyleProfileEditor({ open, onClose, profile, onChange, onRetake 
         <Choice name="Undertone" field="undertone" profile={profile} options={UNDERTONES} onChange={onChange} />
         <Choice name="Contrast" field="contrast" profile={profile} options={CONTRASTS} onChange={onChange} />
         <Choice name="Fit" field="fit" profile={profile} options={FITS} onChange={onChange} />
-        <Choice name="Your week" field="week" profile={profile} options={LIFESTYLES} onChange={onChange} />
+        <Choice name="Your lifestyle" field="week" profile={profile} options={LIFESTYLES} onChange={onChange} />
       </div>
     </Sheet>
   );

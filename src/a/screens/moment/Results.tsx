@@ -11,7 +11,7 @@
 import { soldOut, usePieceSelection, type PieceSelection } from "../../lib/selection";
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { motion } from "motion/react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { track } from "../../../core/analytics";
 import { recordSelection } from "../../../core/data";
@@ -119,6 +119,8 @@ export function Results() {
   const selection = useTrackedSelection(usePieceSelection(hero), hero?.id ?? null, recommendationId);
   const label = occasionLabel(answers.occasion);
   const shared = params.get("via") !== null && !answers.done;
+  /** On a shared link, the look the sender had open when they shared: the one they're asking about. */
+  const [sentId] = useState(() => params.get("hero"));
   /* A composed look's picture of its very pieces, made when the look is shown. */
   const outfit = useMemo(() => response?.outfits.find((o) => o.outfitId === hero?.id) ?? null, [response, hero?.id]);
   const picture = useOutfitPicture(outfit, user?.id);
@@ -232,7 +234,8 @@ export function Results() {
   /* My pick is the look the engine ranked first, wherever it sits in the gallery. */
   const top = looks.reduce<(typeof looks)[number] | null>((best, l) => (l.rank !== undefined && (best?.rank === undefined || l.rank < best.rank) ? l : best), null);
   const isPick = top ? hero.id === top.id : index === 0;
-  const eyebrow = isPick ? `My pick ${forOccasion(answers.occasion)}` : `${ROLE_LABEL[hero.role]} ${forOccasion(answers.occasion)}`;
+  const sent = shared && (sentId ? hero.id === sentId : isPick);
+  const eyebrow = sent ? "The look your friend sent" : isPick && !shared ? `My pick ${forOccasion(answers.occasion)}` : `${ROLE_LABEL[hero.role]} ${forOccasion(answers.occasion)}`;
   /* Opened from someone's shared link: show their looks and invite this visitor to get their own. */
   const fresh = href("", FRESH);
   const seeOnMe = () => gated("tryon", () => go("moment/tryon"));
@@ -275,7 +278,7 @@ export function Results() {
                   {...swipe.handlers}
                 />
                 <span className="a-zoom-cue" aria-hidden="true">
-                  <Search size={16} strokeWidth={1.5} />
+                  <Maximize2 size={16} strokeWidth={1.5} />
                   <span className="a-zoom-cue-text a-transition">View larger</span>
                 </span>
                 {looks.length > 1 ? (
@@ -300,7 +303,7 @@ export function Results() {
         }
         actions={
           done ? (
-            <CompletionActions />
+            <CompletionActions kind={done} />
           ) : shared ? (
             <div className="flex flex-wrap items-center gap-1 lg:gap-2">
               <LinkButton to={fresh} variant="primary">
@@ -308,7 +311,7 @@ export function Results() {
               </LinkButton>
               {/* A friend's looks are here for an opinion, not a sale: no Check out, and passing them on is a quiet link. */}
               <TextButton onClick={() => setSharing(true)} className="text-[13px]">
-                Forward
+                Send to someone else
               </TextButton>
             </div>
           ) : (
@@ -352,7 +355,7 @@ export function Results() {
               done ? null : shared ? (
                 <div className="mt-6">
                   <p className="a-label text-[var(--muted)]">Shared with you</p>
-                  <p className="a-note mt-3">A friend asked me to style them {forOccasion(answers.occasion)}. Tell me about your moment and I’ll style three looks for you.</p>
+                  <p className="a-note mt-3">Your friend would like your opinion. I styled these three looks for them {forOccasion(answers.occasion)}; compare them with the arrows or the small pictures, then tell them which one you’d choose.</p>
                 </div>
               ) : (
                 <section className="mt-6" aria-label="Make it yours">

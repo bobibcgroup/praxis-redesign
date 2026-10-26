@@ -10,6 +10,7 @@ import { visibleTo } from "../../core/account";
 import { forgetWardrobeItem, rememberWardrobeItem, setWardrobePhoto, updateWardrobeItem, wardrobeEntries, wardrobePhoto, type WardrobeEntry } from "../../core/data";
 import { anonymousId } from "../../core/identity";
 import { shortHash } from "../../core/ids";
+import { NAMED } from "../../core/colour";
 import { consentFor, IMAGE_POLICIES } from "../../core/images";
 import { wardrobeRef } from "../../core/request";
 import { imageServices } from "../../core/vision";
@@ -25,6 +26,13 @@ const SLOT_OPTIONS = (Object.keys(SLOT_LABEL) as Slot[]).map((id) => ({ id, labe
 /** "Top, navy" under a piece's name; an example piece says so. */
 export function pieceLine(e: Pick<WardrobeEntry, "slot" | "colour" | "source">): string {
   return [SLOT_LABEL[e.slot], e.colour?.toLowerCase(), e.source === "sample" ? "an example" : null].filter(Boolean).join(", ");
+}
+
+/** The piece's picture: its photo while this tab has it, else a swatch of its colour, so every piece has a face. */
+function PieceTile({ photo, label, colour }: { photo: string | null; label: string; colour?: string }) {
+  if (photo) return <img src={photo} alt={`Your photo of ${label}`} className="a-piece-tile object-cover" />;
+  const named = colour ? NAMED.find((n) => n.name.toLowerCase() === colour.toLowerCase()) : undefined;
+  return <span aria-hidden="true" className="a-piece-tile" style={named ? { background: `rgb(${named.rgb.join(" ")})` } : undefined} />;
 }
 
 const defaultName = (slot: Slot) => `Your own ${SLOT_LABEL[slot].toLowerCase()}`;
@@ -206,11 +214,23 @@ export function Wardrobe() {
       <main className="mx-auto flex max-w-[640px] flex-col gap-8 px-5 pb-16 pt-4 lg:px-10">
         <div>
           <h1 className="a-display">Your wardrobe</h1>
-          <p className="mt-4 max-w-[48ch] leading-6 text-[var(--muted)]">
-            The pieces you own. I build looks around them and never price them. They are kept on this device by name, type and colour; a photo stays in this tab only.
+          <p className="mt-4 max-w-[48ch] leading-6 text-[var(--muted)]">The pieces you own. I build looks around them and never price them.</p>
+          <p className="mt-2 max-w-[48ch] text-[13px] leading-5 text-[var(--muted)]">
+            Kept on this device; a photo stays in this tab only.{!fromLooks && pieces.length > 0 ? " To style one, choose a moment, then Use something I own." : ""}
           </p>
-          {!fromLooks && pieces.length > 0 && <p className="mt-3 max-w-[48ch] text-[13px] leading-5 text-[var(--muted)]">To style a piece, choose a moment on the home page, then Make it yours on your looks.</p>}
         </div>
+
+        {!adding && (
+          <div>
+            <PrimaryButton onClick={() => (setEditing(null), setRemoved(null), setAdding(true))}>Add a piece</PrimaryButton>
+          </div>
+        )}
+        {adding && (
+          <section aria-label="Add a piece" className="border-t border-[var(--rule)] pt-6">
+            <h2 className="mb-6 text-[17px] leading-6">Add a piece</h2>
+            <PieceForm editing={false} initial={{ slot: null, label: "", colour: "", photo: null }} onSave={add} onCancel={() => setAdding(false)} />
+          </section>
+        )}
 
         {pieces.length > 0 ? (
           <ul aria-label="Pieces you own" className="border-t border-[var(--rule)]">
@@ -223,9 +243,9 @@ export function Wardrobe() {
                   ) : (
                     <>
                       <div className="flex items-center gap-4">
-                        {photo && <img src={photo} alt={`Your photo of ${e.label}`} className="h-14 w-14 shrink-0 object-cover" style={{ borderRadius: 2 }} />}
+                        <PieceTile photo={photo} label={e.label} colour={e.colour} />
                         <div className="min-w-0 flex-1">
-                          <p className="text-[15px] leading-6">{e.label}</p>
+                          <p className="text-[17px] leading-6">{e.label}</p>
                           <p className="text-[13px] leading-5 text-[var(--muted)]">{pieceLine(e)}</p>
                         </div>
                       </div>
@@ -262,17 +282,6 @@ export function Wardrobe() {
           <p role="alert" className="-mt-4 text-[15px] text-[var(--error)]">
             I couldn’t save that on this device. Storage may be full or blocked.
           </p>
-        )}
-
-        {adding ? (
-          <section aria-label="Add a piece" className="border-t border-[var(--rule)] pt-6">
-            <h2 className="mb-6 text-[17px] leading-6">Add a piece</h2>
-            <PieceForm editing={false} initial={{ slot: null, label: "", colour: "", photo: null }} onSave={add} onCancel={() => setAdding(false)} />
-          </section>
-        ) : (
-          <div>
-            <PrimaryButton onClick={() => (setEditing(null), setRemoved(null), setAdding(true))}>Add a piece</PrimaryButton>
-          </div>
         )}
       </main>
     </div>

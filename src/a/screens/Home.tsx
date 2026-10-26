@@ -119,7 +119,7 @@ export function Home() {
 
   if (answers.done === "dna") {
     return (
-      <Stage wordmark canvas={<Frame image={faceImage ?? STAND_IN_PORTRAIT} alt={faceImage ? "Your portrait" : "A sample portrait"} reduced={reduced} />} actions={<CompletionActions />}>
+      <Stage wordmark canvas={<Frame image={faceImage ?? STAND_IN_PORTRAIT} alt={faceImage ? "Your portrait" : "A sample portrait"} reduced={reduced} />} actions={<CompletionActions kind="dna" />}>
         <Completion kind="dna" />
       </Stage>
     );

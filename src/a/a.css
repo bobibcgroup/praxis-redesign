@@ -337,6 +337,46 @@
   transform: none;
 }
 
+/* A disabled control does not answer the pointer. */
+[data-concept="a"] .a-primary:disabled:hover {
+  background: var(--accent);
+}
+
+[data-concept="a"] .a-secondary:disabled:hover {
+  background: transparent;
+}
+
+[data-concept="a"] .a-tertiary:disabled:hover {
+  color: var(--muted);
+}
+
+/* On touch screens a tap leaves no stuck hover colour; the press itself shows instead. */
+@media (hover: none) {
+  [data-concept="a"] .a-primary:hover {
+    background: var(--accent);
+  }
+
+  [data-concept="a"] .a-secondary:hover {
+    background: transparent;
+  }
+
+  [data-concept="a"] .a-tertiary:hover {
+    color: var(--muted);
+  }
+
+  [data-concept="a"] .a-primary:not(:disabled):active {
+    background: color-mix(in srgb, var(--accent) 88%, var(--text));
+  }
+
+  [data-concept="a"] .a-secondary:not(:disabled):active {
+    background: var(--control-hover-bg);
+  }
+
+  [data-concept="a"] .a-tertiary:not(:disabled):active {
+    color: var(--text);
+  }
+}
+
 /* Answer rows: the same control, full width of the column, stacked 8 px apart. */
 [data-concept="a"] .a-answers {
   display: flex;
@@ -703,17 +743,16 @@
 
 [data-concept="a"] .a-why-list {
   display: grid;
-  gap: 8px;
+  gap: 12px;
   margin: 0 0 8px;
-  padding: 8px 0 0;
+  padding: 12px 0 0;
   border-top: 1px solid var(--rule);
 }
 
+/* Each group: its answers as a small label, then what they did, across the column's full width. */
 [data-concept="a"] .a-why-list > div {
   display: grid;
-  grid-template-columns: minmax(96px, 136px) 1fr;
-  column-gap: 16px;
-  align-items: baseline;
+  row-gap: 2px;
 }
 
 [data-concept="a"] .a-why-list dt {
@@ -1326,13 +1365,21 @@
   }
 }
 
-/* The story card preview in the share sheet: 9:16, hairline frame. */
+/* The story card preview in the share sheet: 9:16, hairline frame. It gives up height before the
+   sheet would scroll, so the ways to share stay in view with the preview on a laptop screen. */
 [data-concept="a"] .a-card-preview {
-  width: min(220px, 52vw);
+  height: clamp(200px, calc(85dvh - 440px), 391px);
+  max-width: 52vw;
   aspect-ratio: 9 / 16;
   background: var(--surface);
   border: 1px solid var(--rule);
   overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  [data-concept="a"] .a-card-preview {
+    height: clamp(200px, calc(100dvh - 460px), 391px);
+  }
 }
 
 [data-concept="a"] .a-card-preview img {
@@ -1413,4 +1460,23 @@
   color: var(--bg);
   background: color-mix(in srgb, var(--error) 85%, transparent);
   pointer-events: none;
+}
+
+/* A wardrobe piece's picture: its photo, or a swatch of its colour, with a hairline so pale colours hold. */
+[data-concept="a"] .a-piece-tile {
+  display: block;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 2px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+}
+
+/* What a preview feature does today and what comes next, set apart so it is read before paying. */
+[data-concept="a"] .a-preview-note {
+  padding: 12px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--surface);
 }

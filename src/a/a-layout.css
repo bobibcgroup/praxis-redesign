@@ -456,6 +456,11 @@
     border-radius: var(--r-card);
     padding-bottom: 0;
   }
+
+  /* An introduction reads in fewer, longer lines, so what it gives, its price and Start fit together. */
+  .a-gate.a-gate-wide {
+    max-width: 520px;
+  }
 }
 
 /* Lab-only mode button, bottom right. */

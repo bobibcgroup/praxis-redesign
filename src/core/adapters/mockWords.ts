@@ -31,7 +31,7 @@ export const SETTING_LINE: Record<string, Record<string, string>> = {
   work_safest_01: {
     OFFICE: "A clean shirt and tailored trousers are right in any office.",
     CLIENT: "A clean shirt and tailored trousers look professional and approachable across the table.",
-    EVENT: "Tailored trousers and leather shoes stay smart through a long day on an event floor.",
+    EVENT: "Tailored trousers and leather shoes stay smart and comfortable on an event floor.",
     REMOTE: "The shirt collar frames your face, which is what a video call shows.",
   },
   work_sharper_01: {
@@ -41,9 +41,9 @@ export const SETTING_LINE: Record<string, Record<string, string>> = {
     REMOTE: "A blazer and a crisp collar look sharp on camera, where only your top half shows.",
   },
   work_relaxed_01: {
-    OFFICE: "A fine knit polo and chinos are comfortable all day and still look professional.",
+    OFFICE: "A fine knit polo and chinos are comfortable for hours and still look professional.",
     CLIENT: "A fine knit polo feels approachable with a client and is still neat enough for the room.",
-    EVENT: "A knit polo and loafers stay comfortable through a long day of standing and talking.",
+    EVENT: "A knit polo and loafers stay comfortable through hours of standing and talking.",
     REMOTE: "A fine knit polo has a soft collar that looks neat on camera without feeling formal.",
   },
 

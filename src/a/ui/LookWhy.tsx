@@ -5,9 +5,9 @@
  * moved the look, such as an owned piece, the Style DNA or earlier feedback.
  *
  * A real disclosure: the whole header is the button, and the reasons fold away entirely (height to
- * nothing, then hidden, so they leave the reading and tab order and what follows moves up). Open at
- * first on desktop, where the column has room, and folded on a phone. Once the customer opens or
- * folds it, that choice holds as they move between looks.
+ * nothing, then hidden, so they leave the reading and tab order and what follows moves up). It sits
+ * after the pieces and starts folded on every screen, so the look and what to do next come first.
+ * Once the customer opens or folds it, that choice holds as they move between looks.
  */
 import { useId, useState } from "react";
 import { motion } from "motion/react";
@@ -41,7 +41,7 @@ const FOLD = { duration: 0.25, ease: [0.22, 0.61, 0.36, 1] as const };
 
 /** The customer's own choice for this tab; null until they make one. Each look mounts afresh, so it lives here. */
 let chosen: boolean | null = null;
-const openAtFirst = () => chosen ?? (typeof window !== "undefined" && window.matchMedia?.("(min-width: 1024px)").matches === true);
+const openAtFirst = () => chosen ?? false;
 
 /** For tests: forget the customer's choice. */
 export function resetWhyChoice() {

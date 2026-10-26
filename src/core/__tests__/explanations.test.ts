@@ -77,6 +77,14 @@ describe("Why this look across every answer", () => {
       }
   });
 
+  it("keeps the place lines free of the hour, so they hold by day and by night", () => {
+    for (const entry of OUTFITS) {
+      const hours = timesFor(entry.occasion).map((t) => t.id);
+      if (!(hours.includes("DAY") && hours.includes("NIGHT"))) continue;
+      for (const w of Object.values(SETTING_LINE[entry.id])) expect(w, `${entry.id}: ${w}`).not.toMatch(/\b(day|daytime|daylight|morning|night|evening|after dark|tonight)\b/i);
+    }
+  });
+
   it("gives each hour its own words for every look", () => {
     for (const entry of OUTFITS) {
       const lines = Object.values(TIME_LINE[entry.id]);

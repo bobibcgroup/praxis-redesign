@@ -1,7 +1,8 @@
 /**
  * The completion state: what just happened, then where next. The actions sit in the pinned row.
- * After a guest saves, a quiet offer to sign in so the looks follow them; it can be declined, and
- * once declined it stays away.
+ * After a save, the saved looks come first and the way back to this look second. Saved looks live in
+ * this browser on this device, and the line says so. A guest also gets a quiet offer to sign in so
+ * the looks are kept under their name; it can be declined, and once declined it stays away.
  */
 import { useEffect, useState } from "react";
 import { track } from "../../core/analytics";
@@ -10,7 +11,7 @@ import { FRESH, useGated, useJourney, type DoneKind } from "../lib/journeyContex
 import { LinkButton, PremiumMark, QuietButton, TextButton } from "./controls";
 
 const LINE: Record<DoneKind, string> = {
-  saved: "I’ve saved it to your Looks.",
+  saved: "I’ve saved it to your Looks, in this browser on this device.",
   dna: "I’ll remember your Style DNA.",
 };
 
@@ -27,11 +28,10 @@ function SyncOffer() {
 
   if (!show) return null;
   return (
-    <div className="mt-6 border-t border-[var(--rule)] pt-5">
-      <p className="text-[15px] leading-6">Keep your looks under your name.</p>
-      <p className="text-[15px] leading-6 text-[var(--muted)]">Sign in and they stay with your account on this device.</p>
-      <div className="mt-3 flex items-center gap-2">
-        <QuietButton onClick={() => openGate("signin", "sync_offer")}>Sign in</QuietButton>
+    <div className="mt-6 border-t border-[var(--rule)] pt-4">
+      <p className="text-[15px] leading-6 text-[var(--muted)]">Sign in to keep your looks under your name, apart from anyone else who uses this browser.</p>
+      <div className="mt-1 flex items-center gap-2 -ml-2">
+        <TextButton onClick={() => openGate("signin", "sync_offer")}>Sign in</TextButton>
         <TextButton
           onClick={() => {
             writeJson(local(), SYNC_DISMISSED, true);
@@ -57,10 +57,10 @@ export function Completion({ kind }: { kind: DoneKind }) {
 }
 
 /**
- * Stacked: style another moment (keeps the face and the DNA), then the DNA
- * as the second path with its value line, then the looks.
+ * After a save: see the saved looks, go back to this look, or style another moment.
+ * After the Style DNA: style another moment (keeps the face and the DNA), then the looks, then the DNA.
  */
-export function CompletionActions() {
+export function CompletionActions({ kind }: { kind: DoneKind }) {
   const { href, store, go, user } = useJourney();
   const gated = useGated();
   const premium = user?.premium ?? false;
@@ -68,6 +68,21 @@ export function CompletionActions() {
     if (!store.dna) track("style_dna_explored", { surface: "completion" });
     gated("dna", () => go("dna/face", { ...FRESH, face: null }));
   };
+
+  if (kind === "saved")
+    return (
+      <div className="flex flex-col items-start gap-2">
+        <LinkButton to={href("looks", { hero: null })} variant="primary">
+          See saved looks
+        </LinkButton>
+        <LinkButton to={href("moment/results", { done: null })} variant="secondary">
+          Back to this look
+        </LinkButton>
+        <LinkButton to={href("", FRESH)} variant="tertiary">
+          Start a new look
+        </LinkButton>
+      </div>
+    );
 
   return (
     <div className="flex flex-col items-start gap-2">

@@ -1,8 +1,8 @@
 /**
- * The look in the left column: eyebrow, title, the line tying it to the brief, the stylist's note on
- * why the pieces work, the reasons folded under "Why this look", Make it yours, then the pieces, each with a box the
- * client can untick, and the total of what is chosen. With nothing ticked, it says why Check out is
- * unavailable. On a phone the list scrolls inside the column.
+ * The look in the left column, most useful first: eyebrow, title, the line tying it to the brief and
+ * the stylist's note on why the pieces work; Make it yours; the pieces, each with a box the client can
+ * untick, and the total of what is chosen; then, for whoever wants it, the reasons folded under "Why
+ * this look". With nothing ticked, it says why Check out is unavailable.
  */
 import type { ReactNode } from "react";
 import type { Look } from "../../shared/catalog";
@@ -42,13 +42,13 @@ export function LookDetails({ look, eyebrow, compact = false, selection, caption
       <h1 className="a-display">{look.title}</h1>
       {explain && look.summary && !compact ? <p className="a-summary mt-3 max-w-[40ch]">{look.summary}</p> : null}
       <p className={`a-note mt-4 max-w-[34ch] ${compact ? "hidden lg:block" : ""}`}>{look.why}</p>
-      {explain && !compact && look.factors ? <LookWhy factors={look.factors} lookId={look.id} /> : null}
       {personal}
 
       {!compact ? (
         <div className="mt-6" role="list" aria-label="Pieces">
           {look.pieces.map((p) => (
-            <PieceRow key={p.id} piece={p} chosen={selection.isChosen(p.id)} onToggle={selection.toggle} />
+            /* A friend's shared looks list the pieces and prices to compare, with nothing to tick: they're not buying. */
+            <PieceRow key={p.id} piece={p} chosen={selection.isChosen(p.id)} onToggle={explain ? selection.toggle : undefined} />
           ))}
           <div className="a-total">
             <span className="a-label">
@@ -78,6 +78,7 @@ export function LookDetails({ look, eyebrow, compact = false, selection, caption
           {caption ? <p className="mt-3 max-w-[44ch] text-[13px] leading-5 text-[var(--muted)]">{caption}</p> : null}
         </div>
       ) : null}
+      {explain && !compact && look.factors ? <LookWhy factors={look.factors} lookId={look.id} /> : null}
       {!compact ? after : null}
       {end}
     </div>

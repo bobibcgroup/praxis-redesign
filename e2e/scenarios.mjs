@@ -77,6 +77,7 @@ export const SUITES = {
   12: "AI integration contracts",
   13: "Analytics",
   14: "Hybrid catalogue",
+  15: "Second consultant review",
 };
 /** The suite of each scenario written before the suites existed. */
 const LEGACY_SUITE = {
@@ -604,7 +605,9 @@ for (const device of ["desktop", "phone"]) {
     await p.waitForTimeout(1200);
     check((await p.getByRole("button", { name: /^Check out/ }).filter({ visible: true }).count()) === 0, "no Check out for the friend");
     check((await p.getByRole("button", { name: /^Share$/ }).filter({ visible: true }).count()) === 0, "no Share button for the friend");
-    check((await button(p, /^Forward$/).count()) === 1, "a quiet Forward instead");
+    check((await button(p, /^Send to someone else$/).count()) === 1, "a quiet Send to someone else instead, saying what it does");
+    check(/The look your friend sent/.test(await body(p)), "the look they shared is named as the one they're asking about");
+    check(/would like your opinion/.test(await body(p)), "the page says the friend wants an opinion, not a sale");
     check((await p.getByRole("link", { name: /Get your own looks/ }).filter({ visible: true }).count()) === 1, "Get your own looks leads");
     await shot("friend");
   });
@@ -687,8 +690,8 @@ await scenario("UX10", "Phone results: the title shows on the first screen", "ph
   await shot("results");
 });
 
-/* Why this look is a real disclosure: open at first on desktop, folded on a phone; the reasons truly
-   fold away and leave the tab order; mouse and keyboard both work; the choice holds across looks. */
+/* Why this look is a real disclosure after the pieces: folded at first on every screen; the reasons
+   truly fold away and leave the tab order; mouse and keyboard both work; the choice holds across looks. */
 for (const device of ["desktop", "phone"]) {
   await scenario("WHY1", "Why this look opens and closes for real", device, async (p, shot) => {
     await toResults(p, A);
@@ -698,19 +701,20 @@ for (const device of ["desktop", "phone"]) {
     const shown = () => fold.evaluate((el) => !el.hidden && getComputedStyle(el).display !== "none" && el.getBoundingClientRect().height > 40);
     const nextTop = () => p.evaluate(() => document.querySelector(".a-why").nextElementSibling.getBoundingClientRect().top);
     check((await toggle.getAttribute("aria-controls")) === (await fold.getAttribute("id")), "the header button names the reasons it controls");
-    const first = device === "desktop";
-    check((await expanded()) === first && (await shown()) === first, `${first ? "open" : "folded"} at first on ${device}`);
-    if (!first) {
-      await toggle.click();
-      await p.waitForTimeout(450);
-      check((await expanded()) && (await shown()), "a tap opens it");
-    }
+    check(!(await expanded()) && !(await shown()), `folded at first on ${device}`);
+    const pieces = await p.locator('[aria-label="Pieces"]').filter({ visible: true }).first().boundingBox();
+    const header = await toggle.boundingBox();
+    check(pieces && header && header.y > pieces.y, "after the pieces and their total");
+    await toggle.click();
+    await p.waitForTimeout(450);
+    check((await expanded()) && (await shown()), "a tap opens it");
+    check(await p.getByText("Dinner, Restaurant").filter({ visible: true }).count() > 0, "three groups: occasion and setting first");
     const openNext = await nextTop();
     await toggle.click();
     await p.waitForTimeout(450);
     check(!(await expanded()) && !(await shown()), "a click closes it: the reasons are gone, not just the arrow");
     check((await nextTop()) < openNext - 80, "what follows moves up");
-    check(!(await p.getByText("One of my dinner looks").isVisible()), "folded reasons can't be seen or reached");
+    check(!(await p.getByText("Dinner, Restaurant").isVisible()), "folded reasons can't be seen or reached");
     await toggle.focus();
     await p.keyboard.press("Enter");
     await p.waitForTimeout(450);
@@ -726,7 +730,7 @@ for (const device of ["desktop", "phone"]) {
     await p.locator(".a-thumb").filter({ visible: true }).nth(1).click();
     await p.waitForTimeout(900);
     check((await expanded()) && (await shown()), "open stays open on the next look");
-    check(await p.getByText("A classic alternative").filter({ visible: true }).count() > 0, "and gives that look's reasons");
+    check(await p.getByText(/The classic option/).filter({ visible: true }).count() > 0, "and gives that look's reasons");
     await button(p, /Why this look/).click();
     await p.waitForTimeout(450);
     await p.locator(".a-thumb").filter({ visible: true }).nth(2).click();
@@ -734,13 +738,15 @@ for (const device of ["desktop", "phone"]) {
     check(!(await expanded()) && !(await shown()), "folded stays folded on the next look");
     await button(p, /Why this look/).click();
     await p.waitForTimeout(450);
-    check(await p.getByText("A more relaxed alternative").filter({ visible: true }).count() > 0, "opening it there gives the new look's reasons");
+    check(await p.getByText(/The easier option/).filter({ visible: true }).count() > 0, "opening it there gives the new look's reasons");
     await shot("why-open");
   });
 }
 
 await scenario("WHY2", "Why this look folds at once with reduced motion", "desktop", async (p) => {
   await toResults(p, A);
+  await button(p, /Why this look/).click();
+  await p.waitForTimeout(60);
   await button(p, /Why this look/).click();
   await p.waitForTimeout(60);
   check(await p.locator(".a-why-fold").evaluate((el) => el.hidden && getComputedStyle(el).display === "none"), "folded without animating");
