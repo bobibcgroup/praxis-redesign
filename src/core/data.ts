@@ -34,7 +34,6 @@ export const STORES: readonly StoreInfo[] = [
   { key: "praxis_lab_a_user", where: "device", holds: "The stand-in account", personal: "preferences" },
   { key: "praxis_lab_a_accounts", where: "device", holds: "Stand-in account ids by address", personal: "preferences" },
   { key: "praxis_lab_a_mode", where: "device", holds: "Light or dark", personal: "none" },
-  { key: "praxis_country", where: "device", holds: "The country you chose for the home photos (two letters)", personal: "preferences" },
   { key: "praxis_lab_a_viewer_hint", where: "device", holds: "Whether the zoom hint was shown", personal: "none" },
   { key: "praxis_anon", where: "device", holds: "The anonymous visitor id", personal: "none" },
   { key: "praxis_styling_history", where: "device", holds: "Styling requests and their looks", personal: "preferences" },

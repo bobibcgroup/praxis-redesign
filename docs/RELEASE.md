@@ -117,7 +117,6 @@ Environment, all optional and all off by default:
 | Variable | Where | Purpose |
 | --- | --- | --- |
 | `PORT` | server | Set by Railway |
-| `COUNTRY_HEADER` | server | A trusted country header from a proxy |
 | `AI_PROVIDER_<SERVICE>`, `ALLOW_BILLABLE_AI` | server | AI providers and paid calls (`off` switches a free provider off) |
 | `RETAIL_SHOPIFY_STORE`, `RETAIL_SHOPIFY_FOR` | server | Real pieces from one store for testing; only `?stock=live` tabs unless `everyone` |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | server | The stylist's words (free tier) and, with billing on its Google project, the outfit pictures inside the approved budget |

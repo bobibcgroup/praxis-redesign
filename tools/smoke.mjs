@@ -78,8 +78,6 @@ await step("files", async () => {
   }
   const missing = await get("/assets/does-not-exist.js");
   check(missing.status === 404, "a missing file is a real 404");
-  const country = await get("/api/country");
-  check(country.status === 200, "country lookup answers");
 });
 
 await step("ai", async () => {

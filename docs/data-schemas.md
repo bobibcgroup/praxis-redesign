@@ -33,7 +33,6 @@ interface StoreInfo {
 | `praxis_lab_a_user` | local | preferences | `src/a/lib/user.ts:41` | 4.2 |
 | `praxis_lab_a_accounts` | local | preferences | `src/core/identity.ts:66` | 4.3 |
 | `praxis_lab_a_mode` | local | none | `src/a/lib/mode.ts:10` | 4.4 |
-| `praxis_country` | local | preferences | `src/a/lib/country.ts` | none (see docs/OCCASION-PHOTOS.md) |
 | `praxis_lab_a_viewer_hint` | local | none | `src/a/ui/LookViewer.tsx:27` | 4.5 |
 | `praxis_anon` | local | none | `src/core/identity.ts:9` | 4.6 |
 | `praxis_styling_history` | local | preferences | `src/core/service.ts:119` | 4.7 |

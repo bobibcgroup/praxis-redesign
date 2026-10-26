@@ -14,7 +14,6 @@
     "photos:check": "vitest run src/config"
   },
   "dependencies": {
-    "@ip-location-db/dbip-country": "^2.3.2026060120",
     "@mediapipe/tasks-vision": "^1.1.0",
     "lucide-react": "^0.462.0",
     "motion": "^13.4.4",

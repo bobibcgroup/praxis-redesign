@@ -1,14 +1,7 @@
 /**
  * The production server (Railway runs `npm run start`). It does what `serve -s dist` did, files with
- * the SPA fallback to index.html, plus one thing: it works out the visitor's country and writes it into
- * the page as <meta name="praxis-country">, so the home picks the right occasion photos on first paint
- * with no second request and no swap. See docs/OCCASION-PHOTOS.md.
- *
- * Country, in order: a trusted hosting header, only when COUNTRY_HEADER names one (a proxy such as
- * Cloudflare sets it and strips any copy the visitor sends); then the bundled DB-IP database. The IP is
- * looked up and dropped; it is never logged or stored. The page is personal, so it is sent
- * `private, no-cache` and no shared cache can hand one country's page to another. Static files are
- * the same for everyone and cache hard.
+ * the SPA fallback to index.html. The page is sent `no-cache` so a deploy shows at once; static files
+ * cache hard.
  *
  * It also answers POST /api/tryon, the plug-in point for a real try-on engine (server/tryon.mjs). With
  * no provider set up, the default, it answers that no engine is connected and calls nothing.
@@ -18,7 +11,6 @@ import { createServer } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
-import { countryForIp, geoReady, loadGeo } from "./geo.mjs";
 import { handleTryOn } from "./tryon.mjs";
 import { handleAi, liveServices } from "./ai.mjs";
 import { handleVisual } from "./visuals.mjs";
@@ -26,7 +18,6 @@ import { handleClientError, health, logError, RELEASE } from "./monitor.mjs";
 
 const ROOT = resolve(fileURLToPath(new URL("../dist", import.meta.url)));
 const PORT = Number(process.env.PORT ?? 3000);
-const COUNTRY_HEADER = (process.env.COUNTRY_HEADER ?? "").toLowerCase().trim();
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -59,25 +50,6 @@ const compressed = new Map();
 
 const INDEX = readFileSync(join(ROOT, "index.html"), "utf8");
 
-const valid = (cc) => (typeof cc === "string" && /^[A-Z]{2}$/.test(cc) && cc !== "XX" && cc !== "ZZ" && cc !== "T1" ? cc : null);
-
-function clientIp(req) {
-  const fwd = req.headers["x-forwarded-for"];
-  const first = typeof fwd === "string" ? fwd.split(",")[0].trim() : "";
-  const real = req.headers["x-real-ip"];
-  return first || (typeof real === "string" ? real.trim() : "") || req.socket.remoteAddress || "";
-}
-
-export function resolveCountry(req) {
-  if (COUNTRY_HEADER) {
-    const raw = req.headers[COUNTRY_HEADER];
-    const cc = valid(typeof raw === "string" ? raw.trim().toUpperCase() : null);
-    if (cc) return { countryCode: cc, source: "hosting" };
-  }
-  const cc = valid(countryForIp(clientIp(req)));
-  return cc ? { countryCode: cc, source: "ip" } : { countryCode: null, source: "default" };
-}
-
 function send(req, res, status, headers, body) {
   const accepts = /\bgzip\b/.test(req.headers["accept-encoding"] ?? "");
   let out = typeof body === "string" ? Buffer.from(body) : body;
@@ -92,10 +64,7 @@ function send(req, res, status, headers, body) {
 }
 
 function page(req, res) {
-  const { countryCode, source } = resolveCountry(req);
-  const meta = countryCode ? `<meta name="praxis-country" content="${countryCode}" data-source="${source}" />` : "";
-  const html = meta ? INDEX.replace("</head>", `    ${meta}\n  </head>`) : INDEX;
-  send(req, res, 200, { "Content-Type": TYPES[".html"], "Cache-Control": "private, no-cache" }, html);
+  send(req, res, 200, { "Content-Type": TYPES[".html"], "Cache-Control": "no-cache" }, INDEX);
 }
 
 function file(req, res, path, stat) {
@@ -187,10 +156,6 @@ function route(req, res) {
   if (pathname === "/api/health") {
     return send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "no-store" }, JSON.stringify(health()));
   }
-  if (pathname === "/api/country") {
-    const body = JSON.stringify({ ...resolveCountry(req), ready: geoReady() });
-    return send(req, res, 200, { "Content-Type": TYPES[".json"], "Cache-Control": "private, no-store" }, body);
-  }
   const path = normalize(join(ROOT, pathname));
   if (path !== ROOT && !path.startsWith(ROOT + sep)) {
     res.writeHead(403);
@@ -226,7 +191,3 @@ process.on("uncaughtException", (err) => {
 process.on("unhandledRejection", (err) => logError("server_error", { name: err?.name ?? "Error", where: "unhandled_rejection" }));
 
 server.listen(PORT, () => console.log(`Praxis ${RELEASE.version} (${RELEASE.commit}) on :${PORT}`));
-loadGeo().then(
-  (n) => console.log(`Country tables ready (${n.v4} IPv4, ${n.v6} IPv6 ranges)`),
-  (err) => console.error("Country tables failed to load; every visitor gets the default photos.", err),
-);

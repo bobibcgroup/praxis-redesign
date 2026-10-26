@@ -1,4 +1,4 @@
-/** Suite 1: homepage and occasion selection. Country photos are covered by the GEO scenarios. */
+/** Suite 1: homepage and occasion selection. The occasion photos are covered by the PHOTOS scenarios. */
 import { named, noSideways } from "./lib.mjs";
 
 const OCCASIONS = ["Dinner", "Work", "Date", "Wedding", "Party"];
@@ -84,9 +84,12 @@ export default async function (H) {
       await p.waitForTimeout(400);
       check(!(await state()).paused, "and Space plays it again");
 
+      // Scroll until less than a quarter of the film shows; a short page may need a shorter window for that.
+      await p.setViewportSize({ width: p.viewportSize().width, height: 560 });
       await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await p.waitForTimeout(800);
-      check((await state()).paused, "off screen, the film pauses");
+      const shown = await p.evaluate(() => { const r = document.querySelector(".a-demo").getBoundingClientRect(); return Math.max(0, Math.min(innerHeight, r.bottom) - Math.max(0, r.top)) / r.height; });
+      check(shown < 0.25 && (await state()).paused, `off screen, the film pauses (${Math.round(shown * 100)}% showing)`);
       await toFilm();
       await p.waitForTimeout(1000);
       check(!(await state()).paused, "back on screen, it plays again");
@@ -133,8 +136,6 @@ export default async function (H) {
    */
   for (const [w, h, all] of [[1920, 1080, true], [1440, 900, true], [1440, 790, true], [1440, 760, true], [1470, 712, true], [1440, 680, true], [1366, 768, true], [1280, 800, true], [1024, 768, true], [1366, 660, false], [1280, 690, false]]) {
     await scenario("P5-1h", `Home above the fold at ${w} x ${h}`, "desktop", async (p, shot) => {
-      // With a country's photos, so the "Photographed in" line under the prints takes its room too.
-      await p.addInitScript(() => { try { localStorage.setItem("praxis_country", "AT"); } catch {} });
       await p.goto(`${BASE}/?mode=light`);
       await p.waitForTimeout(900);
       const m = await p.evaluate(() => {

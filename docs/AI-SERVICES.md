@@ -130,7 +130,6 @@ A free provider listed in `FREE_DEFAULTS` (`server/ai.mjs`) needs only its key, 
 | Check out and purchase | INCOMPLETE by design: no real payment |
 | Sign in and Premium payment | INCOMPLETE: visual previews, need a provider (approval) |
 | Server persistence across devices | INCOMPLETE: browser storage only |
-| Country occasion photos | FULLY FUNCTIONAL for 12 countries; 24 pending photos |
 
 ## Pending integrations (each needs approval before it is switched on)
 

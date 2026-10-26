@@ -5,16 +5,13 @@
  * the page with its copy on the open wall, so the premium feature never competes with the first tap.
  * After saving a Style DNA, the completion state.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { track } from "../../core/analytics";
 import { OCCASIONS, STAND_IN_PORTRAIT, timesFor, type OccasionId } from "../../shared/catalog";
-import { COUNTRY_COLLECTIONS } from "../../config/occasionCollections";
-import { collectionFor, previewCode, useCountry } from "../lib/country";
 import { FRESH, useGated, useJourney } from "../lib/journeyContext";
 import { LinkButton } from "../ui/controls";
 import { Completion, CompletionActions } from "../ui/Completion";
-import { CountrySheet } from "../ui/CountrySheet";
 import { Frame } from "../ui/Frame";
 import { HomeDemo } from "../ui/HomeDemo";
 import { OccasionCards } from "../ui/OccasionCards";
@@ -81,20 +78,7 @@ export function Home() {
   const via = params.get("via");
   /* Sent here from Restyle to change the occasion: keep the other answers and go back to the looks after the place. */
   const restyle = params.get("restyle") !== null;
-  const { resolution, name: countryLabel } = useCountry();
-  const preview = previewCode(params);
-  const collection = useMemo(() => collectionFor(resolution.countryCode, preview), [resolution.countryCode, preview]);
-  const [picker, setPicker] = useState(false);
   const [onCards, setOnCards] = useState(false);
-
-  useEffect(() => {
-    if (answers.done) return;
-    track(
-      "country_collection_loaded",
-      { country: resolution.countryCode ?? "none", source: resolution.source, collection: collection.code ?? "default", version: collection.version, localized: collection.code !== null },
-      { once: `country:${resolution.countryCode ?? "none"}` },
-    );
-  }, [answers.done, resolution.countryCode, resolution.source, collection.code, collection.version]);
 
   useEffect(() => {
     if (answers.done) return;
@@ -103,7 +87,7 @@ export function Home() {
 
   const choose = (id: OccasionId) => {
     setPending(id);
-    track("occasion_selected", { occasion: id, surface: "home", collection: collection.code ?? "default" });
+    track("occasion_selected", { occasion: id, surface: "home" });
   };
 
   useEffect(() => {
@@ -147,16 +131,8 @@ export function Home() {
                 if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOnCards(false);
               }}
             >
-              <OccasionCards options={OCCASIONS} value={pending ?? answers.occasion} onChange={choose} collection={collection} />
+              <OccasionCards options={OCCASIONS} value={pending ?? answers.occasion} onChange={choose} />
             </div>
-            {collection.code ? (
-              <p className="a-photos-from">
-                Photographed in {COUNTRY_COLLECTIONS[collection.code].name}.{" "}
-                <button type="button" onClick={() => setPicker(true)} aria-haspopup="dialog" className="a-photos-change">
-                  Change
-                </button>
-              </p>
-            ) : null}
             {store.looks.length > 0 ? (
               <LinkButton to={href("looks", { hero: null })} variant="tertiary" className="a-phone mt-4 self-start !px-0">
                 Saved looks
@@ -187,14 +163,6 @@ export function Home() {
 
         <StyleDna />
       </main>
-      <footer className="a-home-foot">
-        <button type="button" className="a-home-location a-transition" onClick={() => setPicker(true)} aria-haspopup="dialog">
-          <span className="text-[var(--muted)]">Location</span>
-          <span>{countryLabel ?? "Not set"}</span>
-          <span className="a-home-location-change">Change</span>
-        </button>
-      </footer>
-      <CountrySheet open={picker} onClose={() => setPicker(false)} />
     </div>
   );
 }

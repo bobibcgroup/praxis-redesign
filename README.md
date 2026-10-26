@@ -9,8 +9,8 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # typecheck + production build to dist/
 npm test           # unit tests for src/core (vitest)
-npm start          # server/index.mjs: serves dist/ and adds the visitor's country (Railway runs this)
-npm run photos:check  # the country occasion photo registry
+npm start          # server/index.mjs: serves dist/ (Railway runs this)
+npm run photos:check  # the home occasion photos
 ```
 
 Node 22 or newer.
@@ -61,7 +61,6 @@ Browser storage (prototype only, replace with real persistence):
 | `praxis_events` | the last 1000 analytics events (`src/core/analytics.ts`) |
 | `praxis_sync_offer_dismissed` | set when a guest closes the offer to sign in and sync |
 | `praxis_lab_a_mode` | `light` or `dark`; light is the default |
-| `praxis_country` | the country chosen in the home's Location picker, two letters only; absent means automatic |
 | `praxis_lab_a_face`, `praxis_lab_a_item` | captured images for the tab only (sessionStorage); never in localStorage, analytics or saved looks |
 | `praxis_image_consent` | which photo notices were agreed to, with the wording version and time (`src/core/images.ts`) |
 | `praxis_wardrobe` | pieces the customer owns, by name, type and colour, no photo (`src/core/data.ts`) |
@@ -162,7 +161,7 @@ Motion is `motion/react` only, transform and opacity only, and every animation r
 
 ## Documentation
 
-`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/OCCASION-PHOTOS.md` (country occasion photos), `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/AI-HANDOVER.md` (each future AI integration: interface, schemas, mock, settings, errors, screens, backend work, tests, dependencies), `docs/TRY-ON.md`, `docs/CATALOGUE.md` (store pieces, styling references, outfit pictures, connecting an image model), `docs/RELEASE.md` (release notes, deploying, environment, monitoring, rollback).
+`docs/architecture.md` (with the diagram), `docs/api-contracts.md`, `docs/data-schemas.md`, `docs/analytics.md`, `docs/privacy.md`, `docs/integration-dependencies.md`, `docs/testing-report.md`, `docs/AI-SERVICES.md` (the nine AI service contracts, their mocks and how a real provider plugs in), `docs/AI-HANDOVER.md` (each future AI integration: interface, schemas, mock, settings, errors, screens, backend work, tests, dependencies), `docs/TRY-ON.md`, `docs/CATALOGUE.md` (store pieces, styling references, outfit pictures, connecting an image model), `docs/RELEASE.md` (release notes, deploying, environment, monitoring, rollback).
 
 ## Structure
 
@@ -185,7 +184,7 @@ src/lib/outfitLibrary.ts, src/types/praxis.ts   catalog source
 
 The Style DNA panorama (`public/images/home/style-dna-wide-*.webp`, `style-dna-phone-*.webp`) is an interim image made by `tools/style-dna-banner.py` from the app's own look photo (`public/images/wedding_relaxed_01.jpg`): the wall is extended, warmed and given palm shadows. Replace it with a licensed editorial photograph (a man in light linen against a sunlit cream wall, subject in the left third, open wall on the right) at the same names and sizes.
 
-The home photographs live in `public/images/home` as WebP at 480 and 960 wide, cropped for the cards; sources are listed in `public/images/home/CREDITS.md` (Unsplash, free license). To swap one, replace both widths under the same name. These are the default (international) occasion set: a country with its own active set in `src/config/occasionCollections.ts` shows that instead, chosen from the visitor's country (or the Location picker at the foot of home). How it works, how to add a country and the creative briefs are in `docs/OCCASION-PHOTOS.md`.
+The home photographs live in `public/images/home` as WebP at 480 and 960 wide (4:3), cropped for the cards; sources are listed in `public/images/home/CREDITS.md`. Every visitor sees the same five occasion photos, listed in `src/config/occasionPhotos.ts`. To swap one, replace both widths under the same name and bump the version there.
 
 The home film (9 s, 30 fps, about four seconds of it the looks) is rendered from `video/hero-film` with three.js: a phone (titanium edges, glass, side buttons, the island) on a travertine table in warm window light, with the Style DNA tailoring cloth beside it. Its screen is the real app, captured by `node video/hero-film/capture.mjs` (with `npm start` running): the occasions, a light tap on Dinner, the build with its moving line, then the three dinner looks. The three looks leave the screen from their thumbnails as prints, rise along curved paths gaining their shadows, and settle as a set above the table (Classic, Sharper, Relaxed); the sharper look, my pick, comes forward, and all three go back into the screen as it returns to the occasions, so the loop has no cut. `node video/hero-film/render.mjs` steps through it frame by frame in Chromium (SwiftShader, no GPU needed, about 10 minutes per cut) and writes `public/media/praxis-hero-film.mp4` (1200 x 1000, 6:5, from 640 px up) and `praxis-hero-film-mobile.mp4` (800 x 1000, 4:5, phones), each with a VP9 WebM and a WebP poster of the phone and the three looks. `--stills 0,2.6,5.6` writes single frames to `video/.frames` instead. Re-capture and re-render whenever the home cards, the build or the results change visibly. The film is muted, loops, plays inline and only while a quarter of it is on screen; it holds while the pointer or focus is on the occasions; the round control in the lower right always shows its real state, and a film the visitor paused never restarts on its own. With reduced motion the poster shows and the film plays only when Play is chosen. The earlier phone-screen film and its source (`video/hero-demo`) were removed; both remain in the history at commit 33a62f1.
 
