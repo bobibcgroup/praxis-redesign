@@ -64,6 +64,9 @@ export default async function (H) {
       await p.waitForTimeout(900);
       check(!/done=/.test(p.url()) && (await p.locator('[aria-label="Pieces"]').filter({ visible: true }).count()) === 1, "Back to this look shows the look and its pieces again");
       check((await button(p, /^Saved$/).count()) === 1, "and it shows as saved");
+      await p.goto(`${BASE}/looks?mode=light`);
+      await p.waitForTimeout(800);
+      check(/Kept in this browser on this device\. No account needed\./.test(await body(p)), "Saved looks says where looks are kept and that no account is needed");
     });
   }
 
@@ -134,6 +137,7 @@ export default async function (H) {
     await scenario("P5-15f", "Wardrobe: Add a piece first, then each piece with its picture or colour", device, async (p, shot) => {
       await p.goto(`${BASE}/wardrobe?mode=light`);
       await p.waitForTimeout(900);
+      check(/No account needed\. Kept on this device/.test(await body(p)), "the wardrobe says no account is needed");
       await button(p, /^Add a piece$/).click();
       await p.waitForTimeout(300);
       await p.getByRole("radio", { name: /^Top$/ }).first().click();
