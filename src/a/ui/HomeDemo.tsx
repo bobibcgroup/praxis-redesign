@@ -1,9 +1,10 @@
 /**
- * The home film: about thirteen seconds, rendered from video/hero-film (three.js, the app's real screens
+ * The home film: about eighteen seconds, rendered from video/hero-film (three.js, the app's real screens
  * and photographs), so the page only plays a file. A phone on a travertine table in window light shows
  * the occasions and a light tap on Dinner, the looks being put together, then the three dinner looks,
  * which leave the screen as prints and settle above the table; the sharper one comes forward, and all
- * three go back into the screen. Then Style DNA: a fit and two tastes are chosen, and the saved
+ * three go back into the screen. Then Make it yours: See it on me, and Use something I own with a
+ * piece from the wardrobe. Then Style DNA: a fit and two tastes are chosen, and the saved
  * profile's colours lift off the screen as swatches and settle back, before the occasions return so
  * the loop has no cut.
  *

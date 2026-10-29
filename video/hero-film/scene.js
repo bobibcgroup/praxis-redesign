@@ -3,8 +3,10 @@
  * app (captured by capture.mjs): the occasions, a light tap on Dinner, the build, the three dinner
  * looks. Then the three looks leave the screen as prints, rise along curved paths, gain their
  * shadows and settle as an editorial set above the table; the sharper one comes forward a little,
- * and all three go back into the screen. The camera closes in on Style DNA: Slim is chosen, then two
- * tastes, and the saved profile's colours lift off the screen as cloth swatches and settle back.
+ * and all three go back into the screen. The camera closes in on Make it yours: See it on me, then
+ * Use something I own, with a navy overshirt from the wardrobe built into the look. Then Style DNA:
+ * Slim is chosen, then two tastes, and the saved profile's colours lift off the screen as cloth
+ * swatches and settle back.
  * The screen returns to the occasions so the loop has no cut.
  *
  * Everything is a function of time: window.seek(t) draws the frame at t seconds, so render.mjs can
@@ -19,7 +21,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 const params = new URLSearchParams(location.search);
 const LAYOUT = params.get("layout") === "mobile" ? "mobile" : "desktop";
 const SIZE = LAYOUT === "mobile" ? { w: 800, h: 1000 } : { w: 1200, h: 1000 };
-const DURATION = 13.5;
+const DURATION = 18.5;
 
 /* ------------------------------------------------------------------ timing */
 
@@ -32,7 +34,7 @@ const inOutSine = (x) => -(Math.cos(Math.PI * x) - 1) / 2;
 /** Eased progress between two times. */
 const ease = (t, a, b, fn = inOut) => fn(span(t, a, b));
 
-/** The beats, in seconds. Roughly four are the looks and four Style DNA. */
+/** The beats, in seconds. Roughly four are the looks, four Make it yours and four Style DNA. */
 const T = {
   tap: 1.05, // Dinner is touched
   chosen: 1.12, // and marked
@@ -44,15 +46,25 @@ const T = {
   back: [6.95, 7.45], // and settles back
   home: [7.4, 8.45], // the prints go back into the screen
   closeIn: [7.35, 9.0], // the camera returns to the screen
-  toFit: [8.3, 8.65], // Style DNA: how do you like your clothes to fit?
-  slim: 9.3, // Slim is touched
-  slimChosen: 9.37,
-  toTaste: [9.65, 9.95], // which of these feel most like you?
-  taste: [10.25, 10.6], // Quiet luxury, then Classic tailored
-  toProfile: [10.95, 11.25], // the saved Style DNA
-  lift: [11.4, 12.05], // its colours lift off the screen
-  settle: [12.4, 12.95], // and go back
-  toHome: [13.05, 13.35], // the occasions again, where the loop began
+  toMiy: [8.45, 8.85], // down to Make it yours
+  seeIt: 9.2, // See it on me is touched
+  toSee: [9.4, 9.7],
+  backMiy: [10.3, 10.6], // back to the look
+  useOwn: 10.85, // Use something I own
+  toOwn: [11.05, 11.35], // what do you want me to work with?
+  top: 11.65, // a top
+  toTop: [11.8, 12.1], // from the wardrobe
+  overshirt: 12.4, // the navy overshirt
+  toOwned: [12.6, 12.95], // the look rebuilt around it, marked Yours
+  toFit: [13.3, 13.65], // Style DNA: how do you like your clothes to fit?
+  slim: 14.3, // Slim is touched
+  slimChosen: 14.37,
+  toTaste: [14.65, 14.95], // which of these feel most like you?
+  taste: [15.25, 15.6], // Quiet luxury, then Classic tailored
+  toProfile: [15.95, 16.25], // the saved Style DNA
+  lift: [16.4, 17.05], // its colours lift off the screen
+  settle: [17.4, 17.95], // and go back
+  toHome: [18.05, 18.35], // the occasions again, where the loop began
 };
 
 /* ------------------------------------------------------------------ renderer */
@@ -353,10 +365,10 @@ function statusBar(ctx) {
   ctx.fill();
 }
 
-function drawPage(img, alpha = 1) {
+function drawPage(img, alpha = 1, dy = 0) {
   if (!img || alpha <= 0) return;
   sctx.globalAlpha = alpha;
-  sctx.drawImage(img, 0, 47 * SCREEN_PX.pt, SCREEN_PX.w, (844 - 47) * SCREEN_PX.pt);
+  sctx.drawImage(img, 0, (47 + dy) * SCREEN_PX.pt, SCREEN_PX.w, (844 - 47) * SCREEN_PX.pt);
   sctx.globalAlpha = 1;
 }
 
@@ -410,8 +422,19 @@ function screenLayers(t) {
   const L = layoutInfo;
   if (t < T.toBuild[0]) return { layers: [[t < T.chosen ? "home" : "chosen", 1]], touch: [T.tap, L.dinner] };
   if (t < T.toResults[0]) return { layers: fade("chosen", "build", T.toBuild), build: span(t, ...T.toBuild) };
-  if (t < T.toFit[0]) return { layers: fade("build", "results", T.toResults), build: 1 - span(t, ...T.toResults) };
-  if (t < T.toTaste[0]) return { layers: t < T.toFit[1] ? fade("results", "fit", T.toFit) : [[t < T.slimChosen ? "fit" : "fitSlim", 1]], touch: [T.slim, L.slim] };
+  if (t < T.toMiy[0]) return { layers: fade("build", "results", T.toResults), build: 1 - span(t, ...T.toResults) };
+  if (t < T.toSee[0]) {
+    // A scroll down the page: the look moves up and away as Make it yours comes up from below.
+    const k = inOut(span(t, ...T.toMiy));
+    const layers = k <= 0 ? [["results", 1]] : k >= 1 ? [["miy", 1]] : [["results", 1, -60 * k], ["miy", k, 60 * (1 - k)]];
+    return { layers, touch: [T.seeIt, L.seeIt] };
+  }
+  if (t < T.backMiy[0]) return { layers: fade("miy", "see", T.toSee) };
+  if (t < T.toOwn[0]) return { layers: fade("see", "miy", T.backMiy), touch: [T.useOwn, L.useOwn] };
+  if (t < T.toTop[0]) return { layers: fade("miy", "own", T.toOwn), touch: [T.top, L.top] };
+  if (t < T.toOwned[0]) return { layers: fade("own", "ownTop", T.toTop), touch: [T.overshirt, L.overshirt] };
+  if (t < T.toFit[0]) return { layers: fade("ownTop", "owned", T.toOwned) };
+  if (t < T.toTaste[0]) return { layers: t < T.toFit[1] ? fade("owned", "fit", T.toFit) : [[t < T.slimChosen ? "fit" : "fitSlim", 1]], touch: [T.slim, L.slim] };
   if (t < T.toProfile[0]) {
     const [a, b] = T.taste;
     const page = t < a + 0.07 ? "taste" : t < b + 0.07 ? "taste1" : "taste2";
@@ -426,13 +449,13 @@ function screenLayers(t) {
 function drawScreen(t) {
   const s = screenLayers(t);
   const touching = s.touch && t > s.touch[0] - 0.05 && t < s.touch[0] + 0.35;
-  const key = [s.layers.map(([n, a]) => `${n}:${a.toFixed(3)}`).join(","), s.build ? t.toFixed(3) : "", touching ? t.toFixed(3) : ""].join("|");
+  const key = [s.layers.map(([n, a, dy = 0]) => `${n}:${a.toFixed(3)}:${dy.toFixed(2)}`).join(","), s.build ? t.toFixed(3) : "", touching ? t.toFixed(3) : ""].join("|");
   if (key === screenKey) return;
   screenKey = key;
 
   sctx.fillStyle = "#efe2cc";
   sctx.fillRect(0, 0, SCREEN_PX.w, SCREEN_PX.h);
-  for (const [name, alpha] of s.layers) drawPage(shots[name], alpha);
+  for (const [name, alpha, dy] of s.layers) drawPage(shots[name], alpha, dy);
   if (s.build) buildLine(t, inOut(s.build));
   if (touching) touch(t, ...s.touch);
   statusBar(sctx);
@@ -524,7 +547,7 @@ let key;
 
 async function build() {
   layoutInfo = await (await fetch("/scene/screens/layout.json")).json();
-  const names = { home: "home", chosen: "home-dinner", build: "build", results: "results", fit: "dna-fit", fitSlim: "dna-fit-slim", taste: "dna-taste", taste1: "dna-taste-1", taste2: "dna-taste-2", profile: "dna-profile" };
+  const names = { home: "home", chosen: "home-dinner", build: "build", results: "results", miy: "make-it-yours", see: "see-it-on-me", own: "own", ownTop: "own-top", owned: "owned", fit: "dna-fit", fitSlim: "dna-fit-slim", taste: "dna-taste", taste1: "dna-taste-1", taste2: "dna-taste-2", profile: "dna-profile" };
   await Promise.all(Object.entries(names).map(async ([k, n]) => (shots[k] = await image(`/scene/screens/${n}.png`))));
   await document.fonts.ready;
 

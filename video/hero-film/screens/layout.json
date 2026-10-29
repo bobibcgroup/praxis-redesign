@@ -32,6 +32,30 @@
       "label": "RELAXED"
     }
   ],
+  "seeIt": {
+    "x": 20,
+    "y": 79.21875,
+    "width": 350,
+    "height": 72
+  },
+  "useOwn": {
+    "x": 20,
+    "y": 159.21875,
+    "width": 350,
+    "height": 72
+  },
+  "top": {
+    "x": 20,
+    "y": 525.4375,
+    "width": 350,
+    "height": 44
+  },
+  "overshirt": {
+    "x": 20,
+    "y": 481.4375,
+    "width": 350,
+    "height": 44
+  },
   "slim": {
     "x": 20,
     "y": 553.4375,
