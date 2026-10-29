@@ -3,7 +3,9 @@
  * app (captured by capture.mjs): the occasions, a light tap on Dinner, the build, the three dinner
  * looks. Then the three looks leave the screen as prints, rise along curved paths, gain their
  * shadows and settle as an editorial set above the table; the sharper one comes forward a little,
- * and all three go back into the screen so the loop has no cut.
+ * and all three go back into the screen. The camera closes in on Style DNA: Slim is chosen, then two
+ * tastes, and the saved profile's colours lift off the screen as cloth swatches and settle back.
+ * The screen returns to the occasions so the loop has no cut.
  *
  * Everything is a function of time: window.seek(t) draws the frame at t seconds, so render.mjs can
  * step through it frame by frame. Units are centimetres; the table is y = 0.
@@ -17,7 +19,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 const params = new URLSearchParams(location.search);
 const LAYOUT = params.get("layout") === "mobile" ? "mobile" : "desktop";
 const SIZE = LAYOUT === "mobile" ? { w: 800, h: 1000 } : { w: 1200, h: 1000 };
-const DURATION = 9;
+const DURATION = 13.5;
 
 /* ------------------------------------------------------------------ timing */
 
@@ -30,7 +32,7 @@ const inOutSine = (x) => -(Math.cos(Math.PI * x) - 1) / 2;
 /** Eased progress between two times. */
 const ease = (t, a, b, fn = inOut) => fn(span(t, a, b));
 
-/** The beats, in seconds. Roughly four of the nine are the looks. */
+/** The beats, in seconds. Roughly four are the looks and four Style DNA. */
 const T = {
   tap: 1.05, // Dinner is touched
   chosen: 1.12, // and marked
@@ -41,8 +43,16 @@ const T = {
   forward: [5.75, 6.35], // the sharper look comes forward
   back: [6.95, 7.45], // and settles back
   home: [7.4, 8.45], // the prints go back into the screen
-  toHome: [8.25, 8.6],
   closeIn: [7.35, 9.0], // the camera returns to the screen
+  toFit: [8.3, 8.65], // Style DNA: how do you like your clothes to fit?
+  slim: 9.3, // Slim is touched
+  slimChosen: 9.37,
+  toTaste: [9.65, 9.95], // which of these feel most like you?
+  taste: [10.25, 10.6], // Quiet luxury, then Classic tailored
+  toProfile: [10.95, 11.25], // the saved Style DNA
+  lift: [11.4, 12.05], // its colours lift off the screen
+  settle: [12.4, 12.95], // and go back
+  toHome: [13.05, 13.35], // the occasions again, where the loop began
 };
 
 /* ------------------------------------------------------------------ renderer */
@@ -373,12 +383,11 @@ function buildLine(t, alpha) {
   sctx.globalAlpha = 1;
 }
 
-/** A light touch: the place under the finger darkens softly and lets go. No finger is drawn. */
-function touch(t) {
-  const k = span(t, T.tap - 0.04, T.tap + 0.34);
+/** A light touch: the place under the finger brightens softly and lets go. No finger is drawn. */
+function touch(t, at, b) {
+  const k = span(t, at - 0.04, at + 0.34);
   if (k <= 0 || k >= 1) return;
   const pt = SCREEN_PX.pt;
-  const b = layoutInfo.dinner;
   const cx = (b.x + b.width * 0.48) * pt;
   const cy = (47 + b.y + b.height * 0.55) * pt;
   const rr = lerp(20, 34, outQuint(k)) * pt;
@@ -392,41 +401,40 @@ function touch(t) {
   sctx.fill();
 }
 
+/** The screen at time t: one or two of the captured pages, crossfading, and any touch in progress. */
+function screenLayers(t) {
+  const fade = (from, to, [a, b]) => {
+    const k = span(t, a, b);
+    return k <= 0 ? [[from, 1]] : k >= 1 ? [[to, 1]] : [[from, 1], [to, inOut(k)]];
+  };
+  const L = layoutInfo;
+  if (t < T.toBuild[0]) return { layers: [[t < T.chosen ? "home" : "chosen", 1]], touch: [T.tap, L.dinner] };
+  if (t < T.toResults[0]) return { layers: fade("chosen", "build", T.toBuild), build: span(t, ...T.toBuild) };
+  if (t < T.toFit[0]) return { layers: fade("build", "results", T.toResults), build: 1 - span(t, ...T.toResults) };
+  if (t < T.toTaste[0]) return { layers: t < T.toFit[1] ? fade("results", "fit", T.toFit) : [[t < T.slimChosen ? "fit" : "fitSlim", 1]], touch: [T.slim, L.slim] };
+  if (t < T.toProfile[0]) {
+    const [a, b] = T.taste;
+    const page = t < a + 0.07 ? "taste" : t < b + 0.07 ? "taste1" : "taste2";
+    const prev = { taste: "fitSlim", taste1: "taste", taste2: "taste1" }[page];
+    const since = page === "taste" ? T.toTaste : page === "taste1" ? [a + 0.07, a + 0.27] : [b + 0.07, b + 0.27];
+    return { layers: fade(prev, page, since), touch: t < b - 0.1 ? [a, L.tastes[0]] : [b, L.tastes[1]] };
+  }
+  if (t < T.toHome[0]) return { layers: fade("taste2", "profile", T.toProfile) };
+  return { layers: fade("profile", "home", T.toHome) };
+}
+
 function drawScreen(t) {
-  const toBuild = span(t, ...T.toBuild);
-  const toResults = span(t, ...T.toResults);
-  const toHome = span(t, ...T.toHome);
-  const building = t >= T.toBuild[0] && t < T.toResults[1];
-  const key = [
-    t < T.chosen ? "home" : "chosen",
-    toBuild.toFixed(3),
-    toResults.toFixed(3),
-    toHome.toFixed(3),
-    building ? t.toFixed(3) : "",
-    t > T.tap - 0.05 && t < T.tap + 0.35 ? t.toFixed(3) : "",
-  ].join("|");
+  const s = screenLayers(t);
+  const touching = s.touch && t > s.touch[0] - 0.05 && t < s.touch[0] + 0.35;
+  const key = [s.layers.map(([n, a]) => `${n}:${a.toFixed(3)}`).join(","), s.build ? t.toFixed(3) : "", touching ? t.toFixed(3) : ""].join("|");
   if (key === screenKey) return;
   screenKey = key;
 
   sctx.fillStyle = "#efe2cc";
   sctx.fillRect(0, 0, SCREEN_PX.w, SCREEN_PX.h);
-  if (toResults >= 1 && toHome <= 0) {
-    drawPage(shots.results);
-  } else if (toHome > 0) {
-    drawPage(shots.results);
-    drawPage(shots.home, inOut(toHome));
-  } else if (toResults > 0) {
-    drawPage(shots.build);
-    buildLine(t, 1 - toResults);
-    drawPage(shots.results, inOut(toResults));
-  } else if (toBuild > 0) {
-    drawPage(shots.chosen);
-    drawPage(shots.build, inOut(toBuild));
-    buildLine(t, inOut(toBuild));
-  } else {
-    drawPage(t < T.chosen ? shots.home : shots.chosen);
-    touch(t);
-  }
+  for (const [name, alpha] of s.layers) drawPage(shots[name], alpha);
+  if (s.build) buildLine(t, inOut(s.build));
+  if (touching) touch(t, ...s.touch);
   statusBar(sctx);
   // The home indicator.
   sctx.fillStyle = "rgba(20,16,12,0.85)";
@@ -480,6 +488,31 @@ async function cardTexture(look) {
   return canvasTexture(c);
 }
 
+/* ------------------------------------------------------------------ the swatches */
+
+// The profile's colours, as squares of woven cloth: each lifts from its swatch on the screen, grows
+// and hangs in a soft arc over the phone, then goes back. Sizes in centimetres, in the phone's space.
+const SWATCH = { size: 1.75, d: 0.05 };
+const swatches = [];
+
+/** A plain weave in the given colour: fine warp and weft lines and a little unevenness. */
+function weave(css) {
+  const [c, ctx] = makeCanvas(256, 256);
+  ctx.fillStyle = css;
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 256; i += 4) {
+    ctx.fillStyle = `rgba(255,255,255,${0.035 + rand() * 0.03})`;
+    ctx.fillRect(0, i, 256, 1.6);
+    ctx.fillStyle = `rgba(0,0,0,${0.05 + rand() * 0.04})`;
+    ctx.fillRect(i + 2, 0, 1.4, 256);
+  }
+  for (let i = 0; i < 260; i++) {
+    ctx.fillStyle = rand() > 0.5 ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.06)";
+    ctx.fillRect(rand() * 256, rand() * 256, 1 + rand() * 6, 1);
+  }
+  return canvasTexture(c);
+}
+
 /* ------------------------------------------------------------------ build */
 
 const world = new THREE.Group();
@@ -491,8 +524,8 @@ let key;
 
 async function build() {
   layoutInfo = await (await fetch("/scene/screens/layout.json")).json();
-  const [home, chosen, buildShot, results] = await Promise.all(["home", "home-dinner", "build", "results"].map((n) => image(`/scene/screens/${n}.png`)));
-  Object.assign(shots, { home, chosen, build: buildShot, results });
+  const names = { home: "home", chosen: "home-dinner", build: "build", results: "results", fit: "dna-fit", fitSlim: "dna-fit-slim", taste: "dna-taste", taste1: "dna-taste-1", taste2: "dna-taste-2", profile: "dna-profile" };
+  await Promise.all(Object.entries(names).map(async ([k, n]) => (shots[k] = await image(`/scene/screens/${n}.png`))));
   await document.fonts.ready;
 
   // The table.
@@ -582,6 +615,19 @@ async function build() {
     mesh.visible = false;
     world.add(mesh);
     cards.push({ look, mesh, mats });
+  }
+
+  // The swatches, in the phone's own space so they follow it.
+  for (const sw of layoutInfo.swatches) {
+    const mat = new THREE.MeshStandardMaterial({ map: weave(sw.hex), roughness: 0.9, transparent: true });
+    const mesh = new THREE.Mesh(new RoundedBoxGeometry(SWATCH.size, SWATCH.d, SWATCH.size, 2, 0.02), mat);
+    mesh.castShadow = true;
+    mesh.visible = false;
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(SWATCH.size * 1.9, SWATCH.size * 1.9), new THREE.MeshBasicMaterial({ map: softShadow(), transparent: true, depthWrite: false, color: "#1d140b" }));
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.visible = false;
+    phone.add(mesh, shadow);
+    swatches.push({ sw, mesh, mat, shadow });
   }
 
   // Light: a low warm sun through the window at the left (it carries the window's pattern), a soft
@@ -741,11 +787,48 @@ function placeCards(t) {
   });
 }
 
+/** The swatches: off the screen, up into an arc over the phone, a slow turn, and back into place. */
+function placeSwatches(t) {
+  const n = swatches.length;
+  swatches.forEach((s, i) => {
+    const stagger = 0.07;
+    const up = span(t, T.lift[0] + i * stagger, T.lift[1] - (n - 1 - i) * stagger);
+    const down = span(t, T.settle[0] + (n - 1 - i) * stagger * 0.6, T.settle[1] - i * stagger * 0.6);
+    const out = up > 0 && down < 1;
+    s.mesh.visible = s.shadow.visible = out;
+    if (!out) return;
+    const k = down > 0 ? 1 - inOut(down) : outQuint(up) * 0.2 + inOut(up) * 0.8;
+    const sw = s.sw;
+    const from = screenPoint(sw.x + sw.w / 2, 47 + sw.y + sw.h / 2);
+    // An arc across the screen, the middle colour highest, a little towards the camera.
+    const u = i / (n - 1) - 0.5;
+    const to = new THREE.Vector3(u * 8.6, 4.6 - Math.abs(u) * 1.8, -2.4 + Math.abs(u) * 1.4);
+    const p1 = from.clone().add(new THREE.Vector3(0, 2.2, 0));
+    const p2 = to.clone().add(new THREE.Vector3(-u * 0.8, -0.6, 1.4));
+    const pos = bezier(from, p1, p2, to, k);
+    const settled = clamp((t - T.lift[1] + 0.1) / 0.35) * (1 - span(t, T.settle[0], T.settle[0] + 0.25));
+    pos.y += Math.sin(t * 1.6 + i * 1.3) * 0.08 * settled;
+    s.mesh.position.copy(pos);
+    // Flat on the screen at first; in the air, tipped towards the camera and turned a little each.
+    s.mesh.rotation.set(0.35 * k + Math.sin(t * 1.1 + i) * 0.04 * settled, u * -0.5 * k, u * 0.18 * k);
+    s.mesh.scale.setScalar(lerp(sw.w / 390 * SCREEN.w / SWATCH.size, 1, outQuint(k)));
+    const appear = Math.min(clamp(up / 0.1), clamp((1 - down) / 0.08));
+    s.mat.opacity = appear;
+    s.mat.depthWrite = appear > 0.99;
+    // A soft shadow on the glass, wider and fainter the higher it hangs, pushed away from the window.
+    const h = pos.y - PHONE.t / 2;
+    s.shadow.position.set(pos.x + h * 0.35, PHONE.t / 2 + 0.014, pos.z - h * 0.3);
+    s.shadow.scale.setScalar(lerp(0.4, 1.3, clamp(h / 4.6)) * s.mesh.scale.x);
+    s.shadow.material.opacity = appear * lerp(0.45, 0.2, clamp(h / 4.6));
+  });
+}
+
 function draw(t) {
   t = ((t % DURATION) + DURATION) % DURATION;
   drawScreen(t);
   cameraAt(t);
   placeCards(t);
+  placeSwatches(t);
   renderer.render(scene, camera);
 }
 
