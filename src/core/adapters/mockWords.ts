@@ -107,7 +107,7 @@ export const SETTING_LINE: Record<string, Record<string, string>> = {
 
 /** Time: why these pieces suit the hour the customer chose. Keyed by outfit, then time answer. */
 export const TIME_LINE: Record<string, Record<string, string>> = {
-  dinner_safest_01: { SUNSET: "A dark knit is right for an early start and carries on as the evening goes.", NIGHT: "Dark tones look right in evening light." },
+  dinner_safest_01: { SUNSET: "A dark knit is right for an early start and carries on as the evening goes.", NIGHT: "Dark tones look rich in low light after dark." },
   dinner_sharper_01: { SUNSET: "Tailoring suits an early evening dinner and carries straight into the night.", NIGHT: "A blazer and Chelsea boots feel made for a night out." },
   dinner_relaxed_01: { SUNSET: "Easy layers for an early evening, with the overshirt for when it cools.", NIGHT: "Dark jeans and the overshirt keep it neat after dark." },
 
