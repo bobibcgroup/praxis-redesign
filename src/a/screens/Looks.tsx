@@ -25,7 +25,7 @@ function savedOn(iso: string): string {
 }
 
 export function Looks() {
-  const { href, store, reduced, answers } = useJourney();
+  const { href, store, reduced, answers, user } = useJourney();
   /* Came here from a set of looks (its answers ride along in the address): the way back leads to them. */
   const fromLooks = Boolean(answers.occasion && answers.venue && answers.time && answers.vibe && answers.spend && !answers.done);
   const backToLooks = href("moment/results", { hero: null });
@@ -56,8 +56,11 @@ export function Looks() {
       <TopBar back={fromLooks ? backToLooks : href("")} wordmark />
       <div className="flex min-h-0 flex-col">
         {looks.length > 0 ? (
-          <div className="flex items-baseline justify-between px-5 pt-6 lg:px-12 lg:pt-8">
+          <div className="px-5 pt-6 lg:px-12 lg:pt-8">
             <h1 className="a-display">Saved looks</h1>
+            <p className="a-saved-where mt-1 text-[13px] leading-5 text-[var(--muted)]">
+              {user ? "Kept under your name in this browser on this device." : "Kept in this browser on this device. No account needed."}
+            </p>
           </div>
         ) : null}
         {removed ? (

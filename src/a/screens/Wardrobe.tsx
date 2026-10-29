@@ -216,7 +216,7 @@ export function Wardrobe() {
           <h1 className="a-display">Your wardrobe</h1>
           <p className="mt-4 max-w-[48ch] leading-6 text-[var(--muted)]">The pieces you own. I build looks around them and never price them.</p>
           <p className="mt-2 max-w-[48ch] text-[13px] leading-5 text-[var(--muted)]">
-            Kept on this device; a photo stays in this tab only.{!fromLooks && pieces.length > 0 ? " To style one, choose a moment, then Use something I own." : ""}
+            {user ? "Kept under your name on this device" : "No account needed. Kept on this device"}; a photo stays in this tab only.{!fromLooks && pieces.length > 0 ? " To style one, choose a moment, then Use something I own." : ""}
           </p>
         </div>
 
