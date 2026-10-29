@@ -13,14 +13,14 @@ export interface OccasionPhoto {
   position?: string;
 }
 
-/** One campaign from the Round 2 review's reference board. Bump the version whenever a photo changes. */
+/** Made with Google Gemini in the mood of the Round 2 review's reference board; see CREDITS.md. Bump the version whenever a photo changes. */
 export const OCCASION_PHOTOS: { version: number; photos: Record<OccasionId, OccasionPhoto> } = {
-  version: 2,
+  version: 3,
   photos: {
-    DINNER: { base: "/images/home/dinner", alt: "A candlelit table with cut glass goblets under soft warm light" },
-    WORK: { base: "/images/home/work", alt: "A man in a taupe double breasted suit in front of an arched doorway" },
-    DATE: { base: "/images/home/date", alt: "A couple sharing coffee by candlelight under string lights" },
-    WEDDING: { base: "/images/home/wedding", alt: "A long wedding table with white flowers beneath tall arched windows" },
-    PARTY: { base: "/images/home/party", alt: "A lounge bar in burgundy velvet lit by small table lamps" },
+    DINNER: { base: "/images/home/dinner", alt: "A candlelit table for two with crystal glasses and white roses beside a velvet banquette" },
+    WORK: { base: "/images/home/work", alt: "A man in a taupe double breasted suit before an arched wooden door and an olive tree" },
+    DATE: { base: "/images/home/date", alt: "A smiling couple sharing espresso by candlelight in a café strung with lights" },
+    WEDDING: { base: "/images/home/wedding", alt: "A long wedding table with white roses and taper candles between tall arched windows" },
+    PARTY: { base: "/images/home/party", alt: "A wood panelled cocktail lounge with burgundy velvet chairs, brass lamps and a glowing bar" },
   },
 };
